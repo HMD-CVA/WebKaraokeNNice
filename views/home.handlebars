@@ -54,22 +54,23 @@
     <div class="sale_polular">
       <h1>FLASH SALE</h1>
       <div class="products">
-        {{#if phonghatsWithStatus}}
+        {{!-- {{#if phonghatsWithStatus}}
         {{#each phonghatsWithStatus}}
         {{> product}}
         {{/each}}
         {{else}}
         <p>Không có dữ liệu phòng hát</p>
-        {{/if}}
+        {{/if}} --}}
       </div>
     </div>
 
     <div class="ListContainer1">
       <h1><img src="/image/apple_logo.png" style="width: 30px; height: 30px"> iPhone</h1>
       <div class="products">
-        {{#each phonghatsWithStatus}}
         {{>product}}
-        {{/each}}
+        {{!-- {{#each phonghatsWithStatus}}
+        
+        {{/each}} --}}
       </div>
     </div>
   </div>

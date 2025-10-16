@@ -1,7 +1,11 @@
-import mongoose, { model } from "mongoose";
+import mongoose from "mongoose";
+import { generateCode } from "../utils/codeGenerator.js";
 
+// TẠO SCHEMA TRƯỚC, RỒI THÊM MIDDLEWARE, CUỐI CÙNG MỚI TẠO MODEL
+
+// 1. PhongHat Schema
 const PhongHatSchema = new mongoose.Schema({
-  MaPhong: { type: String, required: true, unique: true },
+  MaPhong: { type: String, unique: true },
   TenPhong: { type: String, required: true },
   LoaiPhong: { type: String, required: true },
   SucChua: { type: Number, required: true },
@@ -9,10 +13,10 @@ const PhongHatSchema = new mongoose.Schema({
   GhiChu: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
-const Data_PhongHat_Model = mongoose.model("phonghats", PhongHatSchema);
 
+// 2. NhanVien Schema
 const NhanVienSchema = new mongoose.Schema({
-  MaNV: { type: String, required: true, unique: true },
+  MaNV: { type: String, unique: true },
   TenNV: { type: String, required: true },
   VaiTro: { type: String, required: true },
   LuongCoBan: { type: Number },
@@ -20,8 +24,8 @@ const NhanVienSchema = new mongoose.Schema({
   TrangThai: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
-const Data_NhanVien_Model = mongoose.model("nhanviens", NhanVienSchema);
 
+// 3. KhachHang Schema
 const KhachHangSchema = new mongoose.Schema({
   MaKH: { type: String, required: true, unique: true },
   TenKH: { type: String, required: true },
@@ -29,8 +33,8 @@ const KhachHangSchema = new mongoose.Schema({
   Email: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
-const Data_KhachHang_Model = mongoose.model("khachhangs", KhachHangSchema);
 
+// 4. DatPhong Schema
 const DatPhongSchema = new mongoose.Schema({
   MaDatPhong: { type: String, required: true, unique: true },
   MaKH: { type: String, required: true },
@@ -40,8 +44,8 @@ const DatPhongSchema = new mongoose.Schema({
   TrangThai: { type: String, default: "Đã đặt" },
   createdAt: { type: Date, default: Date.now }
 });
-const Data_DatPhong_Model = mongoose.model("datphongs", DatPhongSchema);
 
+// 5. HoaDon Schema
 const HoaDonSchema = new mongoose.Schema({
   MaHoaDon: { type: String, required: true, unique: true },
   MaDatPhong: { type: String, required: true },
@@ -50,8 +54,8 @@ const HoaDonSchema = new mongoose.Schema({
   TrangThai: { type: String, default: "Chưa thanh toán" },
   createdAt: { type: Date, default: Date.now }
 });
-const Data_HoaDon_Model = mongoose.model("hoadons", HoaDonSchema);
 
+// 6. MatHang Schema
 const MatHangSchema = new mongoose.Schema({
   MaHang: { type: String, required: true, unique: true },
   TenHang: { type: String, required: true },
@@ -60,8 +64,8 @@ const MatHangSchema = new mongoose.Schema({
   SoLuongTon: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now }
 });
-const Data_MatHang_Model = mongoose.model("mathangs", MatHangSchema);
 
+// 7. ChiTietHoaDon Schema
 const ChiTietHoaDonSchema = new mongoose.Schema({
   MaCTHD: { type: String, required: true, unique: true },
   MaHoaDon: { type: String, required: true },
@@ -72,8 +76,8 @@ const ChiTietHoaDonSchema = new mongoose.Schema({
   LoaiDichVu: { type: String, required: true },
   createdAt: { type: Date, default: Date.now }
 });
-const Data_ChiTietHD_Model = mongoose.model("chitiethoadons", ChiTietHoaDonSchema);
 
+// 8. BangGiaPhong Schema
 const BangGiaPhongSchema = new mongoose.Schema({
   MaGia: { type: String, required: true, unique: true },
   LoaiPhong: { type: String, required: true },
@@ -81,8 +85,8 @@ const BangGiaPhongSchema = new mongoose.Schema({
   GiaTien: { type: Number, required: true },
   createdAt: { type: Date, default: Date.now }
 });
-const Data_BangGiaPhong_Model = mongoose.model("banggiaphongs", BangGiaPhongSchema);
 
+// 9. DanhMucLuong Schema
 const DanhMucLuongSchema = new mongoose.Schema({
   MaMucLuong: { type: String, required: true, unique: true },
   VaiTro: { type: String, required: true },
@@ -90,8 +94,8 @@ const DanhMucLuongSchema = new mongoose.Schema({
   LuongTheoGio: { type: Number, required: true },
   createdAt: { type: Date, default: Date.now }
 });
-const Data_DanhMucLuong_Model = mongoose.model("danhmucluongs", DanhMucLuongSchema);
 
+// 10. PhanCong Schema
 const PhanCongSchema = new mongoose.Schema({
   MaPhanCong: { type: String, required: true, unique: true },
   MaNV: { type: String, required: true },
@@ -99,8 +103,8 @@ const PhanCongSchema = new mongoose.Schema({
   NgayLam: { type: Date, required: true },
   createdAt: { type: Date, default: Date.now }
 });
-const Data_PhanCong_Model = mongoose.model("phancongs", PhanCongSchema);
 
+// 11. YeuCauKyThuat Schema
 const YeuCauKyThuatSchema = new mongoose.Schema({
   MaYeuCau: { type: String, required: true, unique: true },
   MaPhong: { type: String, required: true },
@@ -109,8 +113,8 @@ const YeuCauKyThuatSchema = new mongoose.Schema({
   TrangThai: { type: String, default: "Đang chờ" },
   createdAt: { type: Date, default: Date.now }
 });
-const Data_YeuCauKyThuat_Model = mongoose.model("yeucaukythuats", YeuCauKyThuatSchema);
 
+// 12. ThietBi Schema
 const ThietBiSchema = new mongoose.Schema({
   MaThietBi: { type: String, required: true, unique: true },
   MaPhong: { type: String, required: true },
@@ -118,8 +122,8 @@ const ThietBiSchema = new mongoose.Schema({
   TinhTrang: { type: String, default: "Tốt" },
   createdAt: { type: Date, default: Date.now }
 });
-const Data_ThietBi_Model = mongoose.model("thietbis", ThietBiSchema);
 
+// 13. LichSuBaoTri Schema
 const LichSuBaoTriSchema = new mongoose.Schema({
   MaLichSu: { type: String, required: true, unique: true },
   MaThietBi: { type: String, required: true },
@@ -128,8 +132,8 @@ const LichSuBaoTriSchema = new mongoose.Schema({
   ThoiGian: { type: Date, default: Date.now },
   createdAt: { type: Date, default: Date.now }
 });
-const Data_LichSuBaoTri_Model = mongoose.model("lichsubaotris", LichSuBaoTriSchema);
 
+// 14. NhapHang Schema
 const NhapHangSchema = new mongoose.Schema({
   MaPhieuNhap: { type: String, required: true, unique: true },
   MaNV: { type: String, required: true },
@@ -137,8 +141,8 @@ const NhapHangSchema = new mongoose.Schema({
   TongChiPhi: { type: Number, required: true },
   createdAt: { type: Date, default: Date.now }
 });
-const Data_NhapHang_Model = mongoose.model("nhaphangs", NhapHangSchema);
 
+// 15. ChiTietNhapHang Schema
 const ChiTietNhapHangSchema = new mongoose.Schema({
   MaCTNH: { type: String, required: true, unique: true },
   MaPhieuNhap: { type: String, required: true },
@@ -147,14 +151,103 @@ const ChiTietNhapHangSchema = new mongoose.Schema({
   DonGia: { type: Number, required: true },
   createdAt: { type: Date, default: Date.now }
 });
-const Data_ChiTietNhapHang_Model = mongoose.model("chitietnhaphangs", ChiTietNhapHangSchema);
 
+// 16. Admin Schema
 const AdminSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true }
 });
 
+// THÊM MIDDLEWARE VÀO CÁC SCHEMA TRƯỚC KHI TẠO MODEL
+
+// Middleware cho PhongHat
+PhongHatSchema.pre('save', async function(next) {
+  if (this.isNew && !this.MaPhong) {
+    const PhongHat = mongoose.model('PhongHat', PhongHatSchema);
+    this.MaPhong = await generateCode('P', PhongHat, 'MaPhong');
+  }
+  next();
+});
+
+// Middleware cho NhanVien
+NhanVienSchema.pre('save', async function(next) {
+  if (this.isNew && !this.MaNV) {
+    const NhanVien = mongoose.model('NhanVien', NhanVienSchema);
+    this.MaNV = await generateCode('NV', NhanVien, 'MaNV');
+  }
+  next();
+});
+
+// Middleware cho KhachHang
+KhachHangSchema.pre('save', async function(next) {
+  if (this.isNew && !this.MaKH) {
+    const KhachHang = mongoose.model('KhachHang', KhachHangSchema);
+    this.MaKH = await generateCode('KH', KhachHang, 'MaKH');
+  }
+  next();
+});
+
+// Middleware cho DatPhong
+DatPhongSchema.pre('save', async function(next) {
+  if (this.isNew && !this.MaDatPhong) {
+    const DatPhong = mongoose.model('DatPhong', DatPhongSchema);
+    this.MaDatPhong = await generateCode('DP', DatPhong, 'MaDatPhong');
+  }
+  next();
+});
+
+// Middleware cho HoaDon
+HoaDonSchema.pre('save', async function(next) {
+  if (this.isNew && !this.MaHoaDon) {
+    const HoaDon = mongoose.model('HoaDon', HoaDonSchema);
+    this.MaHoaDon = await generateCode('HD', HoaDon, 'MaHoaDon');
+  }
+  next();
+});
+
+// Middleware cho MatHang
+MatHangSchema.pre('save', async function(next) {
+  if (this.isNew && !this.MaHang) {
+    const MatHang = mongoose.model('MatHang', MatHangSchema);
+    this.MaHang = await generateCode('MH', MatHang, 'MaHang');
+  }
+  next();
+});
+
+// TẠO MODEL SAU CÙNG
+const Data_PhongHat_Model = mongoose.model("phonghats", PhongHatSchema);
+const Data_NhanVien_Model = mongoose.model("nhanviens", NhanVienSchema);
+const Data_KhachHang_Model = mongoose.model("khachhangs", KhachHangSchema);
+const Data_DatPhong_Model = mongoose.model("datphongs", DatPhongSchema);
+const Data_HoaDon_Model = mongoose.model("hoadons", HoaDonSchema);
+const Data_MatHang_Model = mongoose.model("mathangs", MatHangSchema);
+const Data_ChiTietHD_Model = mongoose.model("chitiethoadons", ChiTietHoaDonSchema);
+const Data_BangGiaPhong_Model = mongoose.model("banggiaphongs", BangGiaPhongSchema);
+const Data_DanhMucLuong_Model = mongoose.model("danhmucluongs", DanhMucLuongSchema);
+const Data_PhanCong_Model = mongoose.model("phancongs", PhanCongSchema);
+const Data_YeuCauKyThuat_Model = mongoose.model("yeucaukythuats", YeuCauKyThuatSchema);
+const Data_ThietBi_Model = mongoose.model("thietbis", ThietBiSchema);
+const Data_LichSuBaoTri_Model = mongoose.model("lichsubaotris", LichSuBaoTriSchema);
+const Data_NhapHang_Model = mongoose.model("nhaphangs", NhapHangSchema);
+const Data_ChiTietNhapHang_Model = mongoose.model("chitietnhaphangs", ChiTietNhapHangSchema);
 const Data_Admin_Model = mongoose.model("admins", AdminSchema);
 
-
-export default { Data_PhongHat_Model, Data_NhanVien_Model, Data_KhachHang_Model, Data_Admin_Model, Data_SanPham_Model };
+// Export tất cả models
+export default {
+  Data_PhongHat_Model,
+  Data_NhanVien_Model,
+  Data_KhachHang_Model,
+  Data_DatPhong_Model,
+  Data_HoaDon_Model,
+  Data_MatHang_Model,
+  Data_ChiTietHD_Model,
+  Data_BangGiaPhong_Model,
+  Data_DanhMucLuong_Model,
+  Data_PhanCong_Model,
+  Data_YeuCauKyThuat_Model,
+  Data_ThietBi_Model,
+  Data_LichSuBaoTri_Model,
+  Data_NhapHang_Model,
+  Data_ChiTietNhapHang_Model,
+  Data_Admin_Model
+};

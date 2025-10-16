@@ -1,6 +1,6 @@
 import express from 'express';
 import { engine } from 'express-handlebars';
-import db from './server.js';
+import db from './config/server.js';
 import DataModel from './app/model/index.js';
 
 db.connectDB();
@@ -31,22 +31,17 @@ app.set('views', './views');
 // Trang chủ
 app.get('/', (req, res) => {
     Promise.all([
-        DataModel.Data_Admin_Model.find({}).lean().exec(),
-        DataModel.Data_KhachHang_Model.find({}).lean().exec(),
-        DataModel.Data_NhanVien_Model.find({}).lean().exec(),
-        DataModel.Data_SanPham_Model.find({}).lean().exec(),
-        DataModel.Data_SanPham_Model.find({ sale: true }).lean().exec(),
         DataModel.Data_PhongHat_Model.find({}).lean().exec()
     ])
-    .then(([admins, khachhangs, nhanviens, sanphams, spSale, phonghats]) => {
-        const phonghatsWithStatus = phonghats.map(room => ({
-            ...room,
-            statusText: room.TrangThai === 1 ? 'CÒN TRỐNG' : 
-                        room.TrangThai === 0 ? 'ĐANG SỬ DỤNG' : 
-                        room.TrangThai === 2 ? 'ĐÃ ĐẶT' : 
-                        room.TrangThai === -1 ? 'ĐÃ XOÁ': 'KHÔNG XÁC ĐỊNH'
-        }));
-        res.render('home', { layout: 'HomeMain.handlebars', admins, khachhangs, nhanviens, sanphams, spSale, phonghatsWithStatus });
+    .then(([phonghats]) => {
+        // const phonghatsWithStatus = phonghats.map(room => ({
+        //     ...room,
+        //     statusText: room.TrangThai === 1 ? 'CÒN TRỐNG' : 
+        //                 room.TrangThai === 0 ? 'ĐANG SỬ DỤNG' : 
+        //                 room.TrangThai === 2 ? 'ĐÃ ĐẶT' : 
+        //                 room.TrangThai === -1 ? 'ĐÃ XOÁ': 'KHÔNG XÁC ĐỊNH'
+        // }));
+        res.render('home', { layout: 'HomeMain.handlebars', phonghats });
     })
     .catch(err => res.status(500).send(err));
 });
