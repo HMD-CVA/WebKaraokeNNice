@@ -1,80 +1,46 @@
 <div id="footer">
+    <div id="AllFooter">
     <div id="content1">
-        <p>&copy; 2021 Your Company. All rights reserved.</p>  
-        <button id="btn1">Click me</button>     
+        <img src="./image/logo_NNice.png">     
     </div>
     <div id="content2">
-        <p>&copy; 2022 Your Company. All rights reserved.</p>       
+        <div class="ct2_title"><i class="fa fa-info-circle" aria-hidden="true"></i> Thông tin</div>   
+        <div class="ct2_content">
+            <p><i class="fa fa-building" aria-hidden="true"></i> CÔNG TY TNHH GIẢI TRÍ NGHỆ THUẬT NICE</p>
+            <p><i class="fa fa-map-marker" aria-hidden="true"></i>: 113 Phan Xích Long, Phường 2, Quận Phú Nhuận, TP.Hồ Chí Minh, Việt Nam</p>
+            <p><i class="fa fa-envelope" aria-hidden="true"></i>: cskg@nnice.com.vn</p>
+            <p><i class="fa fa-phone" aria-hidden="true"></i>: (028)3 5170046</p>
+        </div>    
     </div>
     <div id="content3">
-        <p>&copy; 2023 Your Company. All rights reserved.</p>       
+        <div class="ct3_title"><i class="fa fa-link" aria-hidden="true"></i> Liên kết nhanh</div>
+        <div class="ct3_content">
+            <p><a href="/"><i class="fa fa-home" aria-hidden="true"></i> Trang chủ</a></p>
+            <p><a href="/rooms"><i class="fa fa-music" aria-hidden="true"></i> Phòng hát</a></p>
+            <p><a href="/about"><i class="fa fa-info" aria-hidden="true"></i> Giới thiệu</a></p>
+            <p><a href="/services"><i class="fa fa-concierge-bell" aria-hidden="true"></i> Dịch vụ</a></p>
+            <p><a href="/contact"><i class="fa fa-address-book" aria-hidden="true"></i> Liên hệ</a></p>
+        </div>       
     </div>
     <div id="content4">
-        <p>&copy; 2024 Your Company. All rights reserved.</p>       
+        <div class="ct4_title"><i class="fa fa-clock-o" aria-hidden="true"></i> Giờ mở cửa</div>
+        <div class="ct4_content">
+            <p><i class="fa fa-calendar" aria-hidden="true"></i> Thứ 2 - Chủ nhật</p>
+            <p><i class="fa fa-sun-o" aria-hidden="true"></i> 09:00 - 24:00</p>
+            <p class="highlight"><i class="fa fa-moon-o" aria-hidden="true"></i> Mở cửa cả ngày lễ</p>
+        </div>
+        <div class="social-media">
+            {{!-- <div class="ct4_title"><i class="fa fa-share-alt" aria-hidden="true"></i> Kết nối với chúng tôi</div> --}}
+            <div class="social-icons">
+                <a href="#"><i class="fab fa-facebook-f"></i></a>
+                <a href="#"><i class="fab fa-tiktok"></i></a>
+                <a href="#"><i class="fab fa-youtube"></i></a>
+                <a href="#"><i class="fab fa-zalo"></i></a>
+            </div>
+        </div>
+    </div>
+    </div>
+    <div class="text-center py-1 bg-dark text-light">
+        © 2025 Copy Right by <strong>HMDuck</strong>
     </div>
 </div>
-
-{{!-- <div id="test">
-    <h1>Danh sach KH</h1> 
-    <table>
-        <thead>
-            <tr>
-                <td>Name</td>
-                <td>Phone</td>
-                <td>Address</td>
-            </tr>
-        </thead>
-        <tbody>
-            {{#each khachhangs}}
-            <tr>
-                <td>{{this.name}}</td>
-                <td>{{this.phone}}</td>
-                <td>{{this.address}}</td>
-                <td><button class="editKH" data-id="{{this._id}}" data-name="{{this.name}}" data-phone="{{this.phone}}" data-address="{{this.address}}">Edit</button></td>
-                <td><button class="deleteKH" data-id="{{this._id}}" data-name="{{this.name}}" data-phone="{{this.phone}}" data-address="{{this.address}}">Delete</button></td>
-            </tr>
-            {{/each}}
-        </tbody>
-    </table>
-    
-    <h1>Add KH</h1>
-    <input type="text" id="name" placeholder="Name">
-    <input type="text" id="phone" placeholder="Phone">
-    <input type="text" id="address" placeholder="Address">
-    <button id="addKH">Add</button>
-</div>
-
-
-
-<div id="testproduct">
-    <h1>Danh sach Product</h1> 
-    <table>
-        <thead>
-            <tr>
-                <td>Name</td>
-                <td>Price</td>
-                <td>Decription</td>
-                <td>IMG Link</td>
-            </tr>
-        </thead>
-        <tbody>
-            {{#each sanphams}}
-            <tr>
-                <td>{{this.name}}</td>
-                <td>{{this.price}}</td>
-                <td>{{this.description}}</td>
-                <td><img src="{{this.image}}" style="width: 20px; height: 20px;"></td>
-                <td><button class="editSP" data-id="{{this._id}}" data-name="{{this.name}}" data-price="{{this.price}}" data-description="{{this.description}}" data-image="{{this.image}}">Edit</button></td>
-                <td><button class="deleteSP" data-id="{{this._id}}" data-name="{{this.name}}" data-price="{{this.price}}" data-description="{{this.description}}" data-image="{{this.image}}">Delete</button></td> 
-            </tr>
-            {{/each}}
-        </tbody>
-    </table>
-    
-    <h1>Add SP</h1>
-    <input type="text" id="sp_name" placeholder="Name">
-    <input type="number" id="sp_price" placeholder="Price">
-    <input type="text" id="sp_description" placeholder="Description">
-    <input type="text" id="sp_image" placeholder="IMG Link">
-    <button id="addSP">Add</button>
-</div> --}}

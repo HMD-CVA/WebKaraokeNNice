@@ -1,5 +1,5 @@
 <div id="container">
-  <!-- BANNER MỚI - THAY THẾ HOÀN TOÀN PHẦN BANNER CŨ -->
+  <!-- BANNER START -->
   <div class="banner-container">
     <button class="control-btn prev-btn">❮</button>
 
@@ -22,13 +22,6 @@
         <div class="banner-item">
           <img src="/image/Banner_5.jpg" alt="Ad 5">
         </div>
-        <!-- Thêm banner 1, 2 để loop mượt -->
-        <div class="banner-item">
-          <img src="/image/Banner_1.png" alt="Ad 1">
-        </div>
-        <div class="banner-item">
-          <img src="/image/Banner_2.jpg" alt="Ad 2">
-        </div>
       </div>
     </div>
 
@@ -46,21 +39,22 @@
       <div class="progress"></div>
     </div>
   </div>
-  <!-- KẾT THÚC PHẦN BANNER MỚI -->
+  <!-- BANNER END -->
 
-
-  <!-- PHẦN NÀY GIỮ NGUYÊN -->
   <div id="wrapper">
     <div class="sale_polular">
-      <h1>FLASH SALE</h1>
+      <h1>Phòng Hát KARAOKE</h1>
+      <select>
+        <option value="">Tất cả phòng</option>
+        <option>Phòng nhỏ</option>
+        <option>Phòng vừa</option>
+        <option>Phòng trung</option>
+      </select>
+
       <div class="products">
-        {{!-- {{#if phonghatsWithStatus}}
-        {{#each phonghatsWithStatus}}
-        {{> product}}
+        {{#each phonghats}}
+          {{>product}}
         {{/each}}
-        {{else}}
-        <p>Không có dữ liệu phòng hát</p>
-        {{/if}} --}}
       </div>
     </div>
 
@@ -68,9 +62,6 @@
       <h1><img src="/image/apple_logo.png" style="width: 30px; height: 30px"> iPhone</h1>
       <div class="products">
         {{>product}}
-        {{!-- {{#each phonghatsWithStatus}}
-        
-        {{/each}} --}}
       </div>
     </div>
   </div>

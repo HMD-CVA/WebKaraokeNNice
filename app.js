@@ -31,9 +31,10 @@ app.set('views', './views');
 // Trang chủ
 app.get('/', (req, res) => {
     Promise.all([
-        DataModel.Data_PhongHat_Model.find({}).lean().exec()
+        DataModel.Data_PhongHat_Model.find({}).lean().exec(),
+        DataModel.Data_BangGiaPhong_Model.find({}).lean().exec()
     ])
-    .then(([phonghats]) => {
+    .then(([phonghats, banggiaphongs]) => {
         // const phonghatsWithStatus = phonghats.map(room => ({
         //     ...room,
         //     statusText: room.TrangThai === 1 ? 'CÒN TRỐNG' : 
@@ -41,7 +42,7 @@ app.get('/', (req, res) => {
         //                 room.TrangThai === 2 ? 'ĐÃ ĐẶT' : 
         //                 room.TrangThai === -1 ? 'ĐÃ XOÁ': 'KHÔNG XÁC ĐỊNH'
         // }));
-        res.render('home', { layout: 'HomeMain.handlebars', phonghats });
+        res.render('home', { layout: 'HomeMain.handlebars', phonghats, banggiaphongs });
     })
     .catch(err => res.status(500).send(err));
 });

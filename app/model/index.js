@@ -11,6 +11,7 @@ const PhongHatSchema = new mongoose.Schema({
   SucChua: { type: Number, required: true },
   TrangThai: { type: String, required: true, default: "Trống" },
   GhiChu: { type: String },
+  LinkAnh: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -22,6 +23,7 @@ const NhanVienSchema = new mongoose.Schema({
   LuongCoBan: { type: Number },
   NgayVaoLam: { type: Date, required: true },
   TrangThai: { type: Boolean, default: true },
+  LinkAvatar: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -62,6 +64,7 @@ const MatHangSchema = new mongoose.Schema({
   DonGia: { type: Number, required: true },
   DonViTinh: { type: String, required: true },
   SoLuongTon: { type: Number, default: 0 },
+  LinkAnh: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -120,6 +123,7 @@ const ThietBiSchema = new mongoose.Schema({
   MaPhong: { type: String, required: true },
   TenThietBi: { type: String, required: true },
   TinhTrang: { type: String, default: "Tốt" },
+  LinkAnh: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
 

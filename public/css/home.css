@@ -23,99 +23,86 @@
     background-color: transparent;
 }
 
-/* BANNER MỚI - HIỂN THỊ 3 BANNER CÙNG LÚC */
+/* BANNER CONTAINER - MỞ RỘNG ĐỂ CHỨA ẢNH 550x780px */
 .banner-container {
     position: relative;
-    height: 800px;
     width: 100%;
     overflow: hidden;
     background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-top: 100px;
-    padding-bottom: 25px;
-}
-
-/* BANNER VIEWPORT - MINIMAL LIQUID GLASS */
-.banner-viewport {
-    flex: 1;
-    height: 100%;
-    overflow: hidden;
+    margin-top: 80px;
+    padding: 0;
     position: relative;
-    display: flex;
-    justify-content: center;
-    margin: 20px;
-
-    /* Crystal Clear Background */
-    background: rgba(255, 255, 255, 0.02);
-    border: 0.5px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    backdrop-filter: blur(10px);
-    
-    /* Subtle Depth */
-    box-shadow: 
-        0 2px 12px rgba(0, 0, 0, 0.05),
-        inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
 }
 
 /* Micro Liquid Movement */
+.banner-viewport {
+    width: calc(100% - 80px);
+    overflow: hidden;
+    position: relative;
+    
+    /* Glass morphism nâng cao */
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    
+    /* Shadow đẹp hơn */
+    box-shadow: 
+        0 4px 24px rgba(0, 0, 0, 0.08),
+        0 1px 4px rgba(0, 0, 0, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+    
+    backdrop-filter: blur(15px) saturate(160%);
+    margin: 0px 20px;
+    margin-top: 40px;
+    z-index: 2;
+    position: relative;
+}
+
+/* Hiệu ứng viền ánh sáng cho viewport */
 .banner-viewport::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 1px;
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.3),
-        transparent
-    );
-    animation: microShine 3s ease-in-out infinite;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.3) 0%,
+        rgba(255, 255, 255, 0.1) 50%,
+        rgba(255, 255, 255, 0.3) 100%);
+    border-radius: 17px;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    margin: 0px 20px;
+    margin-top: 40px;
 }
 
-@keyframes microShine {
-    0%, 100% {
-        left: -100%;
-        opacity: 0;
-    }
-    50% {
-        opacity: 0.5;
-    }
-    100% {
-        left: 100%;
-        opacity: 0;
-    }
-}
 
-/* Hover Enhancement */
-.banner-viewport:hover {
-    border-color: rgba(255, 255, 255, 0.15);
-    background: rgba(255, 255, 255, 0.03);
-    box-shadow: 
-        0 4px 20px rgba(0, 0, 0, 0.08),
-        inset 0 0.5px 0 rgba(255, 255, 255, 0.15);
-}
-
+/* BANNER TRACK - CHIỀU CAO CỐ ĐỊNH 780px */
 .banner-track {
     display: flex;
-    height: auto;
     transition: transform 0.8s ease-in-out;
-    width: max-content;
-    gap: 0;
-    align-items: flex-start;
+    align-items: center;
+    height: 780px;
+    width: auto; /* SẼ ĐƯỢC JS SET */
 }
 
+/* BANNER ITEM - GIỮ NGUYÊN KÍCH THƯỚC 550x780px */
 .banner-item {
-    width: calc(100% / 3); /* Hiển thị 3 banner cùng lúc */
-    height: auto;
-    flex-shrink: 0;
-    padding: 0;
-    margin: 0;
+    position: relative;
+    flex-shrink: 0 !important;
     display: flex;
     align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    width: 550px; /* RỘNG CỐ ĐỊNH */
+    height: 780px; /* CAO CỐ ĐỊNH */
 }
 
 .banner-item::before {
@@ -128,107 +115,127 @@
     overflow: hidden;
 }
 
-.banner-item:first-child {
-    padding-left: 0;
-}
-
-.banner-item:last-child {
-    padding-right: 0;
-}
-
+/* IMAGE - GIỮ NGUYÊN KÍCH THƯỚC GỐC */
 .banner-item img {
-    width: auto; /* Giữ nguyên kích thước ảnh gốc */
-    height: auto; /* Giữ nguyên kích thước ảnh gốc */
-    max-width: 100%; /* Không vượt quá container */
-    max-height: 800px; /* Giới hạn chiều cao tối đa */
-    object-fit: contain;
-    object-position: center;
-    display: block;
+    width: 550px; /* GIỮ NGUYÊN */
+    height: 780px; /* GIỮ NGUYÊN */
+    object-fit: cover !important; /* HIỂN THỊ TOÀN BỘ ẢNH KHÔNG CẮT */
+    object-position: center !important;
+    display: block !important;
     border: none;
     box-shadow: none;
     border-radius: 0;
-    margin: auto;
+    padding: 0;
+    margin: 0;
 }
 
-/* Nút điều khiển 2 bên */
+/* NÚT ĐIỀU KHIỂN */
 .control-btn {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
+    
+    /* Glass button */
     background: rgba(0, 0, 0, 0.7);
     color: white;
     border: none;
     border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    font-size: 24px;
+    width: 70px;
+    height: 70px;
+    font-size: 28px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 10;
-    backdrop-filter: blur(10px);
+    
+    /* Glass effect */
+    backdrop-filter: blur(20px) saturate(180%);
     border: 2px solid rgba(255, 255, 255, 0.3);
+    
+    /* Shadow */
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.2),
+        0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .control-btn:hover {
     background: rgba(0, 0, 0, 0.9);
-    transform: translateY(-50%) scale(1.1);
+    transform: translateY(-50%) scale(1.15);
     border-color: rgba(255, 255, 255, 0.6);
+    box-shadow: 
+        0 12px 40px rgba(0, 0, 0, 0.3),
+        0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 .prev-btn {
-    left: 20px;
+    left: 50px;
 }
 
 .next-btn {
-    right: 20px;
+    right: 50px;
 }
 
 /* LINE INDICATORS */
 .indicators {
     position: absolute;
-    bottom: 12px;
+    bottom: 0;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 6px;
+    gap: 12px;
     z-index: 10;
+    
+    /* Glass background cho indicators */
+    background: rgba(0, 0, 0, 0.3);
+    padding: 12px 20px;
+    border-radius: 25px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .indicator {
-    width: 20px;
-    height: 3px;
-    border-radius: 2px;
+    width: 25px;
+    height: 4px;
+    border-radius: 4px;
     background: rgba(255, 255, 255, 0.3);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    
+    /* Glow effect */
+    box-shadow: 0 0 0 rgba(255, 255, 255, 0);
 }
 
 .indicator.active {
-    background: rgba(255, 255, 255, 0.9);
-    width: 30px;
-    box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+    background: linear-gradient(90deg, #ff6b6b, #ffa726);
+    width: 35px;
+    box-shadow: 0 0 12px rgba(255, 107, 107, 0.4);
+    transform: scale(1.1);
 }
 
 .indicator:hover {
     background: rgba(255, 255, 255, 0.6);
+    transform: scale(1.05);
 }
 
-/* MODERN PROGRESS BAR */
+/* PROGRESS BAR */
 .progress-bar {
     position: absolute;
-    bottom: 22px;
+    bottom: 0px;
     left: 50%;
     transform: translateX(-50%);
-    width: 98%;
-    height: 3px;
+    width: 90%;
+    height: 4px;
     background: rgba(255, 255, 255, 0.15);
-    z-index: 10;
+    z-index: 9;
     border-radius: 10px;
     overflow: hidden;
+    
+    /* Glass effect */
     backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .progress {
@@ -244,10 +251,9 @@
     transition: width 0.1s linear;
     border-radius: 10px;
     position: relative;
-    box-shadow: 0 0 10px rgba(66, 165, 245, 0.5);
+    box-shadow: 0 0 20px rgba(66, 165, 245, 0.6);
 }
 
-/* Glow effect */
 .progress::after {
     content: '';
     position: absolute;
@@ -257,7 +263,7 @@
     bottom: 0;
     background: linear-gradient(90deg, 
         transparent, 
-        rgba(255, 255, 255, 0.4), 
+        rgba(255, 255, 255, 0.6), 
         transparent
     );
     animation: progressGlow 2s ease-in-out infinite;
@@ -272,7 +278,7 @@
     }
 }
 
-/* Sale Div */
+/* SALE DIV */
 .sale_polular {
     height: auto;
     width: 100%;   
@@ -296,7 +302,7 @@
     font-weight: 700;
 }
 
-/* Grid cho products */
+/* GRID PRODUCTS */
 .products {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -327,40 +333,18 @@
     align-items: center;
     justify-content: center;
 }
-
-/* ===== BANNER RESPONSIVE TỐI ƯU ===== */
-
-/* Tablet: 2 banner */
-@media (max-width: 1200px) {
+/* RESPONSIVE CHO DESIGN MỚI */
+@media (max-width: 768px) {
     .banner-container {
-        height: 600px;
-        margin-top: 120px;
+        margin-top: 60px;
+        padding: 30px 0;
+        border-radius: 16px;
     }
     
-    .banner-item {
-        width: 50%;
-    }
-    
-    .banner-item img {
-        max-height: 550px;
-        max-width: 90%;
-    }
-}
-
-/* Small Tablet: 1 banner */
-@media (max-width: 992px) {
-    .banner-container {
-        height: 500px;
-        margin-top: 120px;
-    }
-    
-    .banner-item {
-        width: 100%;
-    }
-    
-    .banner-item img {
-        max-height: 450px;
-        max-width: 85%;
+    .banner-viewport {
+        width: calc(100% - 40px);
+        margin: 0 20px;
+        border-radius: 12px;
     }
     
     .control-btn {
@@ -376,28 +360,230 @@
     .next-btn {
         right: 15px;
     }
+    
+    .indicators {
+        bottom: 20px;
+        padding: 8px 16px;
+        gap: 8px;
+    }
+    
+    .indicator {
+        width: 20px;
+        height: 3px;
+    }
+    
+    .indicator.active {
+        width: 25px;
+    }
+    
+    .progress-bar {
+        bottom: 60px;
+        width: 80%;
+    }
 }
 
-/* Mobile: 1 banner - ảnh cao hơn */
-@media (max-width: 768px) {
+@media (max-width: 576px) {
     .banner-container {
-        height: 450px;
-        margin-top: 120px;
+        margin-top: 40px;
+        padding: 20px 0;
+        border-radius: 12px;
     }
     
     .banner-viewport {
-        margin: 0 15px;
+        width: calc(100% - 20px);
+        margin: 0 10px;
+        border-radius: 8px;
+    }
+    
+    .control-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+    
+    .prev-btn {
+        left: 5px;
+    }
+    
+    .next-btn {
+        right: 5px;
+    }
+    
+    .indicators {
+        bottom: 15px;
+        padding: 6px 12px;
+        gap: 6px;
+    }
+    
+    .indicator {
+        width: 15px;
+        height: 2px;
+    }
+    
+    .indicator.active {
+        width: 20px;
+    }
+    
+    .progress-bar {
+        bottom: 45px;
+        width: 85%;
+        height: 3px;
+    }
+}
+
+
+/* ===== BANNER RESPONSIVE - GIỮ NGUYÊN KÍCH THƯỚC ẢNH ===== */
+
+/* DESKTOP SIÊU RỘNG: 4 ẢNH CÙNG LÚC */
+@media (min-width: 2000px) {
+    .banner-container {
+        height: 800px; /* CONTAINER CAO HƠN ẢNH MỘT CHÚT */
+    }
+    
+    .banner-viewport {
+        height: 800px;
+    }
+    
+    .banner-track {
+        height: 780px;
+        gap: 25px;
+    }
+}
+
+/* DESKTOP LỚN: 3 ẢNH CÙNG LÚC */
+@media (max-width: 1999px) and (min-width: 1500px) {
+    .banner-container {
+        height: 800px;
+    }
+    
+    .banner-viewport {
+        height: 800px;
+    }
+    
+    .banner-track {
+        height: 780px;
+        gap: 20px;
+    }
+}
+
+/* DESKTOP: 2 ẢNH CÙNG LÚC */
+@media (max-width: 1499px) and (min-width: 1200px) {
+    .banner-container {
+        height: 800px;
+    }
+    
+    .banner-viewport {
+        height: 800px;
+    }
+    
+    .banner-track {
+        height: 780px;
+        gap: 20px;
+    }
+}
+
+/* TABLET LỚN: 2 ẢNH CÙNG LÚC */
+@media (max-width: 1199px) and (min-width: 992px) {
+    .banner-container {
+        height: 800px;
+        margin-top: 70px;
+    }
+    
+    .banner-viewport {
+        height: 800px;
+    }
+    
+    .banner-track {
+        height: 780px;
+        gap: 15px;
+    }
+    
+    .control-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+    }
+    
+    .prev-btn {
+        left: 20px;
+    }
+    
+    .next-btn {
+        right: 20px;
+    }
+}
+
+/* TABLET: 1 ẢNH - GIỮ NGUYÊN KÍCH THƯỚC */
+@media (max-width: 991px) and (min-width: 768px) {
+    .banner-container {
+        height: 800px;
+        margin-top: 60px;
+    }
+    
+    .banner-viewport {
+        height: 800px;
+    }
+    
+    .banner-track {
+        height: 780px;
+        gap: 15px;
+    }
+    
+    .banner-item {
+        width: 550px;
+        height: 780px;
     }
     
     .banner-item img {
-        max-height: 400px;
-        max-width: 80%;
+        width: 550px;
+        height: 780px;
     }
     
     .control-btn {
         width: 45px;
         height: 45px;
         font-size: 18px;
+    }
+    
+    .prev-btn {
+        left: 15px;
+    }
+    
+    .next-btn {
+        right: 15px;
+    }
+}
+
+/* MOBILE LỚN: 1 ẢNH - GIỮ NGUYÊN KÍCH THƯỚC */
+@media (max-width: 767px) and (min-width: 576px) {
+    .banner-container {
+        height: 800px;
+        margin-top: 50px;
+    }
+    
+    .banner-viewport {
+        height: 800px;
+    }
+    
+    .banner-track {
+        height: 780px;
+        gap: 10px;
+    }
+    
+    .banner-item {
+        width: 550px;
+        height: 780px;
+    }
+    
+    .banner-item img {
+        width: 550px;
+        height: 780px;
+    }
+    
+    .control-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
     }
     
     .prev-btn {
@@ -409,31 +595,45 @@
     }
     
     .indicators {
-        bottom: 15px;
+        bottom: 20px;
     }
     
     .progress-bar {
-        bottom: 25px;
-        width: 96%;
+        bottom: 35px;
+        width: 70%;
     }
 }
 
-/* Mobile nhỏ: ảnh chiếm full height */
-@media (max-width: 576px) {
+/* MOBILE: 1 ẢNH - GIỮ NGUYÊN KÍCH THƯỚC */
+@media (max-width: 575px) and (min-width: 401px) {
     .banner-container {
-        height: 400px;
-        margin-top: 120px !important; /* FIX MARGIN TOP MOBILE */
+        height: 800px;
+        margin-top: 40px;
+    }
+    
+    .banner-viewport {
+        height: 800px;
+    }
+    
+    .banner-track {
+        height: 780px;
+        gap: 10px;
+    }
+    
+    .banner-item {
+        width: 550px;
+        height: 780px;
     }
     
     .banner-item img {
-        max-height: 380px;
-        max-width: 75%;
+        width: 550px;
+        height: 780px;
     }
     
     .control-btn {
-        width: 40px;
-        height: 40px;
-        font-size: 16px;
+        width: 35px;
+        height: 35px;
+        font-size: 14px;
     }
     
     .prev-btn {
@@ -442,6 +642,67 @@
     
     .next-btn {
         right: 8px;
+    }
+    
+    .indicators {
+        bottom: 15px;
+        gap: 6px;
+    }
+    
+    .indicator {
+        width: 20px;
+        height: 3px;
+    }
+    
+    .indicator.active {
+        width: 30px;
+    }
+    
+    .progress-bar {
+        bottom: 30px;
+        width: 65%;
+        height: 3px;
+    }
+}
+
+/* MOBILE RẤT NHỎ: 1 ẢNH - GIỮ NGUYÊN KÍCH THƯỚC */
+@media (max-width: 400px) {
+    .banner-container {
+        height: 800px;
+        margin-top: 30px;
+    }
+    
+    .banner-viewport {
+        height: 800px;
+    }
+    
+    .banner-track {
+        height: 780px;
+        gap: 8px;
+    }
+    
+    .banner-item {
+        width: 550px;
+        height: 780px;
+    }
+    
+    .banner-item img {
+        width: 550px;
+        height: 780px;
+    }
+    
+    .control-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 12px;
+    }
+    
+    .prev-btn {
+        left: 5px;
+    }
+    
+    .next-btn {
+        right: 5px;
     }
     
     .indicators {
@@ -459,55 +720,37 @@
     }
     
     .progress-bar {
-        bottom: 22px;
-        width: 94%;
+        bottom: 25px;
+        width: 60%;
         height: 2.5px;
     }
 }
 
-/* Mobile rất nhỏ */
-@media (max-width: 400px) {
-    .banner-container {
-        height: 350px;
-        margin-top: 120px !important; /* FIX MARGIN TOP MOBILE */
+/* RESPONSIVE CHO WRAPPER VÀ PRODUCTS */
+@media (max-width: 768px) {
+    #wrapper {
+        width: 95%;
     }
     
-    .banner-item img {
-        max-height: 320px;
-        max-width: 70%;
+    .products {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 15px;
+        padding: 15px 0;
     }
     
-    .control-btn {
-        width: 35px;
-        height: 35px;
-        font-size: 14px;
+    .sale_polular,
+    .ListContainer1 {
+        padding: 15px;
+    }
+}
+
+@media (max-width: 576px) {
+    .products {
+        grid-template-columns: 1fr;
+        gap: 15px;
     }
     
-    .prev-btn {
-        left: 5px;
-    }
-    
-    .next-btn {
-        right: 5px;
-    }
-    
-    .indicators {
-        bottom: 10px;
-        gap: 4px;
-    }
-    
-    .indicator {
-        width: 15px;
-        height: 2px;
-    }
-    
-    .indicator.active {
-        width: 22px;
-    }
-    
-    .progress-bar {
-        bottom: 20px;
-        width: 92%;
-        height: 2px;
+    .sale_polular h1 {
+        text-align: center;
     }
 }

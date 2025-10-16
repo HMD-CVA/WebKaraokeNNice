@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 async function connectDB() {
   try {
-    await mongoose.connect("mongodb://localhost:27017/QuanLyKaraoke", {
+    await mongoose.connect("mongodb+srv://huynhmyduc2005_db_user:5oLJA7f9uK9WQXXT@cluster0.c2otaab.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0", {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
