@@ -1,0 +1,85 @@
+<div class="container py-4">
+  <h1 class="text-center text-primary mb-4">Quản Lý Sản Phẩm</h1>
+
+  <!-- Form thêm/sửa sản phẩm -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title">Thông tin sản phẩm</h5>
+      <div class="row g-3">
+        <input type="hidden" id="sp_id">
+
+        <div class="col-md-6">
+          <input type="text" id="sp_name" class="form-control" placeholder="Tên sản phẩm">
+        </div>
+        <div class="col-md-6">
+          <input type="number" id="sp_price" class="form-control" placeholder="Giá">
+        </div>
+        <div class="col-md-12">
+          <input type="text" id="sp_description" class="form-control" placeholder="Mô tả">
+        </div>
+        <div class="col-md-12">
+          <input type="text" id="sp_image" class="form-control" placeholder="Link ảnh">
+        </div>
+        <div class="col-md-12 d-flex align-items-center">
+          <div class="form-check me-3">
+            <input class="form-check-input" type="checkbox" id="sp_sale">
+            <label class="form-check-label" for="sp_sale">Sale</label>
+          </div>
+        </div>
+
+        <div class="col-md-12">
+          <button id="addSP" class="btn btn-success">➕ Thêm</button>
+          <button id="updateSP" class="btn btn-warning d-none">✏️ Cập nhật</button>
+          <button id="cancelEdit" class="btn btn-secondary d-none">❌ Huỷ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bảng sản phẩm -->
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title">Danh sách sản phẩm</h5>
+      <div class="table-responsive">
+        <table class="table table-striped table-bordered align-middle text-center">
+          <thead class="table-primary">
+            <tr>
+              <th>Ảnh</th>
+              <th>Tên</th>
+              <th>Giá</th>
+              <th>Mô tả</th>
+              <th>Sale</th>
+              <th>Hành động</th>
+            </tr>
+          </thead>
+          <tbody id="productTable">
+            {{#each sanphams}}
+            <tr data-id="{{this._id}}">
+              <td>
+                <img src="{{this.image}}" alt="{{this.name}}" class="img-thumbnail"
+                  style="width:60px;height:60px;object-fit:cover;">
+              </td>
+              <td>{{this.name}}</td>
+              <td>{{this.price}} đ</td>
+              <td class="text-truncate" style="max-width: 200px;">{{this.description}}</td>
+              <td>
+                {{#if this.sale}}
+                <span class="badge bg-success">✔️ Có</span>
+                {{else}}
+                <span class="badge bg-danger">❌ Không</span>
+                {{/if}}
+              </td>
+              <td>
+                <button class="btn btn-sm btn-warning editSP" data-id="{{this._id}}" data-name="{{this.name}}"
+                  data-price="{{this.price}}" data-description="{{this.description}}" data-image="{{this.image}}"
+                  data-sale="{{this.sale}}">✏️ Sửa</button>
+                <button class="btn btn-sm btn-danger deleteSP" data-id="{{this._id}}">🗑️ Xoá</button>
+              </td>
+            </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

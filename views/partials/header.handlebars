@@ -1,0 +1,64 @@
+<nav class="navbar navbar-expand-lg fixed-top">
+  <div class="container-fluid">
+    <a class="navbar-brand me-auto" href="/">
+      <img src="/image/logo_Nnice_SizeS.png" style="padding-bottom: 5px;" alt="Logo">
+    </a>
+    
+    <!-- MENU ITEMS CHO DESKTOP - GIỮ LẠI TRONG NAVBAR -->
+    <div class="d-none d-lg-block">
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a class="nav-link active" href="/">TRANG CHỦ</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link mx-lg-2" href="/rooms">PHÒNG HÁT</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link mx-lg-2" href="/about">GIỚI THIỆU</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link mx-lg-2" href="/services">DỊCH VỤ</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link mx-lg-2" href="/contact">LIÊN HỆ</a>
+        </li>
+      </ul>
+    </div>
+    
+    <a href="#" class="login-button">
+      <img src="/icon/shopping-cart.png" alt="Cart" style="width: 30px; height: 30px;">
+    </a>
+    
+    <button class="navbar-toggler pe-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar"
+      aria-controls="offcanvasNavbar" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+  </div>
+</nav>
+
+<!-- OFFCANVAS CHỈ DÙNG CHO MOBILE - ĐẶT NGOÀI NAVBAR -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="offcanvasNavbarLabel"><img src="/image/logo_Nnice_SizeS.png" style="padding-bottom: 5px;" alt="Logo"></h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <ul class="navbar-nav justify-content-center flex-grow-1 pe-3">
+      <li class="nav-item">
+        <a class="nav-link" href="/">TRANG CHỦ</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link mx-lg-2" href="/rooms">PHÒNG HÁT</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link mx-lg-2" href="/about">GIỚI THIỆU</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link mx-lg-2" href="/services">DỊCH VỤ</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link mx-lg-2" href="/contact">LIÊN HỆ</a>
+      </li>
+    </ul>
+  </div>
+</div>

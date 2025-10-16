@@ -1,0 +1,76 @@
+<div id="container">
+  <!-- BANNER MỚI - THAY THẾ HOÀN TOÀN PHẦN BANNER CŨ -->
+  <div class="banner-container">
+    <button class="control-btn prev-btn">❮</button>
+
+    <div class="banner-viewport">
+      <div class="liquid-border"></div>
+      <div class="liquid-bubble"></div>
+      <div class="banner-track">
+        <div class="banner-item">
+          <img src="/image/Banner_1.png" alt="Ad 1">
+        </div>
+        <div class="banner-item">
+          <img src="/image/Banner_2.jpg" alt="Ad 2">
+        </div>
+        <div class="banner-item">
+          <img src="/image/Banner_3.jpeg" alt="Ad 3">
+        </div>
+        <div class="banner-item">
+          <img src="/image/Banner_4.jpg" alt="Ad 4">
+        </div>
+        <div class="banner-item">
+          <img src="/image/Banner_5.jpg" alt="Ad 5">
+        </div>
+        <!-- Thêm banner 1, 2 để loop mượt -->
+        <div class="banner-item">
+          <img src="/image/Banner_1.png" alt="Ad 1">
+        </div>
+        <div class="banner-item">
+          <img src="/image/Banner_2.jpg" alt="Ad 2">
+        </div>
+      </div>
+    </div>
+
+    <button class="control-btn next-btn">❯</button>
+
+    <div class="indicators">
+      <div class="indicator active" data-slide="0"></div>
+      <div class="indicator" data-slide="1"></div>
+      <div class="indicator" data-slide="2"></div>
+      <div class="indicator" data-slide="3"></div>
+      <div class="indicator" data-slide="4"></div>
+    </div>
+
+    <div class="progress-bar">
+      <div class="progress"></div>
+    </div>
+  </div>
+  <!-- KẾT THÚC PHẦN BANNER MỚI -->
+
+
+  <!-- PHẦN NÀY GIỮ NGUYÊN -->
+  <div id="wrapper">
+    <div class="sale_polular">
+      <h1>FLASH SALE</h1>
+      <div class="products">
+        {{#if phonghatsWithStatus}}
+        {{#each phonghatsWithStatus}}
+        {{> product}}
+        {{/each}}
+        {{else}}
+        <p>Không có dữ liệu phòng hát</p>
+        {{/if}}
+      </div>
+    </div>
+
+    <div class="ListContainer1">
+      <h1><img src="/image/apple_logo.png" style="width: 30px; height: 30px"> iPhone</h1>
+      <div class="products">
+        {{#each phonghatsWithStatus}}
+        {{>product}}
+        {{/each}}
+      </div>
+    </div>
+  </div>
+</div>
