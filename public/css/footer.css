@@ -1,38 +1,47 @@
+/* GIỮ NGUYÊN TOÀN BỘ CSS CỦA BẠN */
 #footer {
     height: auto;
     width: 100%;   
     background-image: url('../image/footer-bg.png');
 }
+
 #AllFooter{
     height: 100%;
     width: 100%;   
     text-align: center;
-    display: flex;
-    align-items: flex-start;
+    display: grid;
+    grid-template-columns: 26% 25% 20% 20%;
+    grid-auto-flow: dense;
+    align-items: start;
     gap: 0;
     padding: 20px 0px 0px 0px;
 }
+
+/* CONTENT1 - LUÔN CĂN GIỮA VÀ LỚN HƠN */
 #content1 {
     height: 100%;
-    width: 26%;   
     background-color: transparent;
-    
     display: flex;
-    justify-content: flex-end;
-    padding: 20px 30px 0px 0px;
+    justify-content: center; /* LUÔN CĂN GIỮA */
+    align-items: center; /* CĂN GIỮA THEO CHIỀU DỌC */
+    padding: 30px 20px; /* TĂNG PADDING ĐỂ LỚN HƠN */
 }
 
 #content1 img{
-    height: 60%;
-    width: 60%;
+    height: 80%; /* TĂNG KÍCH THƯỚC HÌNH */
+    width: 80%; /* TĂNG KÍCH THƯỚC HÌNH */
     object-fit: contain;
     max-width: 100%;
+    transition: all 0.3s ease; /* THÊM HIỆU ỨNG */
+}
+
+#content1 img:hover {
+    transform: scale(1.05); /* HIỆU ỨNG PHÓNG TO KHI HOVER */
 }
 
 /* CONTENT2 */
 #content2 {
     height: auto;
-    width: 25%;   
     background-color: transparent;
     color: black;
     padding: 15px;
@@ -43,12 +52,10 @@
     font-size: 25px;
     font-weight: 700;
     text-transform: uppercase;
-   
     text-align: left;
     color: #2c3e50;
-    /* THÊM GẠCH CHÂN */
     padding-bottom: 10px;
-    border-bottom: 3px solid #e74c3c; /* Gạch chân đậm màu đỏ */
+    border-bottom: 3px solid #e74c3c;
 }
 
 .ct2_content{
@@ -73,7 +80,6 @@
 /* CONTENT3 */
 #content3 {
     height: auto;
-    width: 20%;   
     background-color: transparent;
     color: black;
     text-align: left;
@@ -88,7 +94,6 @@
     margin-bottom: 20px;
     text-align: left;
     color: #2c3e50;
-    
     padding-bottom: 10px;
     border-bottom: 3px solid #e74c3c;
 }
@@ -128,7 +133,6 @@
 /* CONTENT4*/
 #content4 {
     height: auto;
-    width: 20%;   
     background-color: transparent;
     color: black;
     text-align: left;
@@ -143,9 +147,8 @@
     margin-bottom: 20px;
     text-align: left;
     color: #2c3e50;
-    /* THÊM GẠCH CHÂN */
     padding-bottom: 10px;
-    border-bottom: 3px solid #e74c3c; /* Gạch chân đậm màu đỏ */
+    border-bottom: 3px solid #e74c3c;
 }
 
 .ct4_content {
@@ -208,36 +211,157 @@
 .social-icons a:nth-child(3) { background: #ff0000; }
 .social-icons a:nth-child(4) { background: #0068ff; }
 
-/* RESPONSIVE */
-@media (max-width: 768px) {
-    #footer {
-        flex-direction: column;
-        height: auto;
-        padding: 20px;
+/* RESPONSIVE - ĐẢM BẢO CONTENT1 LUÔN CĂN GIỮA */
+@media (max-width: 1200px) {
+    #AllFooter {
+        grid-template-columns: repeat(2, 1fr);
         gap: 20px;
     }
     
     #content1, #content2, #content3, #content4 {
         width: 100%;
+    }
+    
+    /* CONTENT1 VẪN CĂN GIỮA TRÊN TABLET */
+    #content1 {
+        justify-content: center;
+        align-items: center;
+        padding: 25px 20px;
+    }
+    
+    #content1 img {
+        height: 70%;
+        width: 70%;
+        max-height: 150px;
+        max-width: 250px;
+    }
+}
+
+@media (max-width: 768px) {
+    #AllFooter {
+        grid-template-columns: 1fr;
+        gap: 0;
+        padding: 20px;
+    }
+    
+    #content1, #content2, #content3, #content4 {
+        width: 100%;
         margin: 0;
-        border-right: none; /* Bỏ vách ngăn trên mobile */
-        border-bottom: 2px solid rgba(0, 0, 0, 0.1); /* Thêm vách ngăn dọc */
-        padding-bottom: 20px;
+        border-right: none;
+        border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+        padding: 25px 15px;
     }
     
     #content4 {
-        border-bottom: none; /* Bỏ vách ngăn cuối cùng */
+        border-bottom: none;
+    }
+    
+    /* CONTENT1 VẪN CĂN GIỮA TRÊN MOBILE */
+    #content1 {
+        justify-content: center;
+        align-items: center;
+        padding: 30px 20px;
+    }
+    
+    #content1 img {
+        height: 75%;
+        width: 75%;
+        max-height: 140px;
+        max-width: 220px;
     }
     
     .ct2_title, .ct3_title, .ct4_title {
-        font-size: 24px;
+        font-size: 20px;
     }
     
     .ct2_content, .ct3_content, .ct4_content {
+        font-size: 14px;
+    }
+    
+    .social-icons a {
+        width: 35px;
+        height: 35px;
         font-size: 16px;
     }
     
     .social-icons {
+        gap: 10px;
+        margin-top: 12px;
         justify-content: center;
+    }
+    
+    .ct2_content p, 
+    .ct3_content p, 
+    .ct4_content p {
+        margin: 10px 0;
+        line-height: 1.4;
+    }
+}
+
+/* TỰ ĐỘNG XẾP CHỒNG KHI CÓ SỰ LỆCH CHIỀU CAO */
+@media (max-width: 1024px) {
+    #AllFooter {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+    
+    /* Đảm bảo content1 vẫn căn giữa */
+    #content1 {
+        justify-content: center;
+        align-items: center;
+        padding: 25px 20px;
+    }
+}
+
+/* THÊM HIỆU ỨNG ĐẶC BIỆT CHO CONTENT1 */
+#content1 {
+    position: relative;
+}
+
+#content1::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120%;
+    height: 120%;
+    background: radial-gradient(circle, rgba(231, 76, 60, 0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+#content1:hover::before {
+    opacity: 1;
+}
+
+/* Fallback cho trình duyệt cũ */
+@supports not (display: grid) {
+    #AllFooter {
+        display: flex;
+        flex-wrap: wrap;
+    }
+    
+    #content1, #content2, #content3, #content4 {
+        flex: 1 1 300px;
+        min-width: 300px;
+        margin: 10px;
+    }
+    
+    #content1 {
+        justify-content: center;
+        align-items: center;
+        padding: 30px 20px;
+    }
+    
+    @media (max-width: 768px) {
+        #content1, #content2, #content3, #content4 {
+            flex: 1 1 100%;
+        }
+        
+        #content1 {
+            padding: 30px 20px;
+        }
     }
 }

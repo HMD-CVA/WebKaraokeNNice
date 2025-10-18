@@ -1,1435 +1,1317 @@
-<!-- Template Product Karaoke -->
-<div class="karaoke-product-card">
-  <div class="karaoke-image-container">
-    <img src="{{this.LinkAnh}}" alt="{{this.TenPhong}}">
+<!-- templates/phonghat-card.hbs -->
+<div class="cyberpunk-card" data-phong-id="{{this._id}}">
+  <!-- Image Container -->
+  <div class="image-container">
+    <img src="{{this.LinkAnh}}" alt="{{this.TenPhong}}"
+      onerror="this.src='https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'">
 
-    <div class="karaoke-status-badge karaoke-status-{{this.TrangThai}}">
-      <i class="fas fa-door-open me-1"></i>
-      {{this.statusText}}
-
-      {{!-- <div style="display: none;">
-        Debug: TrangThai = {{this.TrangThai}}, statusText = {{this.statusText}}
-      </div> --}}
-
-      {{!-- {{#if this.TrangThai}}
-      {{#equals this.TrangThai "available"}}CÒN TRỐNG{{/equals}}
-      {{#equals this.TrangThai "busy"}}ĐANG SỬ DỤNG{{/equals}}
-      {{#equals this.TrangThai "reserved"}}ĐÃ ĐẶT{{/equals}}
-      {{/if}} --}}
+    <!-- Status Badge -->
+    <div class="status-badge status-{{this.TrangThai}}">
+      <i class="fas fa-circle"></i>
+      {{getStatusText this.TrangThai}}
     </div>
-    <div class="karaoke-image-overlay">
-      <button class="karaoke-view-btn">
-        <i class="fas fa-expand me-2"></i> Xem ảnh
+
+    <!-- View Image Overlay -->
+    <div class="image-overlay">
+      <button class="view-image-btn" data-image="{{this.LinkAnh}}" data-title="{{this.TenPhong}}">
+        <i class="fas fa-expand-arrows-alt"></i>
+        PHÓNG TO
       </button>
     </div>
   </div>
 
-  <div class="karaoke-card-header">
-    <div class="karaoke-microphone-icon">
-      <i class="fas fa-microphone-alt"></i>
+  <!-- Card Content -->
+  <div class="card-content">
+    <!-- Header -->
+    <div class="card-header">
+      <div class="room-badge">
+        <span class="badge-text">{{this.LoaiPhong}}</span>
+      </div>
+      <div class="microphone-icon">
+        <i class="fas fa-microphone-alt"></i>
+      </div>
     </div>
-    <h2 class="karaoke-room-name">{{this.TenPhong}}</h2>
-    <p class="karaoke-room-type">{{this.LoaiPhong}}</p>
-  </div>
 
-  <div class="karaoke-card-body">
-    <div class="karaoke-info-grid">
-      <div class="karaoke-info-item">
-        <i class="fas fa-users"></i>
-        <div>
-          <div class="karaoke-info-label">Sức chứa</div>
-          <div class="karaoke-info-value">{{this.SucChua}} người</div>
+    <!-- Main Content -->
+    <div class="main-content">
+      <h3 class="room-name">{{this.TenPhong}}</h3>
+      <p class="room-code">{{this.MaPhong}}</p>
+
+      <!-- Room Info -->
+      <div class="room-info">
+        <div class="info-item">
+          <i class="fas fa-users"></i>
+          <span>{{this.SucChua}} người</span>
+        </div>
+        <div class="info-item">
+          <i class="fas fa-clock"></i>
+          <span>{{formatNumber this.GiaTien}}VNĐ/H</span>
         </div>
       </div>
-    </div>
 
-    <div class="karaoke-description">
-      <p>{{this.MoTa}}</p>
-    </div>
+      <!-- Description -->
+      <div class="description">
+        <p>{{this.GhiChu}}</p>
+      </div>
 
-    <div class="karaoke-price-section">
-      <span class="karaoke-price">{{formatNumber this.GiaPhong}}</span>
-      <span class="karaoke-price-unit"> VNĐ/H</span>
-      <div class="karaoke-price-note">
-        <i class="fas fa-info-circle me-1"></i> Giá đã bao gồm VAT
+      <!-- Features -->
+      <div class="features">
+        <div class="feature-item">
+          <i class="fas fa-wifi" title="WiFi miễn phí"></i>
+        </div>
+        <div class="feature-item">
+          <i class="fas fa-tv" title="Màn hình 4K"></i>
+        </div>
+        <div class="feature-item">
+          <i class="fas fa-snowflake" title="Điều hòa"></i>
+        </div>
+        <div class="feature-item">
+          <i class="fas fa-cocktail" title="Phục vụ đồ uống"></i>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button class="btn-book" data-room-id="{{this._id}}">
+          <i class="fas fa-calendar-plus"></i>
+          ĐẶT NGAY
+        </button>
+        <button class="btn-detail" data-room-id="{{this._id}}">
+          <i class="fas fa-info-circle"></i>
+          CHI TIẾT
+        </button>
       </div>
     </div>
-
-    <button class="karaoke-book-btn">
-      <i class="fas fa-calendar-check me-2"></i> ĐẶT PHÒNG NGAY
-    </button>
   </div>
 
-  <div class="karaoke-card-footer">
-    <div class="karaoke-icons-container">
-      <i class="fas fa-wifi" title="WiFi miễn phí"></i>
-      <i class="fas fa-parking" title="Có chỗ đỗ xe"></i>
-      <i class="fas fa-cocktail" title="Phục vụ đồ uống"></i>
-      <i class="fas fa-snowflake" title="Điều hòa"></i>
-      <i class="fas fa-tv" title="TV màn hình lớn"></i>
-    </div>
-  </div>
+  <!-- Glow Effect -->
+  <div class="cyber-glow"></div>
 </div>
 
-<!-- Thêm modal để hiển thị ảnh lớn -->
-<div class="karaoke-image-modal" id="imageModal">
-  <div class="karaoke-modal-content">
-    <span class="karaoke-modal-close">&times;</span>
-    <img class="karaoke-modal-image" id="modalImage" src="" alt="">
-    <div class="karaoke-modal-caption">
+<!-- Image Modal -->
+<div class="image-modal" id="imageModal">
+  <div class="modal-overlay"></div>
+  <div class="modal-container">
+    <div class="modal-header">
       <h3 id="modalTitle"></h3>
+      <button class="close-modal">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <img id="modalImage" src="" alt="">
+    </div>
+    <div class="modal-footer">
       <p id="modalDescription"></p>
+      <div class="modal-actions">
+        <button class="btn-download">
+          <i class="fas fa-download"></i>
+          Tải ảnh
+        </button>
+        <button class="btn-zoom-in">
+          <i class="fas fa-search-plus"></i>
+          Phóng to
+        </button>
+        <button class="btn-zoom-out">
+          <i class="fas fa-search-minus"></i>
+          Thu nhỏ
+        </button>
+      </div>
     </div>
   </div>
 </div>
+
+
 
 <style>
-  /* CSS ĐỘC LẬP - KHÔNG ẢNH HƯỞNG ĐẾN CSS HIỆN CÓ */
-  .karaoke-product-card {
-    --karaoke-primary: #27ae60;
-    --karaoke-primary-light: #2ecc71;
-    --karaoke-accent: #f1c40f;
-    --karaoke-dark: #2c3e50;
-    --karaoke-available: #27ae60;
-    --karaoke-busy: #e74c3c;
-    --karaoke-reserved: #f39c12;
+  :root {
+    --cyber-purple: #7A00FF;
+    --cyber-dark: #2B0033;
+    --cyber-pink: #C800FF;
+    --cyber-orange: #FF3C00;
+    --cyber-cyan: #00F0FF;
+    --cyber-yellow: #FFD700;
+  }
 
-    border: none;
+
+  /* ===== PRODUCT CARD TỐI ƯU CHO GRID ===== */
+  .cyberpunk-card {
+    position: relative;
+    background: rgba(43, 0, 51, 0.9);
+    border: 1px solid var(--cyber-purple);
     border-radius: 20px;
     overflow: hidden;
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    box-shadow:
+      0 8px 32px rgba(122, 0, 255, 0.25),
+      inset 0 0 20px rgba(122, 0, 255, 0.1);
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    background: white;
-    position: relative;
+    backdrop-filter: blur(15px);
     width: 100%;
-    max-width: 450px;
-    /* Tăng width để phù hợp ảnh lớn */
-    min-height: 580px;
-    /* Tăng height */
+    max-width: 380px;
+    min-height: 612px;
     height: auto;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0 auto;
+    font-family: 'Segoe UI', 'Orbitron', sans-serif;
     display: flex;
     flex-direction: column;
   }
 
-  .karaoke-product-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  .cyberpunk-card:hover {
+    transform: translateY(-8px);
+    box-shadow:
+      0 20px 60px rgba(122, 0, 255, 0.4),
+      0 0 80px rgba(200, 0, 255, 0.2),
+      inset 0 0 30px rgba(122, 0, 255, 0.15);
+    border-color: var(--cyber-cyan);
   }
 
-  .karaoke-product-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 4px;
-    background: linear-gradient(90deg, var(--karaoke-primary), var(--karaoke-primary-light), var(--karaoke-accent));
-    z-index: 2;
-  }
-
-  /* Image Container - TĂNG 20% */
-  .karaoke-image-container {
+  /* Card Header - Tối ưu không gian */
+  .card-header {
+    background: linear-gradient(135deg, var(--cyber-purple), var(--cyber-pink));
+    padding: 1rem;
     position: relative;
-    height: 200px;
-    /* Tăng 20% từ 200px lên 240px */
     overflow: hidden;
     flex-shrink: 0;
   }
 
-  .karaoke-image-container img {
+  .card-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg,
+        transparent,
+        var(--cyber-cyan),
+        var(--cyber-yellow),
+        transparent);
+    animation: scanline 3s linear infinite;
+  }
+
+  .room-badge {
+    background: rgba(0, 240, 255, 0.25);
+    border: 1px solid var(--cyber-cyan);
+    border-radius: 20px;
+    padding: 0.4rem 1rem;
+    display: inline-block;
+    backdrop-filter: blur(10px);
+  }
+
+  .badge-text {
+    color: var(--cyber-cyan);
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .microphone-icon {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 1.3rem;
+  }
+
+  /* Image Container - Tối ưu tỷ lệ */
+  .image-container {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .image-container img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     transition: transform 0.5s ease;
   }
 
-  .karaoke-product-card:hover .karaoke-image-container img {
-    transform: scale(1.05);
-  }
-
-  .karaoke-image-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.6));
-    /* Tối hơn */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: all 0.3s ease;
-  }
-
-  .karaoke-image-container:hover .karaoke-image-overlay {
-    opacity: 1;
-  }
-
-  /* Nút Xem Ảnh - LÀM NỔI BẬT */
-  .karaoke-view-btn {
-    background: linear-gradient(135deg, var(--karaoke-primary), var(--karaoke-primary-light));
-    border: none;
-    border-radius: 50px;
-    padding: 12px 24px;
-    color: white;
-    font-weight: 700;
-    font-size: 1rem;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .karaoke-view-btn:hover {
-    background: linear-gradient(135deg, var(--karaoke-primary-light), var(--karaoke-primary));
-    transform: scale(1.1);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-  }
-
-  .karaoke-status-badge {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    padding: 5px 12px;
-    border-radius: 15px;
-    font-weight: 600;
-    font-size: 0.75rem;
-    z-index: 3;
-    color: white;
-  }
-
-  .karaoke-status-1 {
-    background-color: #27ae60;
-  }
-
-  .karaoke-status-0 {
-    background-color: #e74c3c;
-  }
-
-  .karaoke-status-2 {
-    background-color: #f39c12;
-  }
-
-  .karaoke-status--1 {
-    background-color: #95a5a6;
-  }
-
-  /* Card Header - GIỮ NGUYÊN */
-  .karaoke-card-header {
-    background: linear-gradient(135deg, var(--karaoke-primary), var(--karaoke-primary-light));
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    position: relative;
-    overflow: hidden;
-    flex-shrink: 0;
-    min-height: 50px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-
-  .karaoke-card-header::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 50%;
-    background: linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 50%);
-  }
-
-  .karaoke-room-name {
-    font-size: 1.3rem;
-    font-weight: 800;
-    margin-bottom: 2px;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-    position: relative;
-    z-index: 1;
-    line-height: 1.1;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
-    letter-spacing: 0.3px;
-  }
-
-  .karaoke-room-type {
-    font-size: 0.75rem;
-    opacity: 0.95;
-    position: relative;
-    z-index: 1;
-    margin: 0;
-    line-height: 1.1;
-    font-weight: 600;
-  }
-
-  .karaoke-microphone-icon {
-    position: absolute;
-    right: 15px;
-    top: 50%;`
-    transform: translateY(-50%);
-    font-size: 1.2rem;
-    opacity: 0.2;
-    z-index: 0;
-  }
-
-  /* Card Body - NHỎ MỌI THỨ XUỐNG */
-  .karaoke-card-body {
-    padding: 10px;
-    /* Giảm padding */
-    position: relative;
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 180px;
-    /* Giảm min-height */
-  }
-
-  .karaoke-info-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    /* Giảm gap */
-    margin-bottom: 10px;
-    /* Giảm margin */
-    flex-shrink: 0;
-  }
-
-  .karaoke-info-item {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    /* Giảm gap */
-  }
-
-  .karaoke-info-item i {
-    color: var(--karaoke-primary);
-    font-size: 0.9rem;
-    /* Giảm size icon */
-    width: 14px;
-    text-align: center;
-  }
-
-  .karaoke-info-label {
-    font-weight: 600;
-    color: var(--karaoke-dark);
-    font-size: 0.75rem;
-    /* Giảm font-size */
-  }
-
-  .karaoke-info-value {
-    color: #555;
-    font-size: 0.7rem;
-    /* Giảm font-size */
-    font-weight: 500;
-  }
-
-  /* Mô tả - NHỎ HƠN */
-  .karaoke-description {
-    background: rgba(39, 174, 96, 0.08);
-    padding: 6px 8px;
-    /* Giảm padding */
-    border-radius: 6px;
-    margin: 10px 0;
-    /* Giảm margin */
-    border-left: 2px solid var(--karaoke-primary);
-    flex-shrink: 0;
-    min-height: 50px;
-    /* Giảm min-height */
-    max-height: 70px;
-    /* Giảm max-height */
-    overflow-y: auto;
-  }
-
-  .karaoke-description p {
-    margin: 0;
-    color: #444;
-    line-height: 1.3;
-    /* Giảm line-height */
-    font-size: 0.75rem;
-    /* Giảm font-size */
-    font-weight: 500;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .karaoke-price-section {
-    background: linear-gradient(135deg, var(--karaoke-primary), var(--karaoke-primary-light));
-    color: white;
-    padding: 6px 10px;
-    /* Giảm padding */
-    border-radius: 6px;
-    text-align: center;
-    margin: 8px 0;
-    /* Giảm margin */
-    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.2);
-    flex-shrink: 0;
-  }
-
-  .karaoke-price {
-    font-size: 1.2rem;
-    /* Giảm size giá */
-    font-weight: 800;
-  }
-
-  .karaoke-price-unit {
-    font-size: 0.75rem;
-    /* Giảm font-size */
-    opacity: 0.9;
-    font-weight: 500;
-  }
-
-  .karaoke-price-note {
-    font-size: 0.6rem;
-    /* Giảm font-size */
-    margin-top: 2px;
-    opacity: 0.8;
-  }
-
-  .karaoke-book-btn {
-    background: linear-gradient(135deg, var(--karaoke-primary), var(--karaoke-primary-light));
-    border: none;
-    border-radius: 6px;
-    padding: 6px 12px;
-    /* Giảm padding */
-    font-weight: 700;
-    color: white;
-    transition: all 0.3s ease;
-    width: 100%;
-    font-size: 0.8rem;
-    /* Giảm font-size */
-    margin-top: auto;
-    cursor: pointer;
-    flex-shrink: 0;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .karaoke-book-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(39, 174, 96, 0.3);
-  }
-
-  /* Card Footer - NHỎ LẠI */
-  .karaoke-card-footer {
-    background-color: rgba(248, 249, 250, 0.8);
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
-    padding: 2px 12px;
-    /* Giảm padding */
-    color: #6c757d;
-    font-size: 0.65rem;
-    /* Giảm font-size */
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    flex-shrink: 0;
-    min-height: 30px;
-    /* Giảm min-height */
-    height: 30px;
-  }
-
-  .karaoke-icons-container {
-    display: flex;
-    gap: 6px;
-    /* Giảm gap */
-    margin-left: auto;
-  }
-
-  .karaoke-icons-container i {
-    color: var(--karaoke-primary);
-    transition: all 0.3s ease;
-    font-size: 0.8rem;
-    /* Giảm size icon */
-  }
-
-  .karaoke-icons-container i:hover {
-    color: var(--karaoke-primary-light);
-    transform: scale(1.1);
-  }
-
-  /* Responsive */
-  @media (max-width: 576px) {
-    .karaoke-product-card {
-      max-width: 100%;
-      min-height: 550px;
-    }
-
-    .karaoke-card-body {
-      padding: 14px;
-      min-height: 260px;
-    }
-
-    .karaoke-room-name {
-      font-size: 1.5rem;
-    }
-
-    .karaoke-info-grid {
-      grid-template-columns: 1fr;
-      gap: 8px;
-    }
-
-    .karaoke-image-container {
-      height: 180px;
-      /* Vẫn lớn trên mobile */
-    }
-
-    .karaoke-card-header {
-      min-height: 90px;
-      padding: 15px;
-    }
-
-    .karaoke-description p {
-      font-size: 1.5rem;
-    }
-  }
-
-  /* CSS cho modal xem ảnh */
-  .karaoke-image-modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.9);
-    align-items: center;
-    justify-content: center;
-    animation: fadeIn 0.3s ease;
-  }
-
-  .karaoke-modal-content {
-    position: relative;
-    max-width: 90%;
-    max-height: 90%;
-    background: white;
-    border-radius: 15px;
-    overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-    animation: zoomIn 0.3s ease;
-  }
-
-  .karaoke-modal-image {
-    width: 100%;
-    height: auto;
-    max-height: 70vh;
-    object-fit: contain;
-    display: block;
-  }
-
-  .karaoke-modal-caption {
-    padding: 20px;
-    background: white;
-    text-align: center;
-  }
-
-  .karaoke-modal-caption h3 {
-    color: #2c3e50;
-    font-size: 1.5rem;
-    margin-bottom: 8px;
-    font-weight: 700;
-  }
-
-  .karaoke-modal-caption p {
-    color: #666;
-    font-size: 1rem;
-    margin: 0;
-  }
-
-  .karaoke-modal-close {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    color: white;
-    font-size: 35px;
-    font-weight: bold;
-    cursor: pointer;
-    background: rgba(0, 0, 0, 0.5);
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    z-index: 1001;
-  }
-
-  .karaoke-modal-close:hover {
-    background: rgba(0, 0, 0, 0.8);
-    transform: scale(1.1);
-  }
-
-  /* Animations */
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-
-    to {
-      opacity: 1;
-    }
-  }
-
-  @keyframes zoomIn {
-    from {
-      opacity: 0;
-      transform: scale(0.8);
-    }
-
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  /* Hiệu ứng cho nút Xem ảnh khi hover */
-  .karaoke-view-btn {
-    background: linear-gradient(135deg, var(--karaoke-primary), var(--karaoke-primary-light));
-    border: none;
-    border-radius: 50px;
-    padding: 12px 24px;
-    color: white;
-    font-weight: 700;
-    font-size: 1rem;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .karaoke-view-btn:hover {
-    background: linear-gradient(135deg, var(--karaoke-primary-light), var(--karaoke-primary));
-    transform: scale(1.1);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-  }
-
-  /* Responsive cho modal */
-  @media (max-width: 768px) {
-    .karaoke-modal-content {
-      max-width: 95%;
-      max-height: 95%;
-    }
-
-    .karaoke-modal-caption {
-      padding: 15px;
-    }
-
-    .karaoke-modal-caption h3 {
-      font-size: 1.3rem;
-    }
-
-    .karaoke-modal-caption p {
-      font-size: 0.9rem;
-    }
-
-    .karaoke-modal-close {
-      top: 10px;
-      right: 10px;
-      font-size: 30px;
-      width: 35px;
-      height: 35px;
-    }
-  }
-</style>
-
-
-<script>
-  // JavaScript cho chức năng xem ảnh
-  document.addEventListener('DOMContentLoaded', function () {
-    // Lấy tất cả các nút "Xem ảnh"
-    const viewButtons = document.querySelectorAll('.karaoke-view-btn');
-    const modal = document.getElementById('imageModal');
-    const modalImg = document.getElementById('modalImage');
-    const modalTitle = document.getElementById('modalTitle');
-    const modalDescription = document.getElementById('modalDescription');
-    const closeBtn = document.querySelector('.karaoke-modal-close');
-
-    // Xử lý click nút "Xem ảnh"
-    viewButtons.forEach(button => {
-      button.addEventListener('click', function () {
-        const card = this.closest('.karaoke-product-card');
-        const image = card.querySelector('.karaoke-image-container img');
-        const roomName = card.querySelector('.karaoke-room-name').textContent;
-        const roomType = card.querySelector('.karaoke-room-type').textContent;
-
-        // Hiển thị ảnh và thông tin trong modal
-        modalImg.src = image.src;
-        modalImg.alt = image.alt;
-        modalTitle.textContent = roomName;
-        modalDescription.textContent = roomType;
-
-        // Hiển thị modal
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden'; // Ngăn scroll
-      });
-    });
-
-    // Đóng modal khi click nút close
-    closeBtn.addEventListener('click', function () {
-      modal.style.display = 'none';
-      document.body.style.overflow = 'auto';
-    });
-
-    // Đóng modal khi click bên ngoài
-    modal.addEventListener('click', function (e) {
-      if (e.target === modal) {
-        modal.style.display = 'none';
-        document.body.style.overflow = 'auto';
-      }
-    });
-
-    // Đóng modal bằng phím ESC
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && modal.style.display === 'flex') {
-        modal.style.display = 'none';
-        document.body.style.overflow = 'auto';
-      }
-    });
-  });
-</script>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-{{!-- <!-- Modern Karaoke Product Card -->
-<div class="modern-karaoke-card">
-  <!-- Image Section với hiệu ứng gradient overlay -->
-  <div class="card-image-section">
-    <img src="{{this.AnhPhong}}" alt="{{this.TenPhong}}" class="card-main-image">
-    
-    <!-- Status Badge với animation -->
-    <div class="status-indicator status-{{this.TrangThai}}">
-      <div class="status-dot"></div>
-      <span class="status-text">{{this.statusText}}</span>
-    </div>
-
-    <!-- Quick Actions Overlay -->
-    <div class="image-overlay">
-      <div class="action-buttons">
-        <button class="action-btn view-image-btn" data-image="{{this.AnhPhong}}" data-title="{{this.TenPhong}}">
-          <i class="fas fa-expand-arrows-alt"></i>
-        </button>
-        <button class="action-btn favorite-btn">
-          <i class="far fa-heart"></i>
-        </button>
-      </div>
-    </div>
-
-    <!-- Room Type Ribbon -->
-    <div class="type-ribbon">
-      <i class="fas fa-microphone"></i>
-      <span>{{this.LoaiPhong}}</span>
-    </div>
-  </div>
-
-  <!-- Card Content -->
-  <div class="card-content">
-    <!-- Header với rating -->
-    <div class="card-header">
-      <h3 class="room-title">{{this.TenPhong}}</h3>
-      <div class="rating-badge">
-        <i class="fas fa-star"></i>
-        <span>4.8</span>
-      </div>
-    </div>
-
-    <!-- Room Features Grid -->
-    <div class="features-grid">
-      <div class="feature-item">
-        <div class="feature-icon">
-          <i class="fas fa-users"></i>
-        </div>
-        <div class="feature-info">
-          <span class="feature-value">{{this.SucChua}}</span>
-          <span class="feature-label">Người</span>
-        </div>
-      </div>
-      
-      <div class="feature-item">
-        <div class="feature-icon">
-          <i class="fas fa-ruler-combined"></i>
-        </div>
-        <div class="feature-info">
-          <span class="feature-value">25m²</span>
-          <span class="feature-label">Diện tích</span>
-        </div>
-      </div>
-      
-      <div class="feature-item">
-        <div class="feature-icon">
-          <i class="fas fa-clock"></i>
-        </div>
-        <div class="feature-info">
-          <span class="feature-value">24/7</span>
-          <span class="feature-label">Mở cửa</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Description -->
-    <div class="room-description">
-      <p>{{this.MoTa}}</p>
-    </div>
-
-    <!-- Amenities Tags -->
-    <div class="amenities-tags">
-      <span class="amenity-tag"><i class="fas fa-wifi"></i> WiFi</span>
-      <span class="amenity-tag"><i class="fas fa-parking"></i> Đỗ xe</span>
-      <span class="amenity-tag"><i class="fas fa-cocktail"></i> Bar</span>
-      <span class="amenity-tag"><i class="fas fa-snowflake"></i> Điều hòa</span>
-    </div>
-
-    <!-- Price & Action Section -->
-    <div class="card-footer">
-      <div class="price-section">
-        <div class="price-main">
-          <span class="price-amount">{{formatNumber this.GiaPhong}}</span>
-          <span class="price-unit">VNĐ/giờ</span>
-        </div>
-        <div class="price-note">Đã bao gồm VAT</div>
-      </div>
-      
-      <button class="book-now-btn">
-        <i class="fas fa-calendar-plus"></i>
-        <span>Đặt ngay</span>
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- Image Modal -->
-<div class="image-modal" id="imageModal">
-  <div class="modal-content">
-    <span class="close-modal">&times;</span>
-    <img class="modal-image" id="modalImage" src="" alt="">
-    <div class="modal-info">
-      <h3 id="modalTitle"></h3>
-      <div class="modal-actions">
-        <button class="modal-btn book-from-modal">
-          <i class="fas fa-calendar-check"></i>
-          Đặt phòng này
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<style>
-  /* Modern Karaoke Card Styles */
-  .modern-karaoke-card {
-    --primary-color: #FF6B6B;
-    --secondary-color: #4ECDC4;
-    --accent-color: #FFD166;
-    --dark-color: #2D3047;
-    --light-color: #F7F9FC;
-    --text-dark: #2D3748;
-    --text-light: #718096;
-    --success-color: #27ae60;
-    --warning-color: #f39c12;
-    --danger-color: #e74c3c;
-    
-    background: white;
-    border-radius: 20px;
-    box-shadow: 
-      0 4px 20px rgba(0, 0, 0, 0.08),
-      0 2px 8px rgba(0, 0, 0, 0.02);
-    overflow: hidden;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    position: relative;
-    height: fit-content;
-    max-width: 380px;
-    margin: 0 auto;
-    font-family: 'Segoe UI', system-ui, sans-serif;
-  }
-
-  .modern-karaoke-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 
-      0 20px 40px rgba(0, 0, 0, 0.12),
-      0 8px 24px rgba(0, 0, 0, 0.06);
-  }
-
-  /* Image Section */
-  .card-image-section {
-    position: relative;
-    height: 220px;
-    overflow: hidden;
-  }
-
-  .card-main-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.6s ease;
-  }
-
-  .modern-karaoke-card:hover .card-main-image {
+  .cyberpunk-card:hover .image-container img {
     transform: scale(1.08);
   }
 
-  /* Status Indicator */
-  .status-indicator {
+  /* Status Badge - Vị trí tối ưu */
+  .status-badge {
     position: absolute;
-    top: 16px;
-    left: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
+    top: 12px;
+    right: 12px;
+    padding: 0.5rem 1rem;
     border-radius: 20px;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    font-size: 0.75rem;
-    font-weight: 600;
-    z-index: 2;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    backdrop-filter: blur(15px);
+    border: 1px solid;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
   }
 
-  .status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    animation: pulse 2s infinite;
+  .status-Trống {
+    background: rgba(39, 174, 96, 0.9);
+    border-color: #27ae60;
+    color: white;
   }
 
-  .status-1 .status-dot { background: var(--success-color); }
-  .status-0 .status-dot { background: var(--danger-color); }
-  .status-2 .status-dot { background: var(--warning-color); }
-
-  .status-text {
-    color: var(--text-dark);
-    font-weight: 700;
+  .status-Đang.sử.dụng {
+    background: rgba(231, 76, 60, 0.9);
+    border-color: #e74c3c;
+    color: white;
   }
 
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+  .status-Đang.bảo.trì {
+    background: rgba(243, 156, 18, 0.9);
+    border-color: #f39c12;
+    color: white;
   }
 
-  /* Image Overlay */
+  .status-Đã.đặt.trước {
+    background: rgba(155, 89, 182, 0.9);
+    border-color: #9b59b6;
+    color: white;
+  }
+
+  .status-badge i {
+    font-size: 0.4rem;
+    margin-right: 0.4rem;
+  }
+
+  /* Image Overlay - Hiệu ứng tinh tế */
   .image-overlay {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(
-      135deg,
-      rgba(45, 48, 71, 0.4) 0%,
-      rgba(45, 48, 71, 0.1) 100%
-    );
+    background: linear-gradient(to bottom,
+        rgba(43, 0, 51, 0.8),
+        rgba(122, 0, 255, 0.6));
+    display: flex;
+    align-items: center;
+    justify-content: center;
     opacity: 0;
     transition: all 0.3s ease;
-    display: flex;
-    align-items: flex-end;
-    justify-content: flex-end;
-    padding: 16px;
   }
 
-  .modern-karaoke-card:hover .image-overlay {
+  .image-container:hover .image-overlay {
     opacity: 1;
   }
 
-  .action-buttons {
-    display: flex;
-    gap: 8px;
-  }
-
-  .action-btn {
-    width: 40px;
-    height: 40px;
-    border: none;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    color: var(--dark-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .view-image-btn {
+    background: rgba(0, 240, 255, 0.25);
+    border: 2px solid var(--cyber-cyan);
+    color: var(--cyber-cyan);
+    padding: 0.7rem 1.2rem;
+    border-radius: 25px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.75rem;
     cursor: pointer;
     transition: all 0.3s ease;
-    font-size: 0.9rem;
+    backdrop-filter: blur(10px);
   }
 
-  .action-btn:hover {
-    background: var(--primary-color);
-    color: white;
-    transform: scale(1.1);
+  .view-image-btn:hover {
+    background: var(--cyber-cyan);
+    color: var(--cyber-dark);
+    box-shadow: 0 0 20px var(--cyber-cyan);
+    transform: scale(1.05);
   }
 
-  /* Type Ribbon */
-  .type-ribbon {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    color: white;
-    padding: 6px 12px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    z-index: 2;
-  }
-
-  /* Card Content */
+  /* Card Content - Tối ưu bố cục */
   .card-content {
-    padding: 20px;
-  }
-
-  /* Card Header */
-  .card-header {
+    padding: 1.5rem;
+    color: white;
+    flex: 1;
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 16px;
+    flex-direction: column;
+    gap: 0.8rem;
   }
 
-  .room-title {
+  .room-name {
     font-size: 1.3rem;
     font-weight: 800;
-    color: var(--text-dark);
     margin: 0;
-    line-height: 1.3;
-    flex: 1;
+    background: linear-gradient(45deg, var(--cyber-cyan), var(--cyber-yellow));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
-  .rating-badge {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    background: var(--accent-color);
-    color: var(--dark-color);
-    padding: 4px 8px;
-    border-radius: 12px;
+  .room-code {
+    color: var(--cyber-cyan);
     font-size: 0.75rem;
-    font-weight: 700;
+    margin: 0;
+    font-family: 'Orbitron', monospace;
+    opacity: 0.8;
   }
 
-  .rating-badge i {
-    font-size: 0.7rem;
-  }
-
-  /* Features Grid */
-  .features-grid {
+  /* Room Info - Compact hơn */
+  .room-info {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin-bottom: 16px;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+    margin: 0.5rem 0;
   }
 
-  .feature-item {
+  .info-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px;
-    background: var(--light-color);
-    border-radius: 12px;
+    gap: 0.5rem;
+    padding: 0.6rem;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     transition: all 0.3s ease;
   }
 
-  .feature-item:hover {
-    background: rgba(78, 205, 196, 0.1);
-    transform: translateY(-2px);
+  .info-item:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: var(--cyber-cyan);
+    transform: translateY(-1px);
   }
 
-  .feature-icon {
-    width: 32px;
-    height: 32px;
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 0.8rem;
-  }
-
-  .feature-info {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .feature-value {
-    font-weight: 800;
-    color: var(--text-dark);
+  .info-item i {
+    color: var(--cyber-cyan);
+    width: 14px;
     font-size: 0.9rem;
-    line-height: 1;
   }
 
-  .feature-label {
-    font-size: 0.7rem;
-    color: var(--text-light);
+  .info-item span {
+    font-size: 0.85rem;
     font-weight: 600;
   }
 
-  /* Description */
-  .room-description {
-    margin-bottom: 16px;
+  /* Description - Giới hạn chiều cao */
+  .description {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.8rem;
+    border-radius: 10px;
+    border-left: 3px solid var(--cyber-purple);
+    margin: 0;
+    flex: 1;
+    min-height: 60px;
+    max-height: 80px;
+    overflow: hidden;
   }
 
-  .room-description p {
+  .description p {
     margin: 0;
-    color: var(--text-light);
-    font-size: 0.85rem;
-    line-height: 1.5;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: #e0e0e0;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
 
-  /* Amenities Tags */
-  .amenities-tags {
+  /* Features - Layout gọn hơn */
+  .features {
     display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 20px;
-  }
-
-  .amenity-tag {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    background: rgba(255, 107, 107, 0.1);
-    color: var(--primary-color);
-    border-radius: 8px;
-    font-size: 0.7rem;
-    font-weight: 600;
-  }
-
-  .amenity-tag i {
-    font-size: 0.6rem;
-  }
-
-  /* Card Footer */
-  .card-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 16px;
-    border-top: 1px solid rgba(0, 0, 0, 0.06);
-  }
-
-  .price-section {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .price-main {
-    display: flex;
-    align-items: baseline;
-    gap: 4px;
-  }
-
-  .price-amount {
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: var(--primary-color);
-    line-height: 1;
-  }
-
-  .price-unit {
-    font-size: 0.8rem;
-    color: var(--text-light);
-    font-weight: 600;
-  }
-
-  .price-note {
-    font-size: 0.7rem;
-    color: var(--text-light);
-    margin-top: 2px;
-  }
-
-  .book-now-btn {
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    border: none;
+    justify-content: space-around;
+    margin: 0.5rem 0;
+    padding: 0.8rem;
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 12px;
-    padding: 12px 20px;
-    color: white;
-    font-weight: 700;
-    font-size: 0.85rem;
+  }
+
+  .feature-item {
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    padding: 0.4rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    cursor: help;
+  }
+
+  .feature-item:hover {
+    background: rgba(0, 240, 255, 0.1);
+    transform: scale(1.1);
+  }
+
+  .feature-item i {
+    color: var(--cyber-cyan);
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+  }
+
+  .feature-item:hover i {
+    color: var(--cyber-yellow);
+    text-shadow: 0 0 10px var(--cyber-yellow);
+  }
+
+  /* Action Buttons - Tối ưu không gian */
+  .action-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+    margin-top: auto;
+  }
+
+  .btn-book,
+  .btn-detail {
+    padding: 0.8rem;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.75rem;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: 44px;
   }
 
-  .book-now-btn:hover {
+  .btn-book {
+    background: linear-gradient(135deg, var(--cyber-purple), var(--cyber-pink));
+    color: white;
+    box-shadow: 0 4px 15px rgba(122, 0, 255, 0.3);
+  }
+
+  .btn-book:hover {
+    background: linear-gradient(135deg, var(--cyber-pink), var(--cyber-purple));
+    box-shadow: 0 6px 25px rgba(200, 0, 255, 0.5);
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
   }
 
-  /* Image Modal */
+  .btn-detail {
+    background: rgba(0, 240, 255, 0.15);
+    border: 1px solid var(--cyber-cyan);
+    color: var(--cyber-cyan);
+    box-shadow: 0 4px 15px rgba(0, 240, 255, 0.2);
+  }
+
+  .btn-detail:hover {
+    background: var(--cyber-cyan);
+    color: var(--cyber-dark);
+    box-shadow: 0 6px 25px var(--cyber-cyan);
+    transform: translateY(-2px);
+  }
+
+  /* Cyber Glow Effect */
+  .cyber-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    background: radial-gradient(circle at 50% 50%,
+        rgba(122, 0, 255, 0.3) 0%,
+        transparent 60%);
+  }
+
+  .cyberpunk-card:hover .cyber-glow {
+    opacity: 1;
+  }
+
+  /* ===== IMAGE MODAL TOÀN MÀN HÌNH ===== */
   .image-modal {
     display: none;
     position: fixed;
-    z-index: 1000;
-    left: 0;
     top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 9999;
+    backdrop-filter: blur(20px);
+    animation: modalFadeIn 0.3s ease-out;
+  }
+
+  @keyframes modalFadeIn {
+    from {
+      opacity: 0;
+      backdrop-filter: blur(0px);
+    }
+
+    to {
+      opacity: 1;
+      backdrop-filter: blur(20px);
+    }
+  }
+
+  .modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.95);
-    backdrop-filter: blur(10px);
+    z-index: 1;
+  }
+
+  .modal-container {
+    position: relative;
+    width: 95vw;
+    height: 95vh;
+    margin: 2.5vh auto;
+    background: linear-gradient(135deg,
+        rgba(43, 0, 51, 0.95) 0%,
+        rgba(122, 0, 255, 0.8) 100%);
+    border: 2px solid var(--cyber-cyan);
+    border-radius: 20px;
+    box-shadow:
+      0 0 80px rgba(122, 0, 255, 0.6),
+      0 0 200px rgba(0, 240, 255, 0.4);
+    display: flex;
+    flex-direction: column;
+    z-index: 2;
+    overflow: hidden;
+  }
+
+  /* Modal Header */
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid rgba(122, 0, 255, 0.3);
+    flex-shrink: 0;
+  }
+
+  .modal-header h3 {
+    color: var(--cyber-cyan);
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+  }
+
+  .close-modal {
+    background: rgba(255, 60, 0, 0.3);
+    border: 2px solid var(--cyber-orange);
+    color: white;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
     align-items: center;
     justify-content: center;
-    animation: fadeIn 0.3s ease;
+    backdrop-filter: blur(10px);
   }
 
-  .modal-content {
-    position: relative;
-    max-width: 90%;
-    max-height: 90%;
-    background: white;
-    border-radius: 20px;
+  .close-modal:hover {
+    background: var(--cyber-orange);
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: 0 0 25px var(--cyber-orange);
+  }
+
+  /* Modal Body - Ảnh chiếm toàn bộ không gian */
+  .modal-body {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
     overflow: hidden;
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
-    animation: modalSlideIn 0.4s ease;
+    position: relative;
   }
 
-  .modal-image {
-    width: 100%;
-    height: auto;
-    max-height: 60vh;
+  .modal-body img {
+    max-width: 100%;
+    max-height: 100%;
     object-fit: contain;
-    display: block;
+    border-radius: 12px;
+    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s ease;
+    cursor: grab;
   }
 
-  .modal-info {
-    padding: 20px;
+  .modal-body img:active {
+    cursor: grabbing;
+  }
+
+  .modal-body img.zoomed {
+    cursor: zoom-out;
+    transform: scale(1.5);
+  }
+
+  /* Modal Footer */
+  .modal-footer {
+    padding: 1.5rem 2rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-top: 1px solid rgba(122, 0, 255, 0.3);
+    flex-shrink: 0;
+  }
+
+  .modal-footer p {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1rem;
+    margin: 0 0 1rem 0;
     text-align: center;
-  }
-
-  .modal-info h3 {
-    color: var(--text-dark);
-    margin-bottom: 16px;
-    font-size: 1.4rem;
   }
 
   .modal-actions {
     display: flex;
     justify-content: center;
-    gap: 12px;
+    gap: 1rem;
+    flex-wrap: wrap;
   }
 
-  .modal-btn {
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    border: none;
-    border-radius: 12px;
-    padding: 12px 24px;
-    color: white;
+  .modal-actions button {
+    background: rgba(0, 240, 255, 0.2);
+    border: 1px solid var(--cyber-cyan);
+    color: var(--cyber-cyan);
+    padding: 0.8rem 1.5rem;
+    border-radius: 25px;
     font-weight: 600;
+    font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 0.5rem;
+    backdrop-filter: blur(10px);
   }
 
-  .modal-btn:hover {
+  .modal-actions button:hover {
+    background: var(--cyber-cyan);
+    color: var(--cyber-dark);
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(255, 107, 107, 0.4);
+    box-shadow: 0 5px 20px rgba(0, 240, 255, 0.4);
   }
 
-  .close-modal {
+  /* Zoom controls */
+  .zoom-controls {
     position: absolute;
-    top: 16px;
-    right: 16px;
-    color: white;
-    font-size: 30px;
-    font-weight: bold;
-    cursor: pointer;
-    background: rgba(0, 0, 0, 0.5);
-    width: 40px;
-    height: 40px;
+    bottom: 100px;
+    right: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    z-index: 10;
+  }
+
+  .zoom-btn {
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid var(--cyber-cyan);
+    color: var(--cyber-cyan);
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
-    z-index: 1001;
+    backdrop-filter: blur(10px);
   }
 
-  .close-modal:hover {
-    background: rgba(0, 0, 0, 0.8);
+  .zoom-btn:hover {
+    background: var(--cyber-cyan);
+    color: var(--cyber-dark);
     transform: scale(1.1);
   }
 
-  /* Animations */
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+  /* Loading state */
+  .modal-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    color: var(--cyber-cyan);
   }
 
-  @keyframes modalSlideIn {
-    from {
-      opacity: 0;
-      transform: scale(0.8) translateY(20px);
+  .modal-loading .spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(0, 240, 255, 0.3);
+    border-top: 3px solid var(--cyber-cyan);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
     }
-    to {
-      opacity: 1;
-      transform: scale(1) translateY(0);
+
+    100% {
+      transform: rotate(360deg);
     }
   }
 
-  /* Responsive Design */
+  /* ===== RESPONSIVE MODAL ===== */
   @media (max-width: 768px) {
-    .modern-karaoke-card {
-      max-width: 100%;
-      margin: 0 8px;
+    .modal-container {
+      width: 98vw;
+      height: 98vh;
+      margin: 1vh auto;
+      border-radius: 15px;
     }
 
-    .card-image-section {
-      height: 200px;
+    .modal-header {
+      padding: 1rem 1.5rem;
     }
 
-    .features-grid {
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
+    .modal-header h3 {
+      font-size: 1.2rem;
     }
 
-    .card-footer {
-      flex-direction: column;
-      gap: 12px;
-      align-items: stretch;
+    .close-modal {
+      width: 40px;
+      height: 40px;
+      font-size: 1.2rem;
     }
 
-    .book-now-btn {
-      justify-content: center;
+    .modal-body {
+      padding: 1rem;
     }
 
-    .modal-content {
-      max-width: 95%;
-      max-height: 95%;
+    .modal-footer {
+      padding: 1rem 1.5rem;
+    }
+
+    .modal-actions {
+      gap: 0.5rem;
+    }
+
+    .modal-actions button {
+      padding: 0.6rem 1rem;
+      font-size: 0.8rem;
+    }
+
+    .zoom-controls {
+      bottom: 80px;
+      right: 20px;
+    }
+
+    .zoom-btn {
+      width: 40px;
+      height: 40px;
+      font-size: 1rem;
     }
   }
 
   @media (max-width: 480px) {
-    .card-content {
-      padding: 16px;
+    .modal-container {
+      border-radius: 10px;
     }
 
-    .features-grid {
+    .modal-header {
+      padding: 0.8rem 1rem;
+    }
+
+    .modal-header h3 {
+      font-size: 1rem;
+    }
+
+    .modal-body {
+      padding: 0.5rem;
+    }
+
+    .modal-footer {
+      padding: 0.8rem 1rem;
+    }
+
+    .modal-actions {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .modal-actions button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  /* ===== FULLSCREEN MODE ===== */
+  .modal-container.fullscreen {
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    border-radius: 0;
+    border: none;
+  }
+
+  /* ===== DRAG AND ZOOM EFFECTS ===== */
+  .modal-body img.dragging {
+    cursor: grabbing;
+    transition: none;
+  }
+
+  .zoom-level {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    color: var(--cyber-cyan);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--cyber-cyan);
+  }
+
+  /* ===== RESPONSIVE CHO PRODUCT CARD ===== */
+  @media (max-width: 1200px) {
+    .cyberpunk-card {
+      max-width: 350px;
+      min-height: 480px;
+      height: auto;
+    }
+  }
+
+  @media (max-width: 992px) {
+    .cyberpunk-card {
+      max-width: 320px;
+      /* Tablet: tăng chiều cao để chứa nội dung */
+      min-height: 612px;
+      height: auto;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .cyberpunk-card {
+      max-width: 100%;
+      min-height: 660px;
+      height: auto;
+      margin: 0.5rem 0;
+    }
+
+    .room-info {
+      grid-template-columns: 1fr;
+      gap: 0.6rem;
+    }
+
+    .action-buttons {
       grid-template-columns: 1fr;
     }
 
-    .room-title {
+    .card-content {
+      padding: 1.2rem;
+      gap: 0.6rem;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .cyberpunk-card {
+      border-radius: 16px;
+      /* Mobile trung bình: tăng chiều cao hơn nữa */
+      min-height: 680px;
+      height: auto;
+    }
+
+    .image-container {
+      height: 180px;
+    }
+
+    .room-name {
       font-size: 1.2rem;
     }
+
+    .description {
+      /* Cho phép description mở rộng */
+      min-height: 70px;
+      max-height: none;
+      -webkit-line-clamp: unset;
+      overflow: visible;
+    }
+
+    .description p {
+      -webkit-line-clamp: unset;
+      overflow: visible;
+    }
+
+    .btn-book,
+    .btn-detail {
+      padding: 0.7rem;
+      font-size: 0.7rem;
+      min-height: 40px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .cyberpunk-card {
+      border-radius: 16px;
+      min-height: 700px;
+      height: auto;
+    }
+
+    .image-container {
+      height: 180px;
+    }
+
+    .room-name {
+      font-size: 1.2rem;
+    }
+
+    .description {
+      min-height: 50px;
+      max-height: 70px;
+    }
+
+    .btn-book,
+    .btn-detail {
+      padding: 0.7rem;
+      font-size: 0.7rem;
+      min-height: 40px;
+    }
+  }
+
+  @media (max-width: 375px) {
+    .cyberpunk-card {
+      /* Mobile rất nhỏ: chiều cao linh hoạt hoàn toàn */
+      min-height: 720px;
+      height: auto;
+    }
+
+    .image-container {
+      height: 160px;
+    }
+
+    .card-header {
+      padding: 0.8rem;
+    }
+
+    .card-content {
+      padding: 0.8rem;
+    }
+
+    .room-name {
+      font-size: 1.1rem;
+    }
+
+    .action-buttons {
+      gap: 0.6rem;
+    }
+  }
+
+  /* Đảm bảo nội dung có thể mở rộng tự do */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.description {
+  /* Cho phép description mở rộng tự do trên mobile */
+  flex: 1;
+  min-height: 60px;
+}
+
+/* Trên desktop giới hạn description */
+@media (min-width: 769px) {
+  .description {
+    max-height: 80px;
+    overflow: hidden;
+  }
+  
+  .description p {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* Trên mobile cho phép hiển thị đầy đủ */
+@media (max-width: 768px) {
+  .description {
+    max-height: none;
+    overflow: visible;
+  }
+  
+  .description p {
+    display: block;
+    -webkit-line-clamp: unset;
+    -webkit-box-orient: unset;
+    overflow: visible;
+  }
+}
+
+  /* ===== ANIMATION OPTIMIZATIONS ===== */
+  @keyframes scanline {
+    0% {
+      transform: translateX(-100%);
+    }
+
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  /* ===== PERFORMANCE OPTIMIZATIONS ===== */
+  .cyberpunk-card {
+    will-change: transform, box-shadow;
+    transform: translateZ(0);
+  }
+
+  .image-container img {
+    transform: translateZ(0);
   }
 </style>
 
+
+
+
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Image Modal Functionality
-    const viewButtons = document.querySelectorAll('.view-image-btn');
+  // Xử lý modal ảnh TOÀN MÀN HÌNH
+  document.addEventListener('DOMContentLoaded', function () {
     const modal = document.getElementById('imageModal');
     const modalImg = document.getElementById('modalImage');
     const modalTitle = document.getElementById('modalTitle');
+    const modalDescription = document.getElementById('modalDescription');
     const closeBtn = document.querySelector('.close-modal');
 
-    viewButtons.forEach(button => {
-      button.addEventListener('click', function() {
-        const imageUrl = this.getAttribute('data-image');
-        const title = this.getAttribute('data-title');
-        
-        modalImg.src = imageUrl;
-        modalImg.alt = title;
-        modalTitle.textContent = title;
-        
-        modal.style.display = 'flex';
+    let isDragging = false;
+    let startX, startY, scrollLeft, scrollTop;
+    let scale = 1;
+    let isZoomed = false;
+
+    // Mở modal khi click nút xem ảnh
+    document.addEventListener('click', function (e) {
+      if (e.target.closest('.view-image-btn')) {
+        const btn = e.target.closest('.view-image-btn');
+        const imageUrl = btn.dataset.image;
+        const title = btn.dataset.title;
+
+        // Hiển thị loading
+        modal.style.display = 'block';
         document.body.style.overflow = 'hidden';
-      });
+
+        // Đặt thông tin
+        modalTitle.textContent = title;
+        modalDescription.textContent = `Phòng hát ${title} - Hình ảnh chất lượng cao`;
+
+        // Tải ảnh
+        const img = new Image();
+        img.onload = function () {
+          modalImg.src = imageUrl;
+          modalImg.style.display = 'block';
+          resetImageState();
+        };
+        img.onerror = function () {
+          modalImg.alt = 'Không thể tải ảnh';
+          modalImg.style.display = 'block';
+        };
+        img.src = imageUrl;
+      }
     });
+
+    // Đóng modal
+    function closeModal() {
+      modal.style.display = 'none';
+      document.body.style.overflow = 'auto';
+      resetImageState();
+    }
 
     closeBtn.addEventListener('click', closeModal);
-    modal.addEventListener('click', function(e) {
-      if (e.target === modal) closeModal();
-    });
 
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape' && modal.style.display === 'flex') {
+    // Đóng bằng phím ESC
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && modal.style.display === 'block') {
         closeModal();
       }
     });
 
-    function closeModal() {
-      modal.style.display = 'none';
-      document.body.style.overflow = 'auto';
+    // Đóng khi click overlay
+    modal.addEventListener('click', function (e) {
+      if (e.target === modal || e.target.classList.contains('modal-overlay')) {
+        closeModal();
+      }
+    });
+
+    // Reset trạng thái ảnh
+    function resetImageState() {
+      scale = 1;
+      isZoomed = false;
+      modalImg.style.transform = 'scale(1)';
+      modalImg.classList.remove('zoomed');
+      updateZoomLevel();
     }
 
-    // Favorite Button Toggle
-    const favoriteButtons = document.querySelectorAll('.favorite-btn');
-    favoriteButtons.forEach(button => {
-      button.addEventListener('click', function() {
-        const icon = this.querySelector('i');
-        icon.classList.toggle('far');
-        icon.classList.toggle('fas');
-        icon.classList.toggle('text-red-500');
-        
-        // Add animation
-        this.style.transform = 'scale(1.2)';
-        setTimeout(() => {
-          this.style.transform = 'scale(1)';
-        }, 300);
-      });
+    // Cập nhật hiển thị zoom level
+    function updateZoomLevel() {
+      let zoomLevel = document.querySelector('.zoom-level');
+      if (!zoomLevel) {
+        zoomLevel = document.createElement('div');
+        zoomLevel.className = 'zoom-level';
+        document.querySelector('.modal-body').appendChild(zoomLevel);
+      }
+      zoomLevel.textContent = `${Math.round(scale * 100)}%`;
+    }
+
+    // Zoom in
+    document.addEventListener('click', function (e) {
+      if (e.target.closest('.btn-zoom-in')) {
+        scale = Math.min(scale + 0.5, 3);
+        modalImg.style.transform = `scale(${scale})`;
+        modalImg.classList.add('zoomed');
+        isZoomed = scale > 1;
+        updateZoomLevel();
+      }
+
+      if (e.target.closest('.btn-zoom-out')) {
+        scale = Math.max(scale - 0.5, 1);
+        modalImg.style.transform = `scale(${scale})`;
+        if (scale === 1) {
+          modalImg.classList.remove('zoomed');
+          isZoomed = false;
+        }
+        updateZoomLevel();
+      }
     });
 
-    // Book Now Buttons
-    const bookButtons = document.querySelectorAll('.book-now-btn, .book-from-modal');
-    bookButtons.forEach(button => {
-      button.addEventListener('click', function() {
-        const card = this.closest('.modern-karaoke-card');
-        const roomName = card ? card.querySelector('.room-title').textContent : modalTitle.textContent;
-        
-        // Hiển thị thông báo đặt phòng
-        Swal.fire({
-          title: 'Đặt phòng Karaoke',
-          html: `Bạn muốn đặt phòng <strong>${roomName}</strong>?`,
-          icon: 'question',
-          showCancelButton: true,
-          confirmButtonColor: '#FF6B6B',
-          cancelButtonColor: '#718096',
-          confirmButtonText: 'Đặt ngay',
-          cancelButtonText: 'Hủy'
-        }).then((result) => {
-          if (result.isConfirmed) {
-            Swal.fire({
-              title: 'Thành công!',
-              text: `Đã gửi yêu cầu đặt phòng ${roomName}`,
-              icon: 'success',
-              timer: 2000
-            });
-          }
-        });
-      });
+    // Tải ảnh
+    document.addEventListener('click', function (e) {
+      if (e.target.closest('.btn-download')) {
+        const imageUrl = modalImg.src;
+        const link = document.createElement('a');
+        link.href = imageUrl;
+        link.download = `phong-hat-${modalTitle.textContent.toLowerCase().replace(/\s+/g, '-')}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    });
+
+    // Kéo ảnh khi zoom
+    modalImg.addEventListener('mousedown', function (e) {
+      if (isZoomed) {
+        isDragging = true;
+        startX = e.pageX - modalImg.offsetLeft;
+        startY = e.pageY - modalImg.offsetTop;
+        modalImg.classList.add('dragging');
+        e.preventDefault();
+      }
+    });
+
+    document.addEventListener('mousemove', function (e) {
+      if (!isDragging || !isZoomed) return;
+
+      const x = e.pageX - startX;
+      const y = e.pageY - startY;
+
+      modalImg.style.left = x + 'px';
+      modalImg.style.top = y + 'px';
+    });
+
+    document.addEventListener('mouseup', function () {
+      isDragging = false;
+      modalImg.classList.remove('dragging');
+    });
+
+    // Zoom bằng scroll
+    modalImg.addEventListener('wheel', function (e) {
+      if (e.ctrlKey) {
+        e.preventDefault();
+        if (e.deltaY < 0) {
+          // Zoom in
+          scale = Math.min(scale + 0.1, 3);
+        } else {
+          // Zoom out
+          scale = Math.max(scale - 0.1, 1);
+        }
+        modalImg.style.transform = `scale(${scale})`;
+        isZoomed = scale > 1;
+        updateZoomLevel();
+      }
+    });
+
+    // Touch events cho mobile
+    let touchStartDistance = 0;
+
+    modalImg.addEventListener('touchstart', function (e) {
+      if (e.touches.length === 2) {
+        touchStartDistance = Math.hypot(
+          e.touches[0].pageX - e.touches[1].pageX,
+          e.touches[0].pageY - e.touches[1].pageY
+        );
+      }
+    });
+
+    modalImg.addEventListener('touchmove', function (e) {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const touchDistance = Math.hypot(
+          e.touches[0].pageX - e.touches[1].pageX,
+          e.touches[0].pageY - e.touches[1].pageY
+        );
+
+        if (touchStartDistance > 0) {
+          scale = Math.max(1, Math.min(touchDistance / touchStartDistance, 3));
+          modalImg.style.transform = `scale(${scale})`;
+          isZoomed = scale > 1;
+          updateZoomLevel();
+        }
+      }
     });
   });
-</script> --}}
+
+  // Xử lý đặt phòng
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('.btn-book')) {
+      const roomId = e.target.closest('.btn-book').dataset.roomId;
+      bookRoom(roomId);
+    }
+
+    if (e.target.closest('.btn-detail')) {
+      const roomId = e.target.closest('.btn-detail').dataset.roomId;
+      showRoomDetail(roomId);
+    }
+  });
+
+  function bookRoom(roomId) {
+    // Gọi API đặt phòng
+    console.log('Đặt phòng:', roomId);
+    // Hiển thị thông báo
+    showNotification('Đang xử lý đặt phòng...', 'info');
+  }
+
+  function showRoomDetail(roomId) {
+    // Hiển thị chi tiết phòng
+    console.log('Chi tiết phòng:', roomId);
+  }
+
+  function showNotification(message, type = 'info') {
+    // Tạo thông báo tạm thời
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} cyber-notification`;
+    notification.textContent = message;
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1001;
+      background: var(--cyber-dark);
+      color: var(--cyber-cyan);
+      border: 1px solid var(--cyber-cyan);
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+    `;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+      notification.remove();
+    }, 3000);
+  }
+
+</script>

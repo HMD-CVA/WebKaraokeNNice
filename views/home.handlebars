@@ -42,27 +42,76 @@
   <!-- BANNER END -->
 
   <div id="wrapper">
-    <div class="sale_polular">
-      <h1>Phòng Hát KARAOKE</h1>
-      <select>
-        <option value="">Tất cả phòng</option>
-        <option>Phòng nhỏ</option>
-        <option>Phòng vừa</option>
-        <option>Phòng trung</option>
-      </select>
+    <div class="ListContainer1">
+      <h1><i class="fa fa-microphone" aria-hidden="true"></i> Phòng Hát KARAOKE <i class="fa-solid fa-music"></i></h1>
+      <div class="filterRoom">
+        <select>
+          <option selected>Tất cả phòng</option>
+          <option>Phòng nhỏ</option>
+          <option>Phòng vừa</option>
+          <option>Phòng trung</option>
+          <option>Phòng VIP</option>
+        </select>
+      </div>
 
-      <div class="products">
-        {{#each phonghats}}
-          {{>product}}
-        {{/each}}
+      <div class="products-container">
+        <div class="products" id="productsGrid">
+          {{#each phonghats}}
+          {{> product}}
+          {{/each}}
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="pagination-controls" style="display: none;">
+          <button class="pagination-btn prev-btn" id="prevPage" disabled>
+            <i class="fas fa-chevron-left"></i>
+            Trang trước
+          </button>
+
+          <div class="page-indicator">
+            <span id="currentPage">1</span>
+            <span class="page-separator">/</span>
+            <span id="totalPages">1</span>
+          </div>
+
+          <button class="pagination-btn next-btn" id="nextPage">
+            Trang sau
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
       </div>
     </div>
 
-    <div class="ListContainer1">
-      <h1><img src="/image/apple_logo.png" style="width: 30px; height: 30px"> iPhone</h1>
-      <div class="products">
-        {{>product}}
+    <div class="ListContainer2">
+      <h1><i class="fa fa-microphone" aria-hidden="true"></i> Món ăn nổi bật <i class="fa-solid fa-music"></i></h1>
+      <h3><i class="fa fa-microphone" aria-hidden="true"></i> Trăm món mới - khơi thú vị <i
+          class="fa-solid fa-music"></i></h3>
+
+      <!-- FOOD MENU BANNER START - GIỐNG NHƯ BANNER TRONG LISTCONTAINER1 -->
+      <div class="food-banner-container">
+        <button class="food-control-btn food-prev-btn">❮</button>
+
+        <div class="food-banner-viewport">
+          <div class="liquid-border"></div>
+          <div class="liquid-bubble"></div>
+          <div class="food-banner-track" id="foodBannerTrack">
+            <!-- Các món ăn sẽ được thêm bằng JavaScript -->
+          </div>
+        </div>
+
+        <button class="food-control-btn food-next-btn">❯</button>
+
+        <div class="food-indicators">
+          <!-- Indicators sẽ được tạo bằng JavaScript -->
+        </div>
+
+        <div class="food-progress-bar">
+          <div class="food-progress"></div>
+        </div>
       </div>
+      <!-- FOOD MENU BANNER END -->
     </div>
   </div>
+
+</div>
 </div>
