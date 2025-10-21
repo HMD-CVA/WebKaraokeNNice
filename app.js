@@ -2,6 +2,7 @@ import express from 'express';
 import { engine } from 'express-handlebars';
 import db from './config/server.js';
 import DataModel from './app/model/index.js';
+import { generateCode } from './app/utils/codeGenerator.js'
 
 db.connectDB();
 const app = express();
@@ -52,7 +53,7 @@ app.engine('handlebars', engine({
                 return new Intl.NumberFormat('vi-VN').format(giaThapNhat) + ' VNĐ/H';
             }
             return new Intl.NumberFormat('vi-VN').format(giaThapNhat) + ' - ' + 
-                   new Intl.NumberFormat('vi-VN').format(giaCaoNhat) + ' VNĐ/H';
+                new Intl.NumberFormat('vi-VN').format(giaCaoNhat) + ' VNĐ/H';
         },
 
         showTatCaGia: (bangGia) => {
@@ -175,29 +176,29 @@ app.set('views', './views');
 
 // Trang chủ
 app.get('/', async (req, res) => {
-  try {
+try {
     const [phonghats, banggiaphongs] = await Promise.all([
-      DataModel.Data_PhongHat_Model.find({}).lean().exec(),
-      DataModel.Data_BangGiaPhong_Model.find({}).lean().exec()
+    DataModel.Data_PhongHat_Model.find({}).lean().exec(),
+    DataModel.Data_BangGiaPhong_Model.find({}).lean().exec()
     ]);
 
     // Gắn giá phòng - Lấy giá THẤP NHẤT để hiển thị
     const phonghatsWithPrice = phonghats.map(room => {
-      const giaPhong = banggiaphongs.filter(bg => bg.LoaiPhong === room.LoaiPhong);
-      
-      // Tính giá thấp nhất, cao nhất và giá hiện tại
-      const giaValues = giaPhong.map(g => g.GiaTien);
-      const giaThapNhat = giaValues.length > 0 ? Math.min(...giaValues) : 0;
-      const giaCaoNhat = giaValues.length > 0 ? Math.max(...giaValues) : 0;
-      
-      // Lấy giá hiện tại dựa trên thời gian thực (hoặc giá thấp nhất)
-      const gioHienTai = new Date().getHours();
-      const giaHienTai = giaPhong.find(g => {
+    const giaPhong = banggiaphongs.filter(bg => bg.LoaiPhong === room.LoaiPhong);
+    
+    // Tính giá thấp nhất, cao nhất và giá hiện tại
+    const giaValues = giaPhong.map(g => g.GiaTien);
+    const giaThapNhat = giaValues.length > 0 ? Math.min(...giaValues) : 0;
+    const giaCaoNhat = giaValues.length > 0 ? Math.max(...giaValues) : 0;
+    
+    // Lấy giá hiện tại dựa trên thời gian thực (hoặc giá thấp nhất)
+    const gioHienTai = new Date().getHours();
+    const giaHienTai = giaPhong.find(g => {
         const [gioBatDau, gioKetThuc] = g.KhungGio.split('-').map(Number);
         return gioHienTai >= gioBatDau && gioHienTai < gioKetThuc;
-      })?.GiaTien || giaThapNhat;
+    })?.GiaTien || giaThapNhat;
 
-      return {
+    return {
         ...room,
         // Giá để hiển thị
         GiaHienTai: giaHienTai,
@@ -208,18 +209,18 @@ app.get('/', async (req, res) => {
         // Compatible với template cũ
         GiaPhong: giaThapNhat, // Hiển thị giá thấp nhất
         GiaTien: giaThapNhat   // Backup
-      };
+    };
     });
 
     res.render('home', { 
-      layout: 'HomeMain.handlebars',
-      phonghats: phonghatsWithPrice 
+    layout: 'HomeMain.handlebars',
+    phonghats: phonghatsWithPrice 
     });
 
-  } catch (error) {
+} catch (error) {
     console.error("Lỗi khi tải dữ liệu:", error);
     res.status(500).send("Lỗi khi tải dữ liệu: " + error.message);
-  }
+}
 });
 
 // Trang admin dashboard
@@ -236,33 +237,123 @@ app.get('/logout', (req, res) => {
     res.redirect('/');
 });
 
-// Quản lý sản phẩm
-app.get('/admin/sanpham', async (req, res) => {
-    try {
-        const sanphams = await DataModel.Data_SanPham_Model.find({}).lean();
-        res.render('sanpham', { layout: 'AdminMain', title: 'Quản lý sản phẩm', sanphams });
-    } catch (err) {
-        res.status(500).send('Lỗi server!');
-    }
-});
 
 // Quản lý phòng hát
 app.get('/admin/phonghat', async (req, res) => {
     try {
-        const phonghats = await DataModel.Data_PhongHat_Model.find({}).lean();
-        const phonghatsWithStatus = phonghats.map(room => ({
-            ...room,
-            statusText: room.TrangThai === 1 ? 'CÒN TRỐNG' : 
-                        room.TrangThai === 0 ? 'ĐANG SỬ DỤNG' : 
-                        room.TrangThai === 2 ? 'ĐÃ ĐẶT' : 
-                        room.TrangThai === -1 ? 'ĐÃ XOÁ': 'KHÔNG XÁC ĐỊNH'
-        }));
-        res.render('phonghat', { layout: 'AdminMain', title: 'Quản lý phòng hát', phonghats: phonghatsWithStatus,phonghatPage: true });
+        const [phonghats, bangGiaList, roomTypes] = await Promise.all([
+            DataModel.Data_PhongHat_Model.find({}).lean().exec(),
+            DataModel.Data_BangGiaPhong_Model.find({}).lean().exec(),
+            DataModel.Data_BangGiaPhong_Model.distinct('LoaiPhong')
+        ]);
+
+        // Tạo map để tra cứu nhanh bảng giá theo LoaiPhong
+        const phonghatsWithPrice = phonghats.map(phong => {
+            const bangGiaCungLoai = bangGiaList.filter(banggia => 
+                banggia.LoaiPhong === phong.LoaiPhong
+            );
+
+            return {
+                ...phong,
+                BangGia: bangGiaCungLoai,
+            };
+        });
+        
+        // Chuẩn bị dữ liệu cho phần chỉnh sửa
+        const editBangGia = bangGiaList.map(gia => {
+            const [startTime = '', endTime = ''] = gia.KhungGio.split('-');
+            return {
+                ...gia,
+                startTime,
+                endTime
+            };
+        });
+
+        // Tính toán thống kê
+        const totalRooms = phonghats.length;
+        const countAvailable = phonghats.filter(p => p.TrangThai === 'Trống').length;
+        const countBusy = phonghats.filter(p => p.TrangThai === 'Đang sử dụng').length;
+        const countReserved = phonghats.filter(p => p.TrangThai === 'Đã đặt trước').length;
+        
+        res.render('phonghat', { 
+            layout: 'AdminMain', 
+            title: 'Quản lý phòng hát & bảng giá', 
+            phonghats: phonghatsWithPrice,
+            roomTypes: roomTypes,
+            currentBangGia: bangGiaList, // Dữ liệu hiện tại
+            editBangGia: editBangGia,    // Dữ liệu để chỉnh sửa
+            totalRooms: totalRooms,
+            countAvailable: countAvailable,
+            countBusy: countBusy,
+            countReserved: countReserved,
+            phonghatPage: true,
+            helpers: {
+                formatNumber: function(price) {
+                    return new Intl.NumberFormat('vi-VN').format(price);
+                },
+                json: function(context) {
+                    return JSON.stringify(context);
+                },
+                eq: function(a, b) {
+                    return a === b;
+                }
+            }
+        });
+
     } catch (err) {
         console.error('Error:', err);
         res.status(500).send('Lỗi server!');
     }
 });
+
+// Quản lý giá phong
+app.get('/admin/loaiphong', async (req, res) => {
+    try {
+        const loaiphongs = await DataModel.Data_BangGiaPhong_Model.find({}).lean();
+        res.render('loaiphong', { layout: 'AdminMain', title: 'Quản lý loại và giá phòng', loaiphongs });
+    } catch (err) {
+        res.status(500).send('Lỗi server!');
+    }
+});
+
+// API kiểm tra loại phòng có đang được sử dụng không
+app.get('/api/phonghat/check-loai-phong', async (req, res) => {
+    try {
+        const { loaiPhong } = req.query;
+        
+        // Kiểm tra xem có phòng nào đang sử dụng loại phòng này không
+        const roomsUsingType = await DataModel.Data_PhongHat_Model.find({ 
+            LoaiPhong: loaiPhong 
+        });
+        
+        const isUsed = roomsUsingType.length > 0;
+        
+        res.json({ 
+            isUsed, 
+            loaiPhong,
+            count: roomsUsingType.length 
+        });
+        
+    } catch (err) {
+        console.error('Lỗi kiểm tra loại phòng:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/banggia/:loaiPhong', async (req, res) => {
+    try {
+        const { loaiPhong } = req.params;
+        const bangGia = await DataModel.Data_BangGiaPhong_Model.find({ 
+            LoaiPhong: loaiPhong 
+        }).lean().exec();
+        
+        res.json(bangGia);
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: 'Lỗi server!' });
+    }
+});
+
 
 // Quản lý khách hàng
 app.get('/admin/khachhang', async (req, res) => {
@@ -332,13 +423,309 @@ app.post('/api/sanpham', async (req, res) => {
 // Thêm phòng hát
 app.post('/api/phonghat', async (req, res) => {
     try {
-        const { TenPhong, LoaiPhong, GiaPhong, SucChua, TrangThai, MoTa, AnhPhong } = req.body;
-        const ph = await DataModel.Data_PhongHat_Model.create({ TenPhong, LoaiPhong, GiaPhong, SucChua, TrangThai, MoTa, AnhPhong });
-        res.status(200).json(ph);
+        const { TenPhong, LoaiPhong, SucChua, TrangThai, GhiChu, LinkAnh } = req.body;      
+        
+        console.log('📥 Nhận dữ liệu phòng:', TenPhong);
+
+        // Tạo mã phòng tự động sử dụng hàm generateCode
+        const maPhong = await generateCode('P', DataModel.Data_PhongHat_Model, 'MaPhong');
+        
+        const ph = await DataModel.Data_PhongHat_Model.create({ 
+            MaPhong: maPhong,
+            TenPhong, 
+            LoaiPhong,  
+            SucChua, 
+            TrangThai, 
+            GhiChu, 
+            LinkAnh,
+            createdAt: new Date()
+        });
+        
+        console.log('✅ Đã thêm phòng:', ph.TenPhong);
+        console.log('📝 Mã phòng được tạo:', ph.MaPhong);
+        
+        res.status(200).json({
+            success: true,
+            message: `Thêm phòng "${ph.TenPhong}" thành công với mã ${ph.MaPhong}!`,
+            data: ph
+        });
+        
     } catch (err) {
-        res.status(400).json({ error: err.message });
+        console.error('❌ Lỗi thêm phòng:', err);
+        res.status(400).json({ 
+            success: false,
+            error: err.message 
+        });
     }
 });
+
+// API để lưu bảng giá
+app.post('/api/banggia/:loaiPhong', async (req, res) => {
+    try {
+        const { loaiPhong, bangGia } = req.body;      
+        
+        console.log('📥 Nhận dữ liệu bảng giá:', {
+            loaiPhong: loaiPhong,
+            soKhungGio: bangGia ? bangGia.length : 0
+        });
+
+        // Validate dữ liệu đầu vào
+        if (!loaiPhong || !bangGia || !Array.isArray(bangGia)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Dữ liệu không hợp lệ: thiếu loaiPhong hoặc bangGia'
+            });
+        }
+
+        if (bangGia.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Vui lòng thêm ít nhất một khung giờ'
+            });
+        }
+
+        // Validate từng khung giờ
+        for (let i = 0; i < bangGia.length; i++) {
+            const gia = bangGia[i];
+            if (!gia.KhungGio || gia.GiaTien === undefined || gia.GiaTien === null) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Khung giờ thứ ${i + 1} thiếu thông tin KhungGio hoặc GiaTien`
+                });
+            }
+            if (gia.GiaTien < 1000) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Khung giờ "${gia.KhungGio}" có giá tiền không hợp lệ (phải từ 1,000 VNĐ)`
+                });
+            }
+        }
+
+        console.log('🗑️ Đang xóa khung giờ cũ cho loại phòng:', loaiPhong);
+        
+        // Xóa các khung giờ cũ - GIỮ NGUYÊN LOGIC CŨ
+        const deleteResult = await DataModel.Data_BangGiaPhong_Model.deleteMany({ 
+            LoaiPhong: loaiPhong 
+        });
+        
+        console.log('✅ Đã xóa:', deleteResult.deletedCount, 'khung giờ cũ');
+
+        // Tạo mã cho từng khung giờ - GIỮ NGUYÊN LOGIC CŨ
+        const newBangGia = [];
+        
+        // Lấy mã cuối cùng một lần để tối ưu - GIỮ NGUYÊN LOGIC CŨ
+        const lastMaGia = await generateCode('PG', DataModel.Data_BangGiaPhong_Model, 'MaGia');
+        const lastNumber = parseInt(lastMaGia.replace('PG', '')) || 0;
+        
+        console.log('🔢 Mã cuối cùng:', lastMaGia, 'Số:', lastNumber);
+
+        // Tạo dữ liệu mới - GIỮ NGUYÊN LOGIC CŨ
+        for (let i = 0; i < bangGia.length; i++) {
+            const gia = bangGia[i];
+            const newNumber = lastNumber + i + 1;
+            const maGia = `PG${newNumber.toString().padStart(3, '0')}`;
+            
+            newBangGia.push({
+                MaGia: maGia,
+                LoaiPhong: loaiPhong,
+                KhungGio: gia.KhungGio,
+                GiaTien: parseInt(gia.GiaTien),
+                createdAt: new Date()
+            });
+
+            console.log(`📝 Tạo khung giờ ${i + 1}:`, {
+                maGia: maGia,
+                khungGio: gia.KhungGio,
+                giaTien: gia.GiaTien
+            });
+        }
+
+        console.log('💾 Đang lưu', newBangGia.length, 'khung giờ mới...');
+        
+        // Lưu dữ liệu mới - GIỮ NGUYÊN LOGIC CŨ
+        const result = await DataModel.Data_BangGiaPhong_Model.insertMany(newBangGia);
+        
+        console.log('✅ Đã thêm thành công:', result.length, 'khung giờ');
+        console.log('📋 Mã được tạo:', result.map(item => item.MaGia));
+        
+        // Response - GIỮ NGUYÊN LOGIC CŨ + THÊM THÔNG TIN
+        res.json({
+            success: true,
+            message: `Cập nhật thành công ${result.length} khung giờ cho loại phòng "${loaiPhong}"!`,
+            data: {
+                soKhungGio: result.length,
+                maGiaList: result.map(item => item.MaGia),
+                bangGia: result
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Lỗi lưu bảng giá:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lưu bảng giá: ' + error.message,
+            error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+});
+
+
+
+app.post('/api/loaiphong', async (req, res) => {
+    try {
+        console.log('=== 🚨 API /api/loaiphong ===');
+        console.log('📦 Request body:', req.body);
+        
+        const { TenLoaiPhong, Action, OldRoomType } = req.body;
+        
+        // VALIDATION
+        if (!TenLoaiPhong || !Action) {
+            return res.status(400).json({ 
+                error: 'Thiếu thông tin bắt buộc: TenLoaiPhong và Action' 
+            });
+        }
+
+        if (Action === 'add') {
+            console.log('🔍 Kiểm tra loại phòng tồn tại:', TenLoaiPhong);
+            
+            // Kiểm tra trùng
+            const existing = await DataModel.Data_BangGiaPhong_Model.findOne({ 
+                LoaiPhong: TenLoaiPhong 
+            });
+            
+            if (existing) {
+                console.log('❌ Loại phòng đã tồn tại');
+                return res.status(400).json({ error: 'Loại phòng đã tồn tại!' });
+            }
+
+            console.log('💾 Đang tạo loại phòng mới...');
+
+            const lastMaGia = await generateCode('PG', DataModel.Data_BangGiaPhong_Model, 'MaGia');
+            const lastNumber = parseInt(lastMaGia.replace('PG', '')) || 0;
+            
+            const newNumber = lastNumber + 1;
+            const maGia = `PG${newNumber.toString().padStart(3, '0')}`;
+            
+            // Tạo loại phòng mới với bảng giá rỗng
+            const newRoomType = new DataModel.Data_BangGiaPhong_Model({
+                MaGia: maGia,
+                LoaiPhong: TenLoaiPhong,
+                BangGia: [],
+                CreatedAt: new Date(),
+                UpdatedAt: new Date()
+            });
+            
+            await newRoomType.save();
+            console.log('✅ Đã lưu loại phòng mới thành công');
+            
+            res.json({ 
+                success: true, 
+                message: `Đã thêm loại phòng "${TenLoaiPhong}" thành công!`,
+                data: newRoomType 
+            });
+
+        } else if (Action === 'edit') {
+            // SỬA LOẠI PHÒNG - CẬP NHẬT TẤT CẢ DOCUMENTS
+            if (!OldRoomType) {
+                return res.status(400).json({ error: 'Thiếu thông tin loại phòng cũ!' });
+            }
+
+            console.log(`✏️ Đang đổi "${OldRoomType}" thành "${TenLoaiPhong}"`);
+
+            // Kiểm tra trùng tên mới
+            if (TenLoaiPhong !== OldRoomType) {
+                const existing = await DataModel.Data_BangGiaPhong_Model.findOne({ 
+                    LoaiPhong: TenLoaiPhong 
+                });
+                
+                if (existing) {
+                    return res.status(400).json({ error: 'Tên loại phòng mới đã tồn tại!' });
+                }
+            }
+
+            // Cập nhật TRONG TẤT CẢ document có LoaiPhong cũ
+            const bangGiaResult = await DataModel.Data_BangGiaPhong_Model.updateMany(
+                { LoaiPhong: OldRoomType },
+                { 
+                    $set: { 
+                        LoaiPhong: TenLoaiPhong,
+                        UpdatedAt: new Date()
+                    } 
+                }
+            );
+
+            console.log(`📊 Đã cập nhật ${bangGiaResult.modifiedCount} document trong Data_BangGiaPhong_Model`);
+
+            // Cập nhật trong collection phòng hát
+            const phongHatResult = await DataModel.Data_PhongHat_Model.updateMany(
+                { LoaiPhong: OldRoomType },
+                { $set: { LoaiPhong: TenLoaiPhong } }
+            );
+
+            console.log(`📊 Đã cập nhật ${phongHatResult.modifiedCount} phòng trong Data_PhongHat_Model`);
+
+            if (bangGiaResult.modifiedCount === 0 && phongHatResult.modifiedCount === 0) {
+                return res.status(404).json({ error: 'Không tìm thấy loại phòng để sửa!' });
+            }
+
+            res.json({ 
+                success: true, 
+                message: `Đã đổi loại phòng "${OldRoomType}" thành "${TenLoaiPhong}"! (${bangGiaResult.modifiedCount} bảng giá, ${phongHatResult.modifiedCount} phòng)`,
+                data: { 
+                    old: OldRoomType, 
+                    new: TenLoaiPhong,
+                    bangGiaUpdated: bangGiaResult.modifiedCount,
+                    phongHatUpdated: phongHatResult.modifiedCount
+                }
+            });
+
+        } else if (Action === 'delete') {
+            // XÓA LOẠI PHÒNG - XÓA TẤT CẢ DOCUMENTS
+            console.log(`🗑️ Đang xóa loại phòng: ${TenLoaiPhong}`);
+
+            // Kiểm tra xem loại phòng có đang được sử dụng không
+            const usedRooms = await DataModel.Data_PhongHat_Model.find({ 
+                LoaiPhong: TenLoaiPhong 
+            });
+            
+            if (usedRooms.length > 0) {
+                return res.status(400).json({ 
+                    error: `Không thể xóa! Có ${usedRooms.length} phòng đang sử dụng loại phòng "${TenLoaiPhong}".` 
+                });
+            }
+
+            // Xóa TẤT CẢ document có LoaiPhong này
+            const result = await DataModel.Data_BangGiaPhong_Model.deleteMany({ 
+                LoaiPhong: TenLoaiPhong 
+            });
+
+            console.log(`📊 Đã xóa ${result.deletedCount} document trong Data_BangGiaPhong_Model`);
+
+            if (result.deletedCount === 0) {
+                return res.status(404).json({ error: 'Không tìm thấy loại phòng để xóa!' });
+            }
+
+            res.json({ 
+                success: true, 
+                message: `Đã xóa loại phòng "${TenLoaiPhong}" thành công! (${result.deletedCount} bảng giá)`,
+                data: { deletedCount: result.deletedCount }
+            });
+
+        } else {
+            return res.status(400).json({ error: 'Action không hợp lệ!' });
+        }
+        
+    } catch (err) {
+        console.error('💥 LỖI SERVER CHI TIẾT:');
+        console.error('Message:', err.message);
+        console.error('Stack:', err.stack);
+        
+        res.status(500).json({ 
+            error: 'Lỗi server: ' + err.message 
+        });
+    }
+});
+
 
 ///////////////////////////////
 //         PUT ROUTES         //
@@ -374,14 +761,160 @@ app.put('/api/sanpham/:id', async (req, res) => {
 app.put('/api/phonghat/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { TenPhong, LoaiPhong, GiaPhong, SucChua, TrangThai, MoTa, AnhPhong } = req.body;
-        const ph = await DataModel.Data_PhongHat_Model.findByIdAndUpdate(id, { TenPhong, LoaiPhong, GiaPhong, SucChua, TrangThai, MoTa, AnhPhong }, { new: true });
-        if (!ph) return res.status(404).json({ error: 'Không tìm thấy phòng hát' });
-        res.json(ph);
+        const { TenPhong, LoaiPhong, SucChua, TrangThai, GhiChu, LinkAnh } = req.body;
+        
+        console.log('📥 Cập nhật phòng ID:', id);
+        
+        // KHÔNG cập nhật MaPhong khi sửa, chỉ cập nhật các trường khác
+        const ph = await DataModel.Data_PhongHat_Model.findByIdAndUpdate(
+            id,
+            { 
+                TenPhong, 
+                LoaiPhong, 
+                SucChua, 
+                TrangThai, 
+                GhiChu, 
+                LinkAnh,
+                createdAt: new Date()
+            },
+            { new: true, runValidators: true }
+        );
+        
+        if (!ph) {
+            return res.status(404).json({ 
+                success: false,
+                error: 'Không tìm thấy phòng' 
+            });
+        }
+        
+        console.log('✅ Đã cập nhật phòng:', ph.TenPhong);
+        
+        res.status(200).json({
+            success: true,
+            message: `Cập nhật phòng "${ph.TenPhong}" thành công!`,
+            data: ph
+        });
+        
     } catch (err) {
-        res.status(400).json({ error: err.message });
+        console.error('❌ Lỗi cập nhật phòng:', err);
+        res.status(400).json({ 
+            success: false,
+            error: err.message 
+        });
     }
 });
+
+app.put('/api/banggia/:loaiPhong', async (req, res) => {
+    try {
+        const { loaiPhong, bangGia } = req.body;      
+        
+        console.log('📥 Nhận dữ liệu bảng giá:', {
+            loaiPhong: loaiPhong,
+            soKhungGio: bangGia ? bangGia.length : 0
+        });
+
+        // Validate dữ liệu đầu vào
+        if (!loaiPhong || !bangGia || !Array.isArray(bangGia)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Dữ liệu không hợp lệ: thiếu loaiPhong hoặc bangGia'
+            });
+        }
+
+        if (bangGia.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Vui lòng thêm ít nhất một khung giờ'
+            });
+        }
+
+        // Validate từng khung giờ
+        for (let i = 0; i < bangGia.length; i++) {
+            const gia = bangGia[i];
+            if (!gia.KhungGio || gia.GiaTien === undefined || gia.GiaTien === null) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Khung giờ thứ ${i + 1} thiếu thông tin KhungGio hoặc GiaTien`
+                });
+            }
+            if (gia.GiaTien < 1000) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Khung giờ "${gia.KhungGio}" có giá tiền không hợp lệ (phải từ 1,000 VNĐ)`
+                });
+            }
+        }
+
+        console.log('🗑️ Đang xóa khung giờ cũ cho loại phòng:', loaiPhong);
+        
+        // Xóa các khung giờ cũ - GIỮ NGUYÊN LOGIC CŨ
+        const deleteResult = await DataModel.Data_BangGiaPhong_Model.deleteMany({ 
+            LoaiPhong: loaiPhong 
+        });
+        
+        console.log('✅ Đã xóa:', deleteResult.deletedCount, 'khung giờ cũ');
+
+        // Tạo mã cho từng khung giờ - GIỮ NGUYÊN LOGIC CŨ
+        const newBangGia = [];
+        
+        // Lấy mã cuối cùng một lần để tối ưu - GIỮ NGUYÊN LOGIC CŨ
+        const lastMaGia = await generateCode('PG', DataModel.Data_BangGiaPhong_Model, 'MaGia');
+        const lastNumber = parseInt(lastMaGia.replace('PG', '')) || 0;
+        
+        console.log('🔢 Mã cuối cùng:', lastMaGia, 'Số:', lastNumber);
+
+        // Tạo dữ liệu mới - GIỮ NGUYÊN LOGIC CŨ
+        for (let i = 0; i < bangGia.length; i++) {
+            const gia = bangGia[i];
+            const newNumber = lastNumber + i + 1;
+            const maGia = `PG${newNumber.toString().padStart(3, '0')}`;
+            
+            newBangGia.push({
+                MaGia: maGia,
+                LoaiPhong: loaiPhong,
+                KhungGio: gia.KhungGio,
+                GiaTien: parseInt(gia.GiaTien),
+                createdAt: new Date()
+            });
+
+            console.log(`📝 Tạo khung giờ ${i + 1}:`, {
+                maGia: maGia,
+                khungGio: gia.KhungGio,
+                giaTien: gia.GiaTien
+            });
+        }
+
+        console.log('💾 Đang lưu', newBangGia.length, 'khung giờ mới...');
+        
+        // Lưu dữ liệu mới - GIỮ NGUYÊN LOGIC CŨ
+        const result = await DataModel.Data_BangGiaPhong_Model.insertMany(newBangGia);
+        
+        console.log('✅ Đã thêm thành công:', result.length, 'khung giờ');
+        console.log('📋 Mã được tạo:', result.map(item => item.MaGia));
+        
+        // Response - GIỮ NGUYÊN LOGIC CŨ + THÊM THÔNG TIN
+        res.json({
+            success: true,
+            message: `Cập nhật thành công ${result.length} khung giờ cho loại phòng "${loaiPhong}"!`,
+            data: {
+                soKhungGio: result.length,
+                maGiaList: result.map(item => item.MaGia),
+                bangGia: result
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Lỗi lưu bảng giá:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lưu bảng giá: ' + error.message,
+            error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+});
+
+
+
 
 ///////////////////////////////
 //        DELETE ROUTES       //
@@ -422,6 +955,53 @@ app.delete('/api/phonghat/:id', async (req, res) => {
         res.status(400).json({ error: err.message });
     }
 });
+
+
+// Xóa loại phòng
+app.delete('/api/banggia/:loaiPhong', async (req, res) => {
+    try {
+        const { loaiPhong } = req.params;
+        
+        console.log('🗑️ Đang xóa bảng giá cho:', loaiPhong);
+        
+        const deleteResult = await DataModel.Data_BangGiaPhong_Model.deleteMany({ 
+            LoaiPhong: loaiPhong 
+        });
+        
+        console.log('✅ Đã xóa:', deleteResult.deletedCount, 'khung giờ');
+        
+        res.json({
+            success: true,
+            message: `Đã xóa ${deleteResult.deletedCount} khung giờ`,
+            deletedCount: deleteResult.deletedCount
+        });
+
+    } catch (error) {
+        console.error('❌ Lỗi xóa bảng giá:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi xóa bảng giá: ' + error.message
+        });
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ///////////////////////////////
 //        START SERVER        //

@@ -84,8 +84,8 @@ const ChiTietHoaDonSchema = new mongoose.Schema({
 const BangGiaPhongSchema = new mongoose.Schema({
   MaGia: { type: String, required: true, unique: true },
   LoaiPhong: { type: String, required: true },
-  KhungGio: { type: String, required: true },
-  GiaTien: { type: Number, required: true },
+  KhungGio: { type: String },
+  GiaTien: { type: Number },
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -214,6 +214,14 @@ MatHangSchema.pre('save', async function(next) {
   if (this.isNew && !this.MaHang) {
     const MatHang = mongoose.model('MatHang', MatHangSchema);
     this.MaHang = await generateCode('MH', MatHang, 'MaHang');
+  }
+  next();
+});
+
+BangGiaPhongSchema.pre('save', async function (next) {
+  if (this.isNew && !this.MaGia) {
+    const BangGiaPhong = mongoose.model('BangGiaPhong', BangGiaPhongSchema);
+    this.MaGia = await generateCode('PG', BangGiaPhong, 'BangGiaPhong');
   }
   next();
 });

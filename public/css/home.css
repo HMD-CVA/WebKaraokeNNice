@@ -1,141 +1,108 @@
-/* CSS CHÍNH */
-#container{
-    height: auto;
-    width: 100%;   
-    background-color: transparent;
-    color: #2c3e50;
-    text-align: center;    
-    align-items: center;
-    justify-content: center;
+/* ===== CSS VARIABLES ===== */
+:root {
+    --cyber-purple: #7a00ff;
+    --cyber-cyan: #00f0ff;
+    --cyber-yellow: #ffd700;
+    --cyber-pink: #ff00c8;
+}
+
+/* ===== RESET & BASE STYLES ===== */
+* {
     margin: 0;
     padding: 0;
-    border-radius: 10px;
+    box-sizing: border-box;
+}
+
+/* FIX TOUCHPAD - QUAN TRỌNG */
+html {
+    scroll-behavior: auto; /* Tắt smooth scroll để fix touchpad */
+    overflow-x: hidden;
+}
+
+body {
+    overflow-x: hidden;
+    position: relative;
+    min-height: 100vh;
+}
+
+/* ===== MAIN CONTAINERS ===== */
+#container {
+    width: 100%;
+    min-height: 100vh;
+    background-color: transparent;
+    color: #2c3e50;
+    text-align: center;
+    margin: 0;
+    padding: 0;
 }
 
 #wrapper {
-    height: auto;
-    width: 80%;   
-    text-align: center;
-    align-items: center;
-    justify-content: center;
-    margin: auto;
-    border-radius: 10px;
-    background-color: transparent;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
 }
 
-/* BANNER CONTAINER - MỞ RỘNG ĐỂ CHỨA ẢNH 550x780px */
+/* ===== BANNER SLIDER - TỐI ƯU HIỆU SUẤT ===== */
 .banner-container {
     position: relative;
     width: 100%;
     overflow: hidden;
-    background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-top: 80px;
-    padding: 0;
-    position: relative;
+    margin: 80px 0 0 0;
+    padding: 0 20px;
 }
 
-/* Micro Liquid Movement */
 .banner-viewport {
-    width: calc(100% - 80px);
+    width: 100%;
+    max-width: calc(100% - 80px);
     overflow: hidden;
-    position: relative;
-    
-    /* Glass morphism nâng cao */
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 16px;
-    
-    /* Shadow đẹp hơn */
+    backdrop-filter: blur(15px) saturate(160%);
     box-shadow: 
         0 4px 24px rgba(0, 0, 0, 0.08),
         0 1px 4px rgba(0, 0, 0, 0.04),
         inset 0 1px 0 rgba(255, 255, 255, 0.1),
         inset 0 -1px 0 rgba(255, 255, 255, 0.05);
-    
-    backdrop-filter: blur(15px) saturate(160%);
-    margin: 0px 20px;
-    margin-top: 40px;
-    z-index: 2;
-    position: relative;
+    margin-top: 20px;
 }
 
-/* Hiệu ứng viền ánh sáng cho viewport */
-.banner-viewport::before {
-    content: '';
-    position: absolute;
-    top: -1px;
-    left: -1px;
-    right: -1px;
-    bottom: -1px;
-    background: linear-gradient(135deg, 
-        rgba(255, 255, 255, 0.3) 0%,
-        rgba(255, 255, 255, 0.1) 50%,
-        rgba(255, 255, 255, 0.3) 100%);
-    border-radius: 17px;
-    z-index: -1;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    margin: 0px 20px;
-    margin-top: 40px;
-}
-
-
-/* BANNER TRACK - CHIỀU CAO CỐ ĐỊNH 780px */
 .banner-track {
     display: flex;
-    transition: transform 0.8s ease-in-out;
+    transition: transform 0.6s ease-in-out; /* Giảm thời gian transition */
     align-items: center;
     height: 780px;
-    width: auto; /* SẼ ĐƯỢC JS SET */
+    transform: translateZ(0); /* Hardware acceleration */
 }
 
-/* BANNER ITEM - GIỮ NGUYÊN KÍCH THƯỚC 550x780px */
 .banner-item {
-    position: relative;
-    flex-shrink: 0 !important;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 550px;
+    height: 780px;
     padding: 0;
     margin: 0;
-    width: 550px; /* RỘNG CỐ ĐỊNH */
-    height: 780px; /* CAO CỐ ĐỊNH */
 }
 
-.banner-item::before {
-    content: attr(data-alt);
-    position: absolute;
-    left: -10000px;
-    top: auto;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-}
-
-/* IMAGE - GIỮ NGUYÊN KÍCH THƯỚC GỐC */
 .banner-item img {
-    width: 550px; /* GIỮ NGUYÊN */
-    height: 780px; /* GIỮ NGUYÊN */
-    object-fit: cover !important; /* HIỂN THỊ TOÀN BỘ ẢNH KHÔNG CẮT */
-    object-position: center !important;
-    display: block !important;
-    border: none;
-    box-shadow: none;
-    border-radius: 0;
-    padding: 0;
-    margin: 0;
+    width: 550px;
+    height: 780px;
+    object-fit: cover;
+    object-position: center;
+    display: block;
 }
 
-/* NÚT ĐIỀU KHIỂN */
+/* Banner Controls */
 .control-btn {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    
-    /* Glass button */
     background: rgba(0, 0, 0, 0.7);
     color: white;
     border: none;
@@ -144,56 +111,41 @@
     height: 70px;
     font-size: 28px;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    
+    transition: all 0.3s ease; /* Giảm thời gian transition */
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    z-index: 10;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 10;
-    
-    /* Glass effect */
-    backdrop-filter: blur(20px) saturate(180%);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    
-    /* Shadow */
-    box-shadow: 
-        0 8px 32px rgba(0, 0, 0, 0.2),
-        0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .control-btn:hover {
     background: rgba(0, 0, 0, 0.9);
-    transform: translateY(-50%) scale(1.15);
-    border-color: rgba(255, 255, 255, 0.6);
-    box-shadow: 
-        0 12px 40px rgba(0, 0, 0, 0.3),
-        0 4px 16px rgba(0, 0, 0, 0.15);
+    transform: translateY(-50%) scale(1.1); /* Giảm scale */
 }
 
-.prev-btn {
-    left: 50px;
+.prev-btn { 
+    left: 20px; 
 }
 
-.next-btn {
-    right: 50px;
+.next-btn { 
+    right: 20px; 
 }
 
-/* LINE INDICATORS */
 .indicators {
     position: absolute;
-    bottom: 0;
+    bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
     gap: 12px;
     z-index: 10;
-    
-    /* Glass background cho indicators */
     background: rgba(0, 0, 0, 0.3);
-    /* padding: 12px 20px; */
     border-radius: 25px;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px 20px;
 }
 
 .indicator {
@@ -202,1467 +154,413 @@
     border-radius: 4px;
     background: rgba(255, 255, 255, 0.3);
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    
-    /* Glow effect */
-    box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+    transition: all 0.3s ease;
 }
 
 .indicator.active {
     background: linear-gradient(90deg, #ff6b6b, #ffa726);
     width: 35px;
-    box-shadow: 0 0 12px rgba(255, 107, 107, 0.4);
-    transform: scale(1.1);
+    transform: scale(1.05); /* Giảm scale */
 }
 
-.indicator:hover {
-    background: rgba(255, 255, 255, 0.6);
-    transform: scale(1.05);
-}
-
-/* PROGRESS BAR */
-.progress-bar {
-    position: absolute;
-    bottom: 0px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 90%;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.15);
-    z-index: 9;
-    border-radius: 10px;
-    overflow: hidden;
-    
-    /* Glass effect */
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.progress {
-    height: 100%;
-    background: linear-gradient(90deg, 
-        #ff6b6b, 
-        #ffa726, 
-        #66bb6a, 
-        #42a5f5, 
-        #ab47bc
-    );
-    width: 0%;
-    transition: width 0.1s linear;
-    border-radius: 10px;
-    position: relative;
-    box-shadow: 0 0 20px rgba(66, 165, 245, 0.6);
-}
-
-.progress::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(90deg, 
-        transparent, 
-        rgba(255, 255, 255, 0.6), 
-        transparent
-    );
-    animation: progressGlow 2s ease-in-out infinite;
-}
-
-@keyframes progressGlow {
-    0%, 100% {
-        transform: translateX(-100%);
-    }
-    50% {
-        transform: translateX(100%);
-    }
-}
-
-/* SALE DIV */
-.sale_polular {
-    height: auto;
-    width: 100%;
-    background: linear-gradient(135deg, 
-        rgba(255, 255, 255, 0.1) 0%,
-        rgba(255, 255, 255, 0.05) 100%);
-    color: #2c3e50;
-    text-align: center;
-    margin: 30px 0;
-    padding: 25px 20px;
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(20px) saturate(180%);
-    position: relative;
-    overflow: hidden;
-}
-
-/* Hiệu ứng nền cho section */
-.sale_polular::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, 
-        rgba(122, 0, 255, 0.03) 0%,
-        rgba(255, 60, 0, 0.03) 50%,
-        rgba(0, 240, 255, 0.03) 100%);
-    z-index: -1;
-    border-radius: 16px;
-}
-
-/* Tiêu đề section */
-.sale_polular h1 {
-    text-align: center;
-    margin: 0 0 30px 0;
-    padding: 0;
-    color: var(--cyber-cyan);
-    font-weight: 800;
-    font-size: 2.2rem;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    text-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
-    position: relative;
-    display: inline-block;
-}
-
-/* Hiệu ứng gạch chân cho tiêu đề */
-.sale_polular h1::after {
-    content: '';
-    position: absolute;
-    bottom: -8px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80px;
-    height: 3px;
-    background: linear-gradient(90deg, 
-        var(--cyber-purple),
-        var(--cyber-cyan),
-        var(--cyber-purple)
-    );
-    border-radius: 2px;
-}
-
-/* GRID PRODUCTS */
-.products {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-    gap: 25px;
-    padding: 20px 0;
-    background-color: transparent;
-    border: none;
-}
-
-/* Container cho từng nhóm sản phẩm */
-.ListContainer1 {
-    width: 100%;
-    height: auto;
-    background: linear-gradient(135deg, 
-        rgba(43, 0, 51, 0.6) 0%,
-        rgba(122, 0, 255, 0.1) 100%);
-    margin: 30px 0;
-    padding: 25px;
-    border-radius: 16px;
-    border: 1px solid rgba(122, 0, 255, 0.2);
-    backdrop-filter: blur(15px);
-    position: relative;
-    overflow: hidden;
-}
-
-/* Hiệu ứng viền ánh sáng */
-.ListContainer1::before {
-    content: '';
-    position: absolute;
-    top: -1px;
-    left: -1px;
-    right: -1px;
-    bottom: -1px;
-    background: linear-gradient(135deg, 
-        rgba(122, 0, 255, 0.3),
-        rgba(0, 240, 255, 0.2),
-        rgba(122, 0, 255, 0.3)
-    );
-    border-radius: 17px;
-    z-index: -1;
-    opacity: 0.5;
-}
-
-/* Tiêu đề container */
-.ListContainer1 h1 {
-    text-align: center;
-    margin: 0 0 25px 0;
-    padding: 0;
-    color: var(--cyber-yellow);
-    font-weight: 700;
-    font-size: 2.8rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    text-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
-}
-
-/* Icon trong tiêu đề */
-.ListContainer1 h1 i {
-    color: var(--cyber-cyan);
-    font-size: 1.5rem;
-}
-/* CARD STYLING TỐI ƯU TRONG SALE POPULAR */
-.sale_polular .cyberpunk-card {
-    margin: 0 auto;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    border: 1px solid rgba(122, 0, 255, 0.3);
-}
-
-.sale_polular .cyberpunk-card:hover {
-    transform: translateY(-8px) scale(1.02);
-    border-color: var(--cyber-cyan);
-    box-shadow: 
-        0 0 40px rgba(122, 0, 255, 0.6),
-        0 0 80px rgba(200, 0, 255, 0.3),
-        inset 0 0 30px rgba(122, 0, 255, 0.2);
-}
-
-/* Badge giảm giá cho card trong sale */
-.sale_polular .cyberpunk-card::after {
-    content: 'SALE';
-    position: absolute;
-    top: 15px;
-    left: 15px;
-    background: linear-gradient(135deg, #ff6b6b, #ffa726);
-    color: white;
-    padding: 0.4rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.7rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    z-index: 10;
-    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
-}
-
-/* ===== FILTER ROOM CONTAINER - NÂNG CẤP ĐẲNG CẤP ===== */
-.filterRoom {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 40px auto;
-  width: 100%;
-  text-align: center;
-  position: relative;
-  z-index: 5;
-}
-
-/* Container glow effect */
-.filterRoom::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 120%;
-  height: 120%;
-  background: radial-gradient(
-    circle at center,
-    rgba(122, 0, 255, 0.3) 0%,
-    rgba(0, 240, 255, 0.2) 30%,
-    transparent 70%
-  );
-  filter: blur(20px);
-  z-index: -1;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-}
-
-.filterRoom:hover::before {
-  opacity: 1;
-}
-
-/* Filter select - CYBERPUNK STYLE NÂNG CAO */
-.filterRoom select {
-  background: linear-gradient(135deg, 
-      rgba(43, 0, 51, 0.95) 0%,
-      rgba(122, 0, 255, 0.3) 50%,
-      rgba(0, 240, 255, 0.15) 100%);
-  border: 2px solid;
-  border-image: linear-gradient(135deg, 
-      var(--cyber-purple), 
-      var(--cyber-cyan),
-      var(--cyber-pink)) 1;
-  border-radius: 16px;
-  color: var(--cyber-cyan);
-  padding: 18px 60px 18px 30px;
-  font-size: 1.2rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  backdrop-filter: blur(20px) saturate(180%);
-  appearance: none;
-  min-width: 320px;
-  max-width: 450px;
-  margin: 0 auto;
-  display: block;
-  text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  position: relative;
-  z-index: 2;
-  
-  /* MŨI TÊN LỚN VÀ ĐẸP HƠN */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' fill='%2300F0FF' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 25px center;
-  background-size: 24px;
-  
-  /* Glow effect mạnh mẽ */
-  box-shadow: 
-      0 0 0 rgba(122, 0, 255, 0),
-      0 8px 32px rgba(0, 0, 0, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-}
-
-/* Hiệu ứng ánh sáng viền động */
-.filterRoom select::before {
-  content: '';
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  background: linear-gradient(135deg, 
-      var(--cyber-purple) 0%,
-      var(--cyber-cyan) 50%,
-      var(--cyber-pink) 100%);
-  border-radius: 18px;
-  z-index: -1;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-}
-
-/* Hover state - CYBERPUNK GLOW */
-.filterRoom select:hover {
-  border-image: linear-gradient(135deg, 
-      var(--cyber-cyan), 
-      var(--cyber-yellow),
-      var(--cyber-pink)) 1;
-  background: linear-gradient(135deg, 
-      rgba(43, 0, 51, 0.98) 0%,
-      rgba(0, 240, 255, 0.25) 50%,
-      rgba(255, 0, 200, 0.15) 100%);
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 
-      0 0 30px rgba(0, 240, 255, 0.6),
-      0 12px 40px rgba(0, 0, 0, 0.4),
-      inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  color: var(--cyber-yellow);
-}
-
-/* Focus state - NỔI BẬT */
-.filterRoom select:focus {
-  outline: none;
-  border-image: linear-gradient(135deg, 
-      var(--cyber-yellow), 
-      var(--cyber-cyan),
-      var(--cyber-yellow)) 1;
-  background: linear-gradient(135deg, 
-      rgba(43, 0, 51, 0.98) 0%,
-      rgba(255, 215, 0, 0.25) 50%,
-      rgba(0, 240, 255, 0.2) 100%);
-  box-shadow: 
-      0 0 40px rgba(255, 215, 0, 0.8),
-      0 15px 50px rgba(0, 0, 0, 0.5),
-      inset 0 1px 0 rgba(255, 255, 255, 0.4);
-  color: var(--cyber-yellow);
-  transform: translateY(-2px) scale(1.01);
-}
-
-/* Options styling - CYBERPUNK THEME */
-.filterRoom select option {
-  background: rgba(20, 0, 30, 0.98);
-  color: var(--cyber-cyan);
-  font-weight: 600;
-  padding: 15px;
-  border: none;
-  font-size: 1rem;
-  text-align: center;
-  border-bottom: 1px solid rgba(122, 0, 255, 0.3);
-}
-
-.filterRoom select option:checked {
-  background: linear-gradient(135deg, 
-      var(--cyber-purple), 
-      var(--cyber-pink));
-  color: white;
-  font-weight: 800;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-}
-
-.filterRoom select option:hover {
-  background: linear-gradient(135deg, 
-      var(--cyber-cyan), 
-      var(--cyber-purple));
-  color: #000;
-}
-
-/* Label hoặc title cho filter (nếu muốn thêm) */
-.filter-label {
-  position: absolute;
-  top: -25px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: var(--cyber-cyan);
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  background: rgba(43, 0, 51, 0.8);
-  padding: 5px 15px;
-  border-radius: 10px;
-  border: 1px solid rgba(122, 0, 255, 0.3);
-  backdrop-filter: blur(10px);
-  white-space: nowrap;
-}
-
-/* Animation cho select khi mở */
-@keyframes cyberGlow {
-  0% {
-    box-shadow: 0 0 0 rgba(0, 240, 255, 0);
-  }
-  50% {
-    box-shadow: 0 0 30px rgba(0, 240, 255, 0.8);
-  }
-  100% {
-    box-shadow: 0 0 0 rgba(0, 240, 255, 0);
-  }
-}
-
-.filterRoom select:focus {
-  animation: cyberGlow 0.6s ease;
-}
-
-/* ===== RESPONSIVE DESIGN NÂNG CAO ===== */
-@media (max-width: 768px) {
-  .filterRoom {
-    margin: 30px auto;
-  }
-  
-  .filterRoom select {
-    min-width: 280px;
-    max-width: 350px;
-    padding: 16px 50px 16px 20px;
-    font-size: 1.1rem;
-    background-size: 22px;
-    background-position: right 20px center;
-  }
-  
-  .filter-label {
-    font-size: 0.8rem;
-    top: -22px;
-    padding: 4px 12px;
-  }
-}
-
-@media (max-width: 576px) {
-  .filterRoom select {
-    width: 90%;
-    min-width: 250px;
-    max-width: 300px;
-    padding: 14px 45px 14px 16px;
-    font-size: 1rem;
-    background-size: 20px;
-    background-position: right 15px center;
-  }
-  
-  .filterRoom::before {
-    width: 110%;
-    height: 110%;
-  }
-}
-
-/* ===== DISABLED STATE - VẪN ĐẸP ===== */
-.filterRoom select:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  border-image: linear-gradient(135deg, 
-      rgba(122, 0, 255, 0.3), 
-      rgba(0, 240, 255, 0.2),
-      rgba(122, 0, 255, 0.3)) 1;
-  transform: none;
-  box-shadow: 0 4px 20px rgba(122, 0, 255, 0.2);
-}
-
-.filterRoom select:disabled:hover {
-  transform: none;
-  box-shadow: 0 4px 20px rgba(122, 0, 255, 0.2);
-}
-
-.filterRoom:hover::after {
-  opacity: 0.6;
-  animation: scanLine 2s linear infinite;
-}
-
-@keyframes scanLine {
-  0% {
-    top: 0;
-  }
-  50% {
-    top: 100%;
-  }
-  100% {
-    top: 100%;
-  }
-}
-
-/* ===== RESPONSIVE DESIGN ===== */
-@media (max-width: 768px) {
-  .filterRoom {
-    margin: 25px auto;
-  }
-  
-  .filterRoom select {
-    min-width: 250px;
-    padding: 14px 45px 14px 20px;
-    font-size: 1rem;
-    /* Mũi tên vẫn lớn trên mobile */
-    background-size: 18px;
-    background-position: right 16px center;
-  }
-}
-
-@media (max-width: 576px) {
-  .filterRoom select {
-    width: 90%;
-    min-width: 200px;
-    max-width: 300px;
-    padding: 12px 40px 12px 16px;
-    /* Mũi tên lớn trên mobile nhỏ */
-    background-size: 16px;
-    background-position: right 12px center;
-  }
-}
-
-/* ===== DISABLED STATE ===== */
-.filterRoom select:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  border-color: rgba(122, 0, 255, 0.3);
-}
-
-.filterRoom select:disabled:hover {
-  transform: none;
-  box-shadow: 0 4px 20px rgba(122, 0, 255, 0.2);
-}
-
-/* RESPONSIVE CHO DESIGN MỚI */
-@media (max-width: 768px) {
-    .banner-container {
-        margin-top: 60px;
-        padding: 30px 0;
-        border-radius: 16px;
-    }
-    
-    .banner-viewport {
-        width: calc(100% - 40px);
-        margin: 0 20px;
-        border-radius: 12px;
-    }
-    
-    .control-btn {
-        width: 50px;
-        height: 50px;
-        font-size: 20px;
-    }
-    
-    .prev-btn {
-        left: 15px;
-    }
-    
-    .next-btn {
-        right: 15px;
-    }
-    
-    .indicators {
-        bottom: 20px;
-        padding: 8px 16px;
-        gap: 8px;
-    }
-    
-    .indicator {
-        width: 20px;
-        height: 3px;
-    }
-    
-    .indicator.active {
-        width: 25px;
-    }
-    
-    .progress-bar {
-        bottom: 60px;
-        width: 80%;
-    }
-}
-
-@media (max-width: 576px) {
-    .banner-container {
-        margin-top: 40px;
-        padding: 20px 0;
-        border-radius: 12px;
-    }
-    
-    .banner-viewport {
-        width: calc(100% - 20px);
-        margin: 0 10px;
-        border-radius: 8px;
-    }
-    
-    .control-btn {
-        width: 40px;
-        height: 40px;
-        font-size: 16px;
-    }
-    
-    .prev-btn {
-        left: 5px;
-    }
-    
-    .next-btn {
-        right: 5px;
-    }
-    
-    .indicators {
-        bottom: 15px;
-        padding: 6px 12px;
-        gap: 6px;
-    }
-    
-    .indicator {
-        width: 15px;
-        height: 2px;
-    }
-    
-    .indicator.active {
-        width: 20px;
-    }
-    
-    .progress-bar {
-        bottom: 45px;
-        width: 85%;
-        height: 3px;
-    }
-}
-
-
-/* ===== BANNER RESPONSIVE - GIỮ NGUYÊN KÍCH THƯỚC ẢNH ===== */
-
-/* DESKTOP SIÊU RỘNG: 4 ẢNH CÙNG LÚC */
-@media (min-width: 2000px) {
-    .banner-container {
-        height: 800px; /* CONTAINER CAO HƠN ẢNH MỘT CHÚT */
-    }
-    
-    .banner-viewport {
-        height: 800px;
-    }
-    
-    .banner-track {
-        height: 780px;
-        gap: 25px;
-    }
-}
-
-/* DESKTOP LỚN: 3 ẢNH CÙNG LÚC */
-@media (max-width: 1999px) and (min-width: 1500px) {
-    .banner-container {
-        height: 800px;
-    }
-    
-    .banner-viewport {
-        height: 800px;
-    }
-    
-    .banner-track {
-        height: 780px;
-        gap: 20px;
-    }
-}
-
-/* DESKTOP: 2 ẢNH CÙNG LÚC */
-@media (max-width: 1499px) and (min-width: 1200px) {
-    .banner-container {
-        height: 800px;
-    }
-    
-    .banner-viewport {
-        height: 800px;
-    }
-    
-    .banner-track {
-        height: 780px;
-        gap: 20px;
-    }
-}
-
-/* TABLET LỚN: 2 ẢNH CÙNG LÚC */
-@media (max-width: 1199px) and (min-width: 992px) {
-    .banner-container {
-        height: 800px;
-        margin-top: 70px;
-    }
-    
-    .banner-viewport {
-        height: 800px;
-    }
-    
-    .banner-track {
-        height: 780px;
-        gap: 15px;
-    }
-    
-    .control-btn {
-        width: 50px;
-        height: 50px;
-        font-size: 20px;
-    }
-    
-    .prev-btn {
-        left: 20px;
-    }
-    
-    .next-btn {
-        right: 20px;
-    }
-}
-
-/* TABLET: 1 ẢNH - GIỮ NGUYÊN KÍCH THƯỚC */
-@media (max-width: 991px) and (min-width: 768px) {
-    .banner-container {
-        height: 800px;
-        margin-top: 60px;
-    }
-    
-    .banner-viewport {
-        height: 800px;
-    }
-    
-    .banner-track {
-        height: 780px;
-        gap: 15px;
-    }
-    
-    .banner-item {
-        width: 550px;
-        height: 780px;
-    }
-    
-    .banner-item img {
-        width: 550px;
-        height: 780px;
-    }
-    
-    .control-btn {
-        width: 45px;
-        height: 45px;
-        font-size: 18px;
-    }
-    
-    .prev-btn {
-        left: 15px;
-    }
-    
-    .next-btn {
-        right: 15px;
-    }
-}
-
-/* MOBILE LỚN: 1 ẢNH - GIỮ NGUYÊN KÍCH THƯỚC */
-@media (max-width: 767px) and (min-width: 576px) {
-    .banner-container {
-        height: 800px;
-        margin-top: 50px;
-    }
-    
-    .banner-viewport {
-        height: 800px;
-    }
-    
-    .banner-track {
-        height: 780px;
-        gap: 10px;
-    }
-    
-    .banner-item {
-        width: 550px;
-        height: 780px;
-    }
-    
-    .banner-item img {
-        width: 550px;
-        height: 780px;
-    }
-    
-    .control-btn {
-        width: 40px;
-        height: 40px;
-        font-size: 16px;
-    }
-    
-    .prev-btn {
-        left: 10px;
-    }
-    
-    .next-btn {
-        right: 10px;
-    }
-    
-    .indicators {
-        bottom: 20px;
-    }
-    
-    .progress-bar {
-        bottom: 35px;
-        width: 70%;
-    }
-}
-
-/* MOBILE: 1 ẢNH - GIỮ NGUYÊN KÍCH THƯỚC */
-@media (max-width: 575px) and (min-width: 401px) {
-    .banner-container {
-        height: 800px;
-        margin-top: 40px;
-    }
-    
-    .banner-viewport {
-        height: 800px;
-    }
-    
-    .banner-track {
-        height: 780px;
-        gap: 10px;
-    }
-    
-    .banner-item {
-        width: 550px;
-        height: 780px;
-    }
-    
-    .banner-item img {
-        width: 550px;
-        height: 780px;
-    }
-    
-    .control-btn {
-        width: 35px;
-        height: 35px;
-        font-size: 14px;
-    }
-    
-    .prev-btn {
-        left: 8px;
-    }
-    
-    .next-btn {
-        right: 8px;
-    }
-    
-    .indicators {
-        bottom: 15px;
-        gap: 6px;
-    }
-    
-    .indicator {
-        width: 20px;
-        height: 3px;
-    }
-    
-    .indicator.active {
-        width: 30px;
-    }
-    
-    .progress-bar {
-        bottom: 30px;
-        width: 65%;
-        height: 3px;
-    }
-}
-
-/* MOBILE RẤT NHỎ: 1 ẢNH - GIỮ NGUYÊN KÍCH THƯỚC */
-@media (max-width: 400px) {
-    .banner-container {
-        height: 800px;
-        margin-top: 30px;
-    }
-    
-    .banner-viewport {
-        height: 800px;
-    }
-    
-    .banner-track {
-        height: 780px;
-        gap: 8px;
-    }
-    
-    .banner-item {
-        width: 550px;
-        height: 780px;
-    }
-    
-    .banner-item img {
-        width: 550px;
-        height: 780px;
-    }
-    
-    .control-btn {
-        width: 30px;
-        height: 30px;
-        font-size: 12px;
-    }
-    
-    .prev-btn {
-        left: 5px;
-    }
-    
-    .next-btn {
-        right: 5px;
-    }
-    
-    .indicators {
-        bottom: 12px;
-        gap: 5px;
-    }
-    
-    .indicator {
-        width: 18px;
-        height: 2.5px;
-    }
-    
-    .indicator.active {
-        width: 25px;
-    }
-    
-    .progress-bar {
-        bottom: 25px;
-        width: 60%;
-        height: 2.5px;
-    }
-}
-
-/* RESPONSIVE CHO WRAPPER VÀ PRODUCTS */
-@media (max-width: 1200px) {
-    #wrapper {
-        width: 95%;
-    }
-    
-    .products {
-        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-        gap: 20px;
-        /* padding: 15px 0; */
-    }
-    
-    .sale_polular h1 {
-        font-size: 2rem;
-    }
-    
-    .ListContainer1 h1 {
-        font-size: 1.6rem;
-    }
-}
-
-@media (max-width: 576px) {
-    .products {
-        grid-template-columns: 1fr;
-        gap: 15px;
-    }
-    
-    .sale_polular h1 {
-        text-align: center;
-    }
-}
-
-.products-container {
-  width: 100%;
-  position: relative;
-}
-
-/* Grid products với 6 items */
-.products {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 25px;
-  padding: 20px 0;
-  background-color: transparent;
-  border: none;
-  min-height: 600px;
-}
-
-/* Pagination Controls */
-.pagination-controls {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 2rem;
-  padding: 1.5rem;
-  background: rgba(43, 0, 51, 0.6);
-  border-radius: 16px;
-  border: 1px solid rgba(122, 0, 255, 0.3);
-  backdrop-filter: blur(15px);
-}
-
-.pagination-btn {
-  background: linear-gradient(135deg, var(--cyber-purple), var(--cyber-pink));
-  border: 2px solid var(--cyber-cyan);
-  color: white;
-  padding: 0.8rem 1.5rem;
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.pagination-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--cyber-pink), var(--cyber-purple));
-  transform: translateY(-2px);
-  box-shadow: 0 6px 25px rgba(200, 0, 255, 0.5);
-}
-
-.pagination-btn:disabled {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.4);
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-.page-indicator {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 700;
-  color: var(--cyber-cyan);
-  font-size: 1.1rem;
-}
-
-.page-indicator span:first-child {
-  color: var(--cyber-yellow);
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-}
-
-.page-separator {
-  color: rgba(255, 255, 255, 0.5);
-}
-
-/* Loading state */
-.products.loading {
-  opacity: 0.6;
-  pointer-events: none;
-}
-
-/* Responsive Pagination */
-@media (max-width: 768px) {
-  .pagination-controls {
-    gap: 1rem;
-    padding: 1rem;
-    flex-direction: column;
-  }
-  
-  .pagination-btn {
-    padding: 0.7rem 1.2rem;
-    font-size: 0.8rem;
-  }
-  
-  .page-indicator {
-    order: -1;
-  }
-}
-
-/* Đảm bảo grid hiển thị tối đa 6 items */
-@media (min-width: 2000px) {
-  .products {
-    grid-template-columns: repeat(3, 1fr);
-    max-width: 1400px;
-    margin: 0 auto;
-  }
-}
-
-@media (min-width: 1500px) and (max-width: 1999px) {
-  .products {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (min-width: 1200px) and (max-width: 1499px) {
-  .products {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 1199px) and (min-width: 768px) {
-  .products {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 767px) {
-  .products {
-    grid-template-columns: 1fr;
-  }
-}
-
-
-/* LISTCONTAINER 2 */
-/* ===== LIST CONTAINER 2 - GIỮ NGUYÊN ===== */
+/* ===== LIST CONTAINERS ===== */
+.ListContainer1,
 .ListContainer2 {
     width: 100%;
-    height: auto;
     background: linear-gradient(135deg, 
-        rgba(43, 0, 51, 0.6) 0%,
-        rgba(122, 0, 255, 0.1) 100%);
-    margin: 30px 0;
-    padding: 25px;
-    border-radius: 16px;
-    border: 1px solid rgba(122, 0, 255, 0.2);
-    backdrop-filter: blur(15px);
+        rgba(43, 0, 51, 0.9) 0%,
+        rgba(122, 0, 255, 0.4) 50%,
+        rgba(0, 240, 255, 0.2) 100%);
+    margin: 20px 0;
+    padding: 35px 20px;
+    border-radius: 24px;
+    border: 2px solid rgba(122, 0, 255, 0.5);
+    backdrop-filter: blur(25px) saturate(200%);
     position: relative;
     overflow: hidden;
 }
 
-/* Hiệu ứng viền ánh sáng */
+.ListContainer1::before,
 .ListContainer2::before {
     content: '';
     position: absolute;
-    top: -1px;
-    left: -1px;
-    right: -1px;
-    bottom: -1px;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
     background: linear-gradient(135deg, 
-        rgba(122, 0, 255, 0.3),
-        rgba(0, 240, 255, 0.2),
-        rgba(122, 0, 255, 0.3)
-    );
-    border-radius: 17px;
+        rgba(122, 0, 255, 0.8),
+        rgba(0, 240, 255, 0.6),
+        rgba(255, 0, 200, 0.8));
+    border-radius: 27px;
     z-index: -1;
-    opacity: 0.5;
+    opacity: 0.6;
 }
 
-/* Tiêu đề container */
+/* ===== HEADER STYLES - GIỮ LẠI ===== */
+.ListContainer1 h1 {
+    text-align: center;
+    margin: 0 0 35px 0;
+    padding: 0 20px;
+    color: var(--cyber-yellow);
+    font-weight: 900;
+    font-size: clamp(1.6rem, 5vw, 2.8rem);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(6px, 1.5vw, 15px);
+    text-shadow: 
+        0 0 25px rgba(255, 215, 0, 0.8),
+        0 4px 12px rgba(0, 0, 0, 0.4);
+    flex-wrap: nowrap;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
 .ListContainer2 h1 {
     text-align: center;
-    margin: 0 0 25px 0;
-    padding: 0;
+    /* margin: 0 0 35px 0; */
+    /* padding: 0 20px; */
     color: var(--cyber-yellow);
-    font-weight: 700;
-    font-size: 2.8rem;
+    font-weight: 900;
+    font-size: clamp(1.4rem, 4.5vw, 2.5rem);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    text-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+    gap: clamp(4px, 1.2vw, 12px);
+    text-shadow: 
+        0 0 25px rgba(255, 215, 0, 0.8),
+        0 4px 12px rgba(0, 0, 0, 0.4);
+    flex-wrap: nowrap;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
-/* Subtitle */
 .ListContainer2 h3 {
     text-align: center;
-    margin: 0 0 30px 0;
-    padding: 0;
+    margin: 0 0 45px 0;
+    padding: 0 20px;
     color: var(--cyber-cyan);
-    font-weight: 600;
-    font-size: 1.4rem;
+    font-weight: 700;
+    font-size: clamp(1rem, 3vw, 1.4rem);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    text-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+    gap: clamp(3px, 1vw, 10px);
+    text-shadow: 0 0 20px rgba(0, 240, 255, 0.7);
+    flex-wrap: nowrap;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
-/* Icon trong tiêu đề */
-.ListContainer2 h1 i,
-.ListContainer2 h3 i {
+/* ===== FILTER ROOM - GIỮ NGUYÊN ===== */
+.filterRoom {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 40px auto;
+    width: 100%;
+    position: relative;
+}
+
+.filterRoom select {
+    background: linear-gradient(135deg, 
+        rgba(43, 0, 51, 0.95) 0%,
+        rgba(122, 0, 255, 0.3) 50%,
+        rgba(0, 240, 255, 0.15) 100%);
+    border: 2px solid;
+    border-image: linear-gradient(135deg, 
+        var(--cyber-purple), 
+        var(--cyber-cyan),
+        var(--cyber-pink)) 1;
+    border-radius: 16px;
     color: var(--cyber-cyan);
-    font-size: 1.5rem;
-    animation: iconPulse 2s ease-in-out infinite;
+    padding: 18px 60px 18px 30px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(20px);
+    appearance: none;
+    min-width: 320px;
+    max-width: 450px;
+    text-align: center;
+    text-transform: uppercase;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' fill='%2300F0FF' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 25px center;
+    background-size: 24px;
 }
 
-@keyframes iconPulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
+.filterRoom select:hover {
+    transform: translateY(-2px);
 }
 
-/* ===== FOOD BANNER CONTAINER - RESPONSIVE CHI TIẾT ===== */
+/* ===== PRODUCTS GRID - TỐI ƯU ===== */
+.products-container {
+    width: 100%;
+    position: relative;
+    overflow: visible !important;
+}
+
+.products {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 25px;
+    padding: 20px 0;
+    min-height: 600px;
+}
+
+/* Pagination */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    padding: 1.5rem;
+    background: rgba(43, 0, 51, 0.6);
+    border-radius: 16px;
+    border: 1px solid rgba(122, 0, 255, 0.3);
+    backdrop-filter: blur(15px);
+    margin-top: 30px;
+}
+
+.pagination-btn {
+    background: linear-gradient(135deg, var(--cyber-purple), var(--cyber-pink));
+    border: 2px solid var(--cyber-cyan);
+    color: white;
+    padding: 0.8rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+}
+
+/* ===== FOOD BANNER - TỐI ƯU HIỆU SUẤT ===== */
 .food-banner-container {
     position: relative;
     width: 100%;
     overflow: hidden;
-    background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 40px 0;
-    padding: 0;
-    position: relative;
+    margin: 50px 0 40px 0;
+    padding: 0 20px;
 }
 
-/* Food Banner Viewport - RESPONSIVE CHI TIẾT */
 .food-banner-viewport {
+    width: 100%;
+    max-width: calc(100% - 100px);
     overflow: hidden;
-    position: relative;
-    
-    /* Glass morphism nâng cao */
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 20px;
-    
-    /* Shadow đẹp hơn */
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-radius: 25px;
+    backdrop-filter: blur(30px) saturate(200%);
     box-shadow: 
-        0 8px 32px rgba(0, 0, 0, 0.12),
-        0 2px 8px rgba(0, 0, 0, 0.08),
-        inset 0 1px 0 rgba(255, 255, 255, 0.15),
-        inset 0 -1px 0 rgba(255, 255, 255, 0.08);
-    
-    backdrop-filter: blur(20px) saturate(180%);
-    z-index: 2;
-    position: relative;
-    
-    /* KÍCH THƯỚC MẶC ĐỊNH CHO DESKTOP LỚN */
-    width: calc(100% - 100px);
-    height: 500px;
-    margin: 0px 30px;
+        0 12px 50px rgba(0, 0, 0, 0.25),
+        0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
-/* FOOD BANNER TRACK */
 .food-banner-track {
     display: flex;
-    transition: transform 0.8s ease-in-out;
+    transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Giảm thời gian */
     align-items: center;
-    height: 500px;
-    width: auto;
+    height: 520px;
+    gap: 40px;
+    padding: 0 40px;
+    transform: translateZ(0); /* Hardware acceleration */
 }
 
-/* FOOD BANNER ITEM - KÍCH THƯỚC DESKTOP LỚN */
 .food-banner-item {
-    position: relative;
-    flex-shrink: 0 !important;
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 0;
-    margin: 0;
-    width: 380px;
-    height: 450px;
+    width: 340px;
+    height: 460px;
     cursor: pointer;
-    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transition: all 0.4s ease; /* Giảm thời gian */
 }
 
-/* Food Circle - DESKTOP LỚN */
 .food-circle {
-    width: 280px;
-    height: 280px;
+    width: 260px;
+    height: 260px;
     border-radius: 50%;
     position: relative;
     overflow: hidden;
-    margin-bottom: 30px;
-    
-    /* Hiệu ứng glass morphism nâng cao */
-    background: rgba(255, 255, 255, 0.08);
-    border: 3px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 
-        0 12px 40px rgba(0, 0, 0, 0.25),
-        inset 0 2px 0 rgba(255, 255, 255, 0.2),
-        inset 0 -2px 0 rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(15px);
-    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    background: rgba(255, 255, 255, 0.12);
+    border: 4px solid rgba(255, 255, 255, 0.35);
+    backdrop-filter: blur(20px);
+    transition: all 0.4s ease;
 }
 
-/* Food Name - DESKTOP LỚN */
+.food-image {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    border-radius: 50%;
+    transition: all 0.4s ease;
+}
+
 .food-name {
+    width: 250px;
+    height: 80px;
+    font-weight: 900;
     font-size: 1.5rem;
-    font-weight: 800;
     color: var(--cyber-yellow);
     text-align: center;
-    padding: 16px 30px;
     background: linear-gradient(135deg, 
-        rgba(122, 0, 255, 0.4) 0%, 
-        rgba(0, 240, 255, 0.4) 100%);
-    border-radius: 35px;
-    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    backdrop-filter: blur(15px);
-    border: 2px solid rgba(122, 0, 255, 0.5);
-    text-shadow: 0 3px 12px rgba(0, 0, 0, 0.7);
-    max-width: 320px;
+        rgba(122, 0, 255, 0.6) 0%, 
+        rgba(0, 240, 255, 0.6) 100%);
+    border-radius: 25px;
+    backdrop-filter: blur(20px);
+    border: 3px solid rgba(122, 0, 255, 0.7);
+    transition: all 0.4s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 30px;
+    padding: 15px;
     line-height: 1.3;
-    
-    box-shadow: 
-        0 6px 25px rgba(0, 0, 0, 0.15),
-        0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* ===== DESKTOP SIÊU RỘNG (1920px+) ===== */
-@media (min-width: 1920px) {
+/* Food Banner Controls */
+.food-control-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 80px;
+    height: 80px;
+    font-size: 32px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(25px);
+    border: 3px solid rgba(255, 255, 255, 0.4);
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.food-control-btn:hover {
+    transform: translateY(-50%) scale(1.1);
+}
+
+.food-prev-btn { 
+    left: 10px; 
+}
+
+.food-next-btn { 
+    right: 10px; 
+}
+
+/* ===== SCROLL FIXES - QUAN TRỌNG ===== */
+.products-section {
+    scroll-margin-top: 220px; /* Offset cho scroll */
+}
+
+.cyberpunk-card {
+    transform: translateZ(0); /* Hardware acceleration */
+    will-change: transform;
+    scroll-margin-top: 220px;
+}
+
+/* ===== RESPONSIVE DESIGN - GIỮ LẠI ===== */
+
+/* Tablet */
+@media (max-width: 1024px) {
+    #wrapper {
+        padding: 0px 30px;
+    }
+    
+    .banner-viewport {
+        max-width: calc(100% - 60px);
+    }
+    
+    .control-btn {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+    }
+    
+    .prev-btn { left: 10px; }
+    .next-btn { right: 10px; }
+    
     .food-banner-viewport {
-        width: calc(100% - 200px);
-        height: 550px;
-        margin: 0px 100px;
-    }
-    
-    .food-banner-track {
-        height: 550px;
-    }
-    
-    .food-banner-item {
-        width: 420px;
-        height: 500px;
-    }
-    
-    .food-circle {
-        width: 320px;
-        height: 320px;
-        margin-bottom: 35px;
-    }
-    
-    .food-name {
-        font-size: 1.6rem;
-        padding: 18px 35px;
-        max-width: 360px;
+        max-width: calc(100% - 80px);
     }
     
     .food-control-btn {
-        width: 80px;
-        height: 80px;
-        font-size: 32px;
-    }
-    
-    .food-prev-btn {
-        left: 80px;
-    }
-    
-    .food-next-btn {
-        right: 80px;
+        width: 70px;
+        height: 70px;
+        font-size: 28px;
     }
 }
 
-/* ===== DESKTOP LỚN (1440px - 1919px) ===== */
-@media (min-width: 1440px) and (max-width: 1919px) {
+/* Mobile */
+@media (max-width: 768px) {
+    #wrapper {
+        width: 100%;
+        padding: 20px;
+    }
+    
+    .banner-container {
+        margin: 60px 0 30px 0;
+        padding: 0 15px;
+    }
+    
+    .banner-viewport {
+        max-width: calc(100% - 40px);
+    }
+    
+    .control-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+    }
+    
+    .prev-btn { left: 5px; }
+    .next-btn { right: 5px; }
+    
+    .ListContainer1,
+    .ListContainer2 {
+        margin: 30px 0;
+        padding: 25px 15px;
+    }
+    
+    .products {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+    
+    .filterRoom select {
+        min-width: 280px;
+        padding: 16px 50px 16px 20px;
+        font-size: 1.1rem;
+    }
+    
+    .food-banner-container {
+        padding: 0 15px;
+    }
+    
     .food-banner-viewport {
-        width: calc(100% - 120px);
-        height: 520px;
-        margin: 0px 40px;
-    }
-    
-    .food-banner-track {
-        height: 520px;
-    }
-    
-    .food-banner-item {
-        width: 400px;
-        height: 480px;
-    }
-    
-    .food-circle {
-        width: 300px;
-        height: 300px;
-        margin-bottom: 32px;
-    }
-    
-    .food-name {
-        font-size: 1.55rem;
-        padding: 17px 32px;
-        max-width: 340px;
-    }
-    
-    .food-control-btn {
-        width: 75px;
-        height: 75px;
-        font-size: 30px;
-    }
-    
-    .food-prev-btn {
-        left: 60px;
-    }
-    
-    .food-next-btn {
-        right: 60px;
-    }
-}
-
-/* ===== DESKTOP TIÊU CHUẨN (1200px - 1439px) ===== */
-@media (min-width: 1200px) and (max-width: 1439px) {
-    .food-banner-viewport {
-        width: calc(100% - 80px);
-        height: 480px;
-        margin: 0px 30px;
-    }
-    
-    .food-banner-track {
-        height: 480px;
-    }
-    
-    .food-banner-item {
-        width: 360px;
-        height: 440px;
-    }
-    
-    .food-circle {
-        width: 260px;
-        height: 260px;
-        margin-bottom: 28px;
-    }
-    
-    .food-name {
-        font-size: 1.4rem;
-        padding: 14px 28px;
-        max-width: 300px;
-    }
-    
-    .food-control-btn {
-        width: 65px;
-        height: 65px;
-        font-size: 26px;
-    }
-    
-    .food-prev-btn {
-        left: 40px;
-    }
-    
-    .food-next-btn {
-        right: 40px;
-    }
-}
-
-/* ===== DESKTOP NHỎ (1024px - 1199px) ===== */
-@media (min-width: 1024px) and (max-width: 1199px) {
-    .food-banner-viewport {
-        width: calc(100% - 60px);
-        height: 450px;
-        margin: 0px 25px;
-    }
-    
-    .food-banner-track {
-        height: 450px;
-    }
-    
-    .food-banner-item {
-        width: 320px;
-        height: 420px;
-    }
-    
-    .food-circle {
-        width: 240px;
-        height: 240px;
-        margin-bottom: 25px;
-    }
-    
-    .food-name {
-        font-size: 1.3rem;
-        padding: 12px 25px;
-        max-width: 280px;
+        max-width: calc(100% - 60px);
     }
     
     .food-control-btn {
@@ -1671,120 +569,64 @@
         font-size: 24px;
     }
     
-    .food-prev-btn {
-        left: 30px;
-    }
+    .food-prev-btn { left: 0; }
+    .food-next-btn { right: 0; }
     
-    .food-next-btn {
-        right: 30px;
+    .pagination-controls {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
     }
 }
 
-/* ===== TABLET LANDSCAPE (768px - 1023px) ===== */
-@media (min-width: 768px) and (max-width: 1023px) {
+/* Small Mobile */
+@media (max-width: 480px) {
+    #wrapper {
+        padding: 0px 15px;
+    }
+    
+    .banner-container {
+        padding: 0 10px;
+        margin: 50px 0 20px 0;
+    }
+    
+    .banner-viewport {
+        max-width: calc(100% - 20px);
+    }
+    
+    .control-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+    
+    .prev-btn { left: 0; }
+    .next-btn { right: 0; }
+    
+    .ListContainer1,
+    .ListContainer2 {
+        margin: 20px 0;
+        padding: 20px 10px;
+    }
+    
+    .products {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .filterRoom select {
+        width: 100%;
+        min-width: 250px;
+        padding: 14px 45px 14px 16px;
+        font-size: 1rem;
+    }
+    
     .food-banner-container {
-        margin: 35px 0;
+        padding: 0 10px;
     }
     
     .food-banner-viewport {
-        width: calc(100% - 40px);
-        height: 420px;
-        margin: 0px 15px;
-        border-radius: 18px;
-    }
-    
-    .food-banner-track {
-        height: 420px;
-    }
-    
-    .food-banner-item {
-        width: 300px;
-        height: 380px;
-    }
-    
-    .food-circle {
-        width: 220px;
-        height: 220px;
-        margin-bottom: 22px;
-        border: 2px solid rgba(255, 255, 255, 0.15);
-    }
-    
-    .food-name {
-        font-size: 1.25rem;
-        padding: 11px 22px;
-        max-width: 260px;
-        border-radius: 30px;
-    }
-    
-    .food-control-btn {
-        width: 55px;
-        height: 55px;
-        font-size: 22px;
-    }
-    
-    .food-prev-btn {
-        left: 15px;
-    }
-    
-    .food-next-btn {
-        right: 15px;
-    }
-    
-    .food-indicators {
-        bottom: 10px;
-        padding: 12px 20px;
-        gap: 10px;
-    }
-    
-    .food-indicator {
-        width: 25px;
-        height: 2px;
-    }
-    
-    .food-indicator.active {
-        width: 35px;
-    }
-    
-    .food-progress-bar {
-        bottom: 55px;
-        width: 85%;
-        height: 5px;
-    }
-}
-
-/* ===== TABLET PORTRAIT (600px - 767px) ===== */
-@media (min-width: 600px) and (max-width: 767px) {
-    .food-banner-container {
-        margin: 30px 0;
-    }
-    
-    .food-banner-viewport {
-        width: calc(100% - 30px);
-        height: 380px;
-        margin: 0px 10px;
-        border-radius: 16px;
-    }
-    
-    .food-banner-track {
-        height: 380px;
-    }
-    
-    .food-banner-item {
-        width: 280px;
-        height: 350px;
-    }
-    
-    .food-circle {
-        width: 200px;
-        height: 200px;
-        margin-bottom: 20px;
-    }
-    
-    .food-name {
-        font-size: 1.2rem;
-        padding: 10px 20px;
-        max-width: 240px;
-        border-radius: 28px;
+        max-width: calc(100% - 20px);
     }
     
     .food-control-btn {
@@ -1792,516 +634,521 @@
         height: 50px;
         font-size: 20px;
     }
-    
-    .food-prev-btn {
-        left: 8px;
-    }
-    
-    .food-next-btn {
-        right: 8px;
-    }
-    
-    .food-indicators {
-        bottom: 18px;
-        padding: 10px 18px;
-        gap: 8px;
-    }
-    
-    .food-indicator {
-        width: 22px;
-        height: 3px;
-    }
-    
-    .food-indicator.active {
-        width: 30px;
-    }
-    
-    .food-progress-bar {
-        bottom: 45px;
-        width: 80%;
-        height: 4px;
+}
+
+/* ===== REDUCE MOTION FOR ACCESSIBILITY ===== */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }
 
-/* ===== MOBILE LỚN (480px - 599px) ===== */
-@media (min-width: 480px) and (max-width: 599px) {
-    .food-banner-container {
-        margin: 25px 0;
-    }
-    
-    .food-banner-viewport {
-        width: calc(100% - 20px);
-        height: 350px;
-        margin: 0px 8px;
-        border-radius: 14px;
-    }
-    
+/* ===== FIX TOUCHPAD SCROLL - QUAN TRỌNG ===== */
+@media (hover: hover) and (pointer: fine) {
+    /* Tắt các hiệu ứng nặng trên touchpad */
+    .banner-track,
     .food-banner-track {
-        height: 350px;
+        transition-duration: 0.4s;
     }
     
-    .food-banner-item {
-        width: 260px;
-        height: 320px;
-    }
-    
-    .food-circle {
-        width: 180px;
-        height: 180px;
-        margin-bottom: 18px;
-        border: 1.5px solid rgba(255, 255, 255, 0.15);
-    }
-    
-    .food-name {
-        font-size: 1.1rem;
-        padding: 9px 18px;
-        max-width: 220px;
-        border-radius: 25px;
-    }
-    
-    .food-control-btn {
-        width: 45px;
-        height: 45px;
-        font-size: 18px;
-    }
-    
-    .food-prev-btn {
-        left: 5px;
-    }
-    
-    .food-next-btn {
-        right: 5px;
-    }
-    
-    .food-indicators {
-        bottom: 15px;
-        padding: 8px 16px;
-        gap: 6px;
-    }
-    
-    .food-indicator {
-        width: 20px;
-        height: 3px;
-    }
-    
-    .food-indicator.active {
-        width: 25px;
-    }
-    
-    .food-progress-bar {
-        bottom: 40px;
-        width: 75%;
-        height: 3px;
+    .cyberpunk-card {
+        transition-duration: 0.2s;
     }
 }
 
-/* ===== MOBILE TRUNG BÌNH (375px - 479px) ===== */
-@media (min-width: 375px) and (max-width: 479px) {
-    .food-banner-container {
-        margin: 20px 0;
-    }
-    
-    .food-banner-viewport {
-        width: calc(100% - 16px);
-        height: 320px;
-        margin: 0px 6px;
-        border-radius: 12px;
-    }
-    
-    .food-banner-track {
-        height: 320px;
-    }
-    
-    .food-banner-item {
-        width: 240px;
-        height: 300px;
-    }
-    
-    .food-circle {
-        width: 160px;
-        height: 160px;
-        margin-bottom: 16px;
-    }
-    
-    .food-name {
-        font-size: 1rem;
-        padding: 8px 16px;
-        max-width: 200px;
-        border-radius: 22px;
-    }
-    
-    .food-control-btn {
-        width: 40px;
-        height: 40px;
-        font-size: 16px;
-    }
-    
-    .food-prev-btn {
-        left: 3px;
-    }
-    
-    .food-next-btn {
-        right: 3px;
-    }
-    
-    .food-indicators {
-        bottom: 12px;
-        padding: 6px 14px;
-        gap: 5px;
-    }
-    
-    .food-indicator {
-        width: 18px;
-        height: 2.5px;
-    }
-    
-    .food-indicator.active {
-        width: 22px;
-    }
-    
-    .food-progress-bar {
-        bottom: 35px;
-        width: 70%;
-        height: 2.5px;
-    }
-}
-
-/* ===== MOBILE NHỎ (320px - 374px) ===== */
-@media (min-width: 320px) and (max-width: 374px) {
-    .food-banner-container {
-        margin: 15px 0;
-    }
-    
-    .food-banner-viewport {
-        width: calc(100% - 12px);
-        height: 300px;
-        margin: 0px 4px;
-        border-radius: 10px;
-    }
-    
-    .food-banner-track {
-        height: 300px;
-    }
-    
-    .food-banner-item {
-        width: 220px;
-        height: 280px;
-    }
-    
-    .food-circle {
-        width: 140px;
-        height: 140px;
-        margin-bottom: 14px;
-    }
-    
-    .food-name {
-        font-size: 0.9rem;
-        padding: 7px 14px;
-        max-width: 180px;
-        border-radius: 20px;
-    }
-    
-    .food-control-btn {
-        width: 35px;
-        height: 35px;
-        font-size: 14px;
-    }
-    
-    .food-prev-btn {
-        left: 2px;
-    }
-    
-    .food-next-btn {
-        right: 2px;
-    }
-    
-    .food-indicators {
-        bottom: 10px;
-        padding: 5px 12px;
-        gap: 4px;
-    }
-    
-    .food-indicator {
-        width: 16px;
-        height: 2px;
-    }
-    
-    .food-indicator.active {
-        width: 20px;
-    }
-    
-    .food-progress-bar {
-        bottom: 30px;
-        width: 65%;
-        height: 2px;
-    }
-}
-
-/* ===== MOBILE RẤT NHỎ (dưới 320px) ===== */
-@media (max-width: 319px) {
-    .food-banner-container {
-        margin: 10px 0;
-    }
-    
-    .food-banner-viewport {
-        width: calc(100% - 8px);
-        height: 280px;
-        margin: 0px 2px;
-        border-radius: 8px;
-    }
-    
-    .food-banner-track {
-        height: 280px;
-    }
-    
-    .food-banner-item {
-        width: 200px;
-        height: 260px;
-    }
-    
-    .food-circle {
-        width: 120px;
-        height: 120px;
-        margin-bottom: 12px;
-    }
-    
-    .food-name {
-        font-size: 0.85rem;
-        padding: 6px 12px;
-        max-width: 160px;
-        border-radius: 18px;
-    }
-    
-    .food-control-btn {
-        width: 30px;
-        height: 30px;
-        font-size: 12px;
-        display: none; /* Ẩn nút trên mobile rất nhỏ */
-    }
-    
-    .food-indicators {
-        bottom: 8px;
-        padding: 4px 10px;
-        gap: 3px;
-    }
-    
-    .food-indicator {
-        width: 14px;
-        height: 2px;
-    }
-    
-    .food-indicator.active {
-        width: 18px;
-    }
-    
-    .food-progress-bar {
-        bottom: 25px;
-        width: 60%;
-        height: 2px;
-    }
-}
-
-/* NÚT ĐIỀU KHIỂN FOOD - GIỮ NGUYÊN */
-.food-control-btn {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    
+/* ===== PAGE INDICATOR STYLES ===== */
+.page-indicator {
     display: flex;
     align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    color: var(--cyber-cyan);
+    font-size: 1.1rem;
+    padding: 0.5rem 1rem;
+    background: rgba(43, 0, 51, 0.8);
+    border-radius: 12px;
+    border: 1px solid rgba(122, 0, 255, 0.3);
+    backdrop-filter: blur(10px);
+    min-width: 120px;
     justify-content: center;
-    z-index: 10;
+}
+
+.page-indicator span:first-child {
+    color: var(--cyber-yellow);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    font-size: 1.2rem;
+}
+
+.page-separator {
+    color: rgba(255, 255, 255, 0.5);
+    margin: 0 0.2rem;
+}
+
+.page-indicator span:last-child {
+    color: var(--cyber-cyan);
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+}
+
+/* Animation cho page indicator */
+.page-indicator {
+    animation: pageIndicatorPulse 3s ease-in-out infinite;
+}
+
+@keyframes pageIndicatorPulse {
+    0%, 100% {
+        box-shadow: 0 0 0 rgba(122, 0, 255, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 15px rgba(122, 0, 255, 0.6);
+    }
+}
+
+/* Hover effect */
+.page-indicator:hover {
+    background: rgba(43, 0, 51, 0.9);
+    transform: scale(1.05);
+    transition: all 0.3s ease;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .page-indicator {
+        font-size: 1rem;
+        min-width: 100px;
+        padding: 0.4rem 0.8rem;
+    }
     
-    backdrop-filter: blur(25px) saturate(200%);
-    border: 2px solid rgba(255, 255, 255, 0.4);
+    .page-indicator span:first-child {
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-indicator {
+        font-size: 0.9rem;
+        min-width: 90px;
+        padding: 0.3rem 0.6rem;
+        order: -1; /* Đưa indicator lên trên cùng trên mobile */
+    }
     
-    box-shadow: 
-        0 12px 40px rgba(0, 0, 0, 0.3),
-        0 4px 15px rgba(0, 0, 0, 0.2);
+    .page-indicator span:first-child {
+        font-size: 1rem;
+    }
 }
 
-.food-control-btn:hover {
-    background: rgba(0, 0, 0, 0.95);
-    transform: translateY(-50%) scale(1.2);
-    border-color: rgba(255, 255, 255, 0.8);
-    box-shadow: 
-        0 16px 50px rgba(0, 0, 0, 0.4),
-        0 6px 20px rgba(0, 0, 0, 0.25);
-}
+/* ===== ENHANCED ICON ANIMATIONS ===== */
 
-.food-prev-btn {
-    left: 50px;
-}
-
-.food-next-btn {
-    right: 50px;
-}
-
-/* LINE INDICATORS FOOD */
-.food-indicators {
-    position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 15px;
-    z-index: 10;
-    
-    background: rgba(0, 0, 0, 0.4);
-    padding: 5px 15px;
-    border-radius: 30px;
-    backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.food-indicator {
-    width: 30px;
-    height: 5px;
-    border-radius: 5px;
-    background: rgba(255, 255, 255, 0.4);
-    cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    box-shadow: 0 0 0 rgba(255, 255, 255, 0);
-}
-
-.food-indicator.active {
-    background: linear-gradient(90deg, #ff6b6b, #ffa726);
-    width: 45px;
-    box-shadow: 0 0 15px rgba(255, 107, 107, 0.6);
-    transform: scale(1.15);
-}
-
-.food-indicator:hover {
-    background: rgba(255, 255, 255, 0.8);
-    transform: scale(1.1);
-}
-
-/* PROGRESS BAR FOOD */
-.food-progress-bar {
-    position: absolute;
-    bottom: 0px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 90%;
-    height: 6px;
-    background: rgba(255, 255, 255, 0.2);
-    z-index: 9;
-    border-radius: 12px;
-    overflow: hidden;
-    
-    backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.food-progress {
-    height: 100%;
-    background: linear-gradient(90deg, 
-        #ff6b6b, 
-        #ffa726, 
-        #66bb6a, 
-        #42a5f5, 
-        #ab47bc
-    );
-    width: 0%;
-    transition: width 0.1s linear;
-    border-radius: 12px;
+/* ListContainer1 Icons - Hiệu ứng nâng cao */
+.ListContainer1 h1 .fa-microphone,
+.ListContainer1 h1 .fa-music {
+    color: var(--cyber-cyan);
+    font-size: clamp(1.2rem, 3.5vw, 1.6rem);
+    text-shadow: 0 0 15px rgba(0, 240, 255, 0.9);
+    flex-shrink: 0;
+    min-width: auto;
+    animation: microphonePulse 4s ease-in-out infinite;
     position: relative;
-    box-shadow: 0 0 25px rgba(66, 165, 245, 0.8);
 }
 
-.food-progress::after {
+@keyframes microphonePulse {
+    0%, 100% {
+        transform: scale(1) rotate(0deg);
+        text-shadow: 0 0 15px rgba(0, 240, 255, 0.9);
+    }
+    25% {
+        transform: scale(1.2) rotate(5deg);
+        text-shadow: 0 0 25px rgba(0, 240, 255, 1);
+    }
+    50% {
+        transform: scale(1.1) rotate(-3deg);
+        text-shadow: 0 0 30px rgba(0, 240, 255, 1.2);
+    }
+    75% {
+        transform: scale(1.15) rotate(2deg);
+        text-shadow: 0 0 20px rgba(0, 240, 255, 1);
+    }
+}
+
+.ListContainer1 h1 .fa-music {
+    animation: musicWave 3s ease-in-out infinite;
+}
+
+@keyframes musicWave {
+    0%, 100% {
+        transform: scale(1) rotate(0deg);
+        text-shadow: 0 0 15px rgba(0, 240, 255, 0.9);
+    }
+    33% {
+        transform: scale(1.15) rotate(8deg);
+        text-shadow: 0 0 30px rgba(122, 0, 255, 1);
+    }
+    66% {
+        transform: scale(1.1) rotate(-6deg);
+        text-shadow: 0 0 25px rgba(255, 0, 200, 1);
+    }
+}
+
+/* Sparkle Icons - Hiệu ứng lấp lánh */
+.ListContainer1 h1 .sparkle-left,
+.ListContainer1 h1 .sparkle-right {
+    color: var(--cyber-yellow);
+    font-size: clamp(1rem, 2.5vw, 1.4rem);
+    text-shadow: 
+        0 0 20px rgba(255, 215, 0, 0.8),
+        0 0 40px rgba(255, 215, 0, 0.6);
+    flex-shrink: 0;
+    min-width: auto;
+    animation: sparkleMagic 2.5s ease-in-out infinite;
+    position: relative;
+}
+
+@keyframes sparkleMagic {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+        text-shadow: 
+            0 0 20px rgba(255, 215, 0, 0.8),
+            0 0 40px rgba(255, 215, 0, 0.6);
+    }
+    25% {
+        opacity: 0.8;
+        transform: scale(1.3) rotate(90deg);
+        text-shadow: 
+            0 0 30px rgba(255, 215, 0, 1),
+            0 0 60px rgba(255, 215, 0, 0.8);
+    }
+    50% {
+        opacity: 0.6;
+        transform: scale(1.1) rotate(180deg);
+        text-shadow: 
+            0 0 25px rgba(255, 107, 107, 0.9),
+            0 0 50px rgba(255, 107, 107, 0.7);
+    }
+    75% {
+        opacity: 0.9;
+        transform: scale(1.2) rotate(270deg);
+        text-shadow: 
+            0 0 35px rgba(255, 215, 0, 1),
+            0 0 70px rgba(255, 215, 0, 0.9);
+    }
+}
+
+/* ListContainer2 Icons - Hiệu ứng gem nâng cao */
+.ListContainer2 h1 .gem-left,
+.ListContainer2 h1 .gem-right {
+    color: var(--cyber-cyan);
+    font-size: clamp(1rem, 3vw, 1.4rem);
+    text-shadow: 
+        0 0 25px rgba(0, 240, 255, 0.9),
+        0 0 50px rgba(0, 240, 255, 0.6);
+    flex-shrink: 0;
+    min-width: auto;
+    animation: gemSparkle 4s linear infinite;
+    position: relative;
+}
+
+@keyframes gemSparkle {
+    0% {
+        transform: rotate(0deg) scale(1);
+        text-shadow: 
+            0 0 25px rgba(0, 240, 255, 0.9),
+            0 0 50px rgba(0, 240, 255, 0.6);
+    }
+    25% {
+        transform: rotate(90deg) scale(1.2);
+        text-shadow: 
+            0 0 35px rgba(122, 0, 255, 1),
+            0 0 70px rgba(122, 0, 255, 0.8);
+    }
+    50% {
+        transform: rotate(180deg) scale(1.1);
+        text-shadow: 
+            0 0 30px rgba(255, 0, 200, 1),
+            0 0 60px rgba(255, 0, 200, 0.7);
+    }
+    75% {
+        transform: rotate(270deg) scale(1.3);
+        text-shadow: 
+            0 0 40px rgba(0, 240, 255, 1.2),
+            0 0 80px rgba(0, 240, 255, 1);
+    }
+    100% {
+        transform: rotate(360deg) scale(1);
+        text-shadow: 
+            0 0 25px rgba(0, 240, 255, 0.9),
+            0 0 50px rgba(0, 240, 255, 0.6);
+    }
+}
+
+/* Utensils Icon - Hiệu ứng nấu ăn */
+.ListContainer2 h1 .fa-utensils {
+    color: var(--cyber-yellow);
+    font-size: clamp(1rem, 3vw, 1.4rem);
+    text-shadow: 
+        0 0 20px rgba(255, 215, 0, 0.8),
+        0 0 40px rgba(255, 215, 0, 0.4);
+    flex-shrink: 0;
+    min-width: auto;
+    animation: cookingAnimation 3s ease-in-out infinite;
+}
+
+@keyframes cookingAnimation {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg) scale(1);
+        text-shadow: 
+            0 0 20px rgba(255, 215, 0, 0.8),
+            0 0 40px rgba(255, 215, 0, 0.4);
+    }
+    25% {
+        transform: translateY(-8px) rotate(15deg) scale(1.1);
+        text-shadow: 
+            0 0 30px rgba(255, 107, 107, 0.9),
+            0 0 50px rgba(255, 107, 107, 0.6);
+    }
+    50% {
+        transform: translateY(4px) rotate(-10deg) scale(1.05);
+        text-shadow: 
+            0 0 25px rgba(255, 215, 0, 1),
+            0 0 45px rgba(255, 215, 0, 0.8);
+    }
+    75% {
+        transform: translateY(-5px) rotate(8deg) scale(1.15);
+        text-shadow: 
+            0 0 35px rgba(122, 0, 255, 0.9),
+            0 0 55px rgba(122, 0, 255, 0.7);
+    }
+}
+
+/* Flame Icon - Hiệu ứng lửa cháy */
+.ListContainer2 h1 .flame-icon {
+    color: #ff6b6b;
+    font-size: clamp(1rem, 3vw, 1.4rem);
+    animation: fireDance 1.5s ease-in-out infinite;
+    position: relative;
+}
+
+@keyframes fireDance {
+    0%, 100% {
+        transform: scale(1) translateY(0);
+        text-shadow: 
+            0 0 20px rgba(255, 107, 107, 0.9),
+            0 0 40px rgba(255, 107, 107, 0.6);
+        opacity: 1;
+    }
+    25% {
+        transform: scale(1.2) translateY(-2px);
+        text-shadow: 
+            0 0 25px rgba(255, 107, 107, 1),
+            0 0 50px rgba(255, 107, 107, 0.8),
+            0 0 70px rgba(255, 215, 0, 0.6);
+        opacity: 0.9;
+    }
+    50% {
+        transform: scale(1.1) translateY(1px);
+        text-shadow: 
+            0 0 30px rgba(255, 107, 107, 1.1),
+            0 0 60px rgba(255, 107, 107, 0.9);
+        opacity: 0.8;
+    }
+    75% {
+        transform: scale(1.3) translateY(-1px);
+        text-shadow: 
+            0 0 35px rgba(255, 107, 107, 1.2),
+            0 0 65px rgba(255, 107, 107, 1);
+        opacity: 0.95;
+    }
+}
+
+/* Rocket Icons - Hiệu ứng bay */
+.ListContainer2 h3 .rocket-left,
+.ListContainer2 h3 .rocket-right {
+    color: var(--cyber-pink);
+    font-size: clamp(0.8rem, 2vw, 1.1rem);
+    animation: rocketLaunch 5s ease-in-out infinite;
+    position: relative;
+}
+
+@keyframes rocketLaunch {
+    0%, 100% {
+        transform: translateX(0) translateY(0) scale(1);
+        text-shadow: 
+            0 0 15px rgba(255, 0, 200, 0.8),
+            0 0 30px rgba(255, 0, 200, 0.4);
+    }
+    25% {
+        transform: translateX(-6px) translateY(-4px) scale(1.1);
+        text-shadow: 
+            0 0 20px rgba(255, 0, 200, 1),
+            0 0 40px rgba(255, 0, 200, 0.6);
+    }
+    50% {
+        transform: translateX(8px) translateY(2px) scale(1.05);
+        text-shadow: 
+            0 0 25px rgba(122, 0, 255, 0.9),
+            0 0 45px rgba(122, 0, 255, 0.5);
+    }
+    75% {
+        transform: translateX(-4px) translateY(3px) scale(1.15);
+        text-shadow: 
+            0 0 30px rgba(255, 0, 200, 1.1),
+            0 0 50px rgba(255, 0, 200, 0.7);
+    }
+}
+
+/* Star Icons - Hiệu ứng ngôi sao nhấp nháy */
+.ListContainer2 h3 .fa-star {
+    color: var(--cyber-yellow);
+    font-size: clamp(0.8rem, 2vw, 1.1rem);
+    animation: starTwinkle 3s ease-in-out infinite;
+}
+
+@keyframes starTwinkle {
+    0%, 100% {
+        transform: rotate(0deg) scale(1);
+        text-shadow: 
+            0 0 15px rgba(255, 215, 0, 0.7),
+            0 0 25px rgba(255, 215, 0, 0.3);
+        opacity: 1;
+    }
+    25% {
+        transform: rotate(90deg) scale(1.3);
+        text-shadow: 
+            0 0 25px rgba(255, 215, 0, 1),
+            0 0 45px rgba(255, 215, 0, 0.8);
+        opacity: 0.7;
+    }
+    50% {
+        transform: rotate(180deg) scale(1.1);
+        text-shadow: 
+            0 0 20px rgba(255, 215, 0, 0.9),
+            0 0 35px rgba(255, 215, 0, 0.6);
+        opacity: 0.4;
+    }
+    75% {
+        transform: rotate(270deg) scale(1.4);
+        text-shadow: 
+            0 0 30px rgba(255, 215, 0, 1.2),
+            0 0 50px rgba(255, 215, 0, 1);
+        opacity: 0.8;
+    }
+}
+
+/* ===== ENHANCED H1 ANIMATIONS ===== */
+
+/* Main Title Glow Effect */
+.ListContainer1 h1,
+.ListContainer2 h1 {
+    position: relative;
+    animation: titleGlow 6s ease-in-out infinite;
+}
+
+@keyframes titleGlow {
+    0%, 100% {
+        text-shadow: 
+            0 0 25px rgba(255, 215, 0, 0.8),
+            0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+    50% {
+        text-shadow: 
+            0 0 40px rgba(255, 215, 0, 1),
+            0 0 60px rgba(255, 107, 107, 0.8),
+            0 0 80px rgba(122, 0, 255, 0.6),
+            0 6px 20px rgba(0, 0, 0, 0.6);
+    }
+}
+
+/* Subtitle Animation */
+.ListContainer2 h3 {
+    animation: subtitleFloat 8s ease-in-out infinite;
+}
+
+@keyframes subtitleFloat {
+    0%, 100% {
+        transform: translateY(0);
+        text-shadow: 0 0 20px rgba(0, 240, 255, 0.7);
+    }
+    50% {
+        transform: translateY(-5px);
+        text-shadow: 
+            0 0 30px rgba(0, 240, 255, 1),
+            0 0 50px rgba(122, 0, 255, 0.8);
+    }
+}
+
+/* ===== PULSE EFFECTS FOR ALL ICONS ===== */
+.ListContainer1 h1 i,
+.ListContainer2 h1 i,
+.ListContainer2 h3 i {
+    position: relative;
+}
+
+/* Tạo hiệu ứng pulse cho tất cả icons */
+.ListContainer1 h1 i::after,
+.ListContainer2 h1 i::after,
+.ListContainer2 h3 i::after {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(90deg, 
-        transparent, 
-        rgba(255, 255, 255, 0.8), 
-        transparent
-    );
-    animation: progressGlow 2s ease-in-out infinite;
-}
-
-/* Food Image & Overlay - GIỮ NGUYÊN */
-.food-image {
-    width: 100%;
-    height: 100%;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 0;
+    height: 0;
     border-radius: 50%;
-    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    transform: scale(1);
+    background: transparent;
+    animation: iconPulseRing 3s ease-out infinite;
+    pointer-events: none;
 }
 
-.food-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, 
-        rgba(122, 0, 255, 0.8), 
-        rgba(0, 240, 255, 0.8));
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+@keyframes iconPulseRing {
+    0% {
+        width: 0;
+        height: 0;
+        opacity: 1;
+        box-shadow: 0 0 0 0 currentColor;
+    }
+    100% {
+        width: 100px;
+        height: 100px;
+        opacity: 0;
+        box-shadow: 0 0 0 20px transparent;
+    }
 }
 
-.food-overlay i {
-    color: white;
-    font-size: 3.5rem;
-    text-shadow: 0 6px 25px rgba(0, 0, 0, 0.8);
-    transform: scale(0.9);
-    transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+/* Delay cho các icon khác nhau */
+.ListContainer1 h1 .fa-microphone::after { animation-delay: 0s; }
+.ListContainer1 h1 .fa-music::after { animation-delay: 1.5s; }
+.ListContainer1 h1 .sparkle-left::after { animation-delay: 0.5s; }
+.ListContainer1 h1 .sparkle-right::after { animation-delay: 2s; }
+.ListContainer2 h1 .gem-left::after { animation-delay: 0.2s; }
+.ListContainer2 h1 .gem-right::after { animation-delay: 1.2s; }
+.ListContainer2 h1 .fa-utensils::after { animation-delay: 0.8s; }
+.ListContainer2 h1 .flame-icon::after { animation-delay: 0.4s; }
+
+/* ===== RESPONSIVE ANIMATIONS ===== */
+@media (max-width: 768px) {
+    /* Giảm intensity của animations trên mobile */
+    .ListContainer1 h1 i,
+    .ListContainer2 h1 i,
+    .ListContainer2 h3 i {
+        animation-duration: 1.5s;
+    }
+    
+    .ListContainer1 h1,
+    .ListContainer2 h1 {
+        animation-duration: 4s;
+    }
 }
 
-/* Hover Effects - GIỮ NGUYÊN */
-.food-banner-item:hover {
-    transform: translateY(-15px) scale(1.02);
-}
-
-.food-banner-item:hover .food-circle {
-    box-shadow: 
-        0 20px 50px rgba(122, 0, 255, 0.7),
-        0 0 0 6px var(--cyber-cyan),
-        inset 0 0 40px rgba(255, 255, 255, 0.3);
-    transform: scale(1.05);
-}
-
-.food-banner-item:hover .food-image {
-    transform: scale(1.15);
-    filter: brightness(1.2) contrast(1.1);
-}
-
-.food-banner-item:hover .food-overlay {
-    opacity: 1;
-}
-
-.food-banner-item:hover .food-overlay i {
-    transform: scale(1.1);
-}
-
-.food-banner-item:hover .food-name {
-    background: linear-gradient(135deg, 
-        rgba(122, 0, 255, 0.6) 0%, 
-        rgba(0, 240, 255, 0.6) 100%);
-    transform: translateY(-8px);
-    box-shadow: 
-        0 12px 35px rgba(122, 0, 255, 0.5),
-        0 4px 15px rgba(0, 0, 0, 0.2);
-    color: white;
-    border-color: var(--cyber-yellow);
+@media (prefers-reduced-motion: reduce) {
+    /* Tắt animations cho người dùng prefer reduced motion */
+    .ListContainer1 h1 i,
+    .ListContainer2 h1 i,
+    .ListContainer2 h3 i,
+    .ListContainer1 h1,
+    .ListContainer2 h1,
+    .ListContainer2 h3 {
+        animation: none !important;
+    }
 }

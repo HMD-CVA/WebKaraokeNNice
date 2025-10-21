@@ -5,12 +5,10 @@ class TripleBannerSlider {
         this.indicatorsContainer = document.querySelector('.indicators');
         this.prevBtn = document.querySelector('.prev-btn');
         this.nextBtn = document.querySelector('.next-btn');
-        this.progressBar = document.querySelector('.progress-bar');
         
         this.currentPosition = 0;
-        this.transitionTime = 8000;
+        this.transitionTime = 6000; // 6 GIÂY
         this.slideInterval = null;
-        this.progressInterval = null;
         this.isAnimating = false;
         
         this.baseWidth = 550;
@@ -20,13 +18,21 @@ class TripleBannerSlider {
         
         this.init();
         this.updateLayout();
+        
+        // Debounce resize event
+        let resizeTimeout;
         window.addEventListener('resize', () => {
-            this.updateLayout();
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                this.updateLayout();
+            }, 100);
         });
     }
     
     calculateBannerSize() {
         const viewport = document.querySelector('.banner-viewport');
+        if (!viewport) return { itemsPerView: 1, targetWidth: this.baseWidth, targetHeight: this.baseHeight };
+        
         const viewportWidth = viewport.offsetWidth - 40;
         const viewportHeight = viewport.offsetHeight - 40;
         
@@ -85,6 +91,8 @@ class TripleBannerSlider {
     applyLayout(layout) {
         const { itemsPerView, targetWidth, targetHeight } = layout;
         const viewport = document.querySelector('.banner-viewport');
+        if (!viewport) return;
+        
         const viewportWidth = viewport.offsetWidth;
         
         // ÁP DỤNG KÍCH THƯỚC ITEMS
@@ -132,15 +140,19 @@ class TripleBannerSlider {
             this.updateTrackWidth(targetWidth, 20);
         }
         
-        console.log(`📐 Layout: ${itemsPerView} items, ${targetWidth}x${targetHeight}px`);
+        console.log(`📐 Banner Layout: ${itemsPerView} items, ${targetWidth}x${targetHeight}px`);
     }
     
     updateTrackWidth(itemWidth, spaceBetween) {
+        if (!this.track) return;
+        
         const totalWidth = (itemWidth + spaceBetween) * this.items.length + spaceBetween;
         this.track.style.width = totalWidth + 'px';
     }
     
     updateLayout() {
+        if (!this.track || !this.items.length) return;
+        
         const layout = this.calculateBannerSize();
         this.itemsPerView = layout.itemsPerView;
         this.targetWidth = layout.targetWidth;
@@ -151,7 +163,7 @@ class TripleBannerSlider {
             this.currentPosition = this.totalPositions;
         }
         
-        console.log(`🔄 Layout: ${this.itemsPerView} items/view, ${this.totalPositions + 1} slides, ${this.targetWidth}x${this.targetHeight}px`);
+        console.log(`🔄 Banner: ${this.itemsPerView} items/view, ${this.totalPositions + 1} slides, ${this.targetWidth}x${this.targetHeight}px`);
         
         this.applyLayout(layout);
         this.createIndicators();
@@ -159,6 +171,8 @@ class TripleBannerSlider {
     }
     
     createIndicators() {
+        if (!this.indicatorsContainer) return;
+        
         this.indicatorsContainer.innerHTML = '';
         
         for (let i = 0; i <= this.totalPositions; i++) {
@@ -180,62 +194,76 @@ class TripleBannerSlider {
     }
     
     init() {
+        // Kiểm tra xem các element có tồn tại không
+        if (!this.track || !this.items.length || !this.prevBtn || !this.nextBtn) {
+            console.error('❌ Banner elements not found');
+            return;
+        }
+        
+        console.log('🚀 Initializing Banner Slider...');
+        
         this.updateSlider();
         
-        this.prevBtn.addEventListener('click', () => this.prevSlide());
-        this.nextBtn.addEventListener('click', () => this.nextSlide());
+        // Event listeners với error handling
+        this.prevBtn.addEventListener('click', () => {
+            console.log('⬅️ Banner Prev clicked');
+            this.prevSlide();
+        });
         
-        this.startSlideShow();
+        this.nextBtn.addEventListener('click', () => {
+            console.log('➡️ Banner Next clicked');
+            this.nextSlide();
+        });
+        
+        // TỰ ĐỘNG CHẠY NGAY KHI LOAD TRANG
+        setTimeout(() => {
+            this.startSlideShow();
+        }, 100);
         
         const bannerContainer = document.querySelector('.banner-container');
-        bannerContainer.addEventListener('mouseenter', () => {
-            this.pauseSlideShow();
-        });
+        if (bannerContainer) {
+            bannerContainer.addEventListener('mouseenter', () => {
+                this.pauseSlideShow();
+            });
+            
+            bannerContainer.addEventListener('mouseleave', () => {
+                this.startSlideShow();
+            });
+        }
         
-        bannerContainer.addEventListener('mouseleave', () => {
-            this.startSlideShow();
-        });
+        console.log('✅ Banner Slider initialized successfully - Auto slide will start immediately');
     }
     
     startSlideShow() {
+        this.isPaused = false;
+
         if (this.slideInterval) {
             clearInterval(this.slideInterval);
         }
         
-        this.slideInterval = setInterval(() => {
-            this.nextSlide();
-        }, this.transitionTime);
-        
-        this.startProgressBar();
-    }
-    
-    startProgressBar() {
-        this.progressBar.style.width = '0%';
-        
-        if (this.progressInterval) {
-            clearInterval(this.progressInterval);
+        // Chỉ start slideshow nếu có nhiều hơn 1 slide
+        if (this.totalPositions > 0) {
+            this.slideInterval = setInterval(() => {
+                this.nextSlide();
+            }, this.transitionTime);
+            
+            console.log('🚀 Banner Auto Slide Started - 6s interval');
+        } else {
+            console.log('ℹ️ Banner: Only one slide, auto slide disabled');
         }
-        
-        let width = 0;
-        const increment = 100 / (this.transitionTime / 100);
-        
-        this.progressInterval = setInterval(() => {
-            if (width >= 100) {
-                clearInterval(this.progressInterval);
-            } else {
-                width += increment;
-                this.progressBar.style.width = width + '%';
-            }
-        }, 100);
     }
     
     pauseSlideShow() {
-        clearInterval(this.slideInterval);
-        clearInterval(this.progressInterval);
+        this.isPaused = true;
+        if (this.slideInterval) {
+            clearInterval(this.slideInterval);
+            this.slideInterval = null;
+            console.log('⏸️ Banner Auto Slide Paused');
+        }
     }
     
     nextSlide() {
-        if (this.isAnimating) return;
+        if (this.isAnimating || this.totalPositions === 0) return;
         
         this.isAnimating = true;
         
@@ -246,10 +274,15 @@ class TripleBannerSlider {
         }
         
         this.updateSlider();
+        
+        // QUAN TRỌNG: Reset isAnimating sau khi animation hoàn thành
+        setTimeout(() => {
+            this.isAnimating = false;
+        }, 800);
     }
     
     prevSlide() {
-        if (this.isAnimating) return;
+        if (this.isAnimating || this.totalPositions === 0) return;
         
         this.isAnimating = true;
         
@@ -260,20 +293,32 @@ class TripleBannerSlider {
         }
         
         this.updateSlider();
+        
+        // QUAN TRỌNG: Reset isAnimating sau khi animation hoàn thành
+        setTimeout(() => {
+            this.isAnimating = false;
+        }, 800);
     }
     
     goToPosition(position) {
-        if (this.isAnimating || position === this.currentPosition) return;
+        if (this.isAnimating || position === this.currentPosition || this.totalPositions === 0) return;
         
         this.isAnimating = true;
         this.currentPosition = position;
         this.updateSlider();
+        
+        // QUAN TRỌNG: Reset isAnimating sau khi animation hoàn thành
+        setTimeout(() => {
+            this.isAnimating = false;
+        }, 800);
     }
     
     updateSlider() {
-        if (!this.itemsPerView || !this.targetWidth) return;
+        if (!this.track || !this.itemsPerView || !this.targetWidth || this.totalPositions === 0) return;
         
         const viewport = document.querySelector('.banner-viewport');
+        if (!viewport) return;
+        
         const viewportWidth = viewport.offsetWidth;
         
         let spaceBetween;
@@ -296,14 +341,557 @@ class TripleBannerSlider {
                 indicator.classList.toggle('active', index === this.currentPosition);
             });
         }
+    }
+}
+// Khởi tạo Sliders với error handling
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 Page loaded - Starting sliders...');
+    
+    setTimeout(() => {
+        window.bannerSlider = new TripleBannerSlider();
+        console.log('🎉 Banner started successfully!');
+    }, 500);
+});
+class FoodBannerSlider {
+    constructor() {
+        this.track = document.getElementById('foodBannerTrack');
+        this.indicatorsContainer = document.querySelector('.food-indicators');
+        this.prevBtn = document.querySelector('.food-prev-btn');
+        this.nextBtn = document.querySelector('.food-next-btn');
         
+        this.currentPosition = 0;
+        this.transitionTime = 6000; // 6 GIÂY
+        this.slideInterval = null;
+        this.isAnimating = false;
+        
+        // Kích thước base cho food items
+        this.baseWidth = 340;
+        this.baseHeight = 460;
+        this.minWidth = 200;
+        this.minHeight = 300;
+        
+        this.foodItems = [
+            {
+                id: 1,
+                name: "SÒ DIỆP NƯỚNG PHÔ MAI",
+                image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+            },
+            {
+                id: 2,
+                name: "XÔI GÀ RÔ TI",
+                image: "https://images.unsplash.com/photo-1563379091339-03246963d96f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+            },
+            {
+                id: 3,
+                name: "BÒ NƯỚNG SỐT TIÊU ĐEN",
+                image: "https://images.unsplash.com/photo-1588168333986-5078d3ae3976?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+            },
+            {
+                id: 4,
+                name: "GÀ NƯỚNG MUỐI ỚT",
+                image: "https://images.unsplash.com/photo-1604503468506-a8da13d82791?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+            },
+            {
+                id: 5,
+                name: "CÁ HỒI SỐT CAM",
+                image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+            },
+            {
+                id: 6,
+                name: "TÔM SỐT XOÀI",
+                image: "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+            }
+        ];
+        
+        this.init();
+    }
+    
+    renderFoodItems() {
+        if (!this.track) {
+            console.error('❌ Food banner track not found');
+            return;
+        }
+        
+        let html = '';
+        this.foodItems.forEach(item => {
+            html += `
+                <div class="food-banner-item">
+                    <div class="food-circle">
+                        <div class="food-image" style="background-image: url('${item.image}')"></div>
+                        <div class="food-overlay">
+                            <i class="fas fa-utensils"></i>
+                        </div>
+                    </div>
+                    <div class="food-name">${item.name}</div>
+                </div>
+            `;
+        });
+        
+        this.track.innerHTML = html;
+        this.items = document.querySelectorAll('.food-banner-item');
+        
+        console.log(`✅ Rendered ${this.items.length} food items`);
+    }
+    
+    calculateFoodSize() {
+        const viewport = document.querySelector('.food-banner-viewport');
+        if (!viewport) return { itemsPerView: 1, targetWidth: this.baseWidth, targetHeight: this.baseHeight };
+        
+        const viewportWidth = viewport.offsetWidth - 40;
+        const viewportHeight = viewport.offsetHeight - 40;
+        
+        let itemsPerView;
+        let targetWidth, targetHeight;
+        
+        if (viewportWidth >= 1400) {
+            itemsPerView = 3;
+            targetWidth = this.baseWidth;
+            targetHeight = this.baseHeight;
+        } else if (viewportWidth >= 1200) {
+            itemsPerView = 3;
+            const scale = Math.min(viewportWidth / (this.baseWidth * 3 + 100), 0.9);
+            targetWidth = Math.max(this.baseWidth * scale, this.minWidth);
+            targetHeight = Math.max(this.baseHeight * scale, this.minHeight);
+        } else if (viewportWidth >= 900) {
+            itemsPerView = 2;
+            targetWidth = this.baseWidth * 0.9;
+            targetHeight = this.baseHeight * 0.9;
+        } else if (viewportWidth >= 768) {
+            itemsPerView = 2;
+            const scale = Math.min(viewportWidth / (this.baseWidth * 2 + 80), 0.8);
+            targetWidth = Math.max(this.baseWidth * scale, this.minWidth);
+            targetHeight = Math.max(this.baseHeight * scale, this.minHeight);
+        } else if (viewportWidth >= 500) {
+            itemsPerView = 1;
+            targetWidth = Math.min(viewportWidth - 40, this.baseWidth);
+            targetHeight = (targetWidth / this.baseWidth) * this.baseHeight;
+        } else {
+            itemsPerView = 1;
+            targetWidth = Math.max(viewportWidth - 20, this.minWidth);
+            targetHeight = (targetWidth / this.baseWidth) * this.baseHeight;
+        }
+        
+        if (targetHeight > viewportHeight) {
+            targetHeight = viewportHeight;
+            targetWidth = (targetHeight / this.baseHeight) * this.baseWidth;
+        }
+        
+        return {
+            itemsPerView,
+            targetWidth: Math.round(targetWidth),
+            targetHeight: Math.round(targetHeight)
+        };
+    }
+    
+    calculateTotalPositions(itemsPerView) {
+        return Math.max(0, this.items.length - itemsPerView);
+    }
+    
+    applyLayout(layout) {
+        const { itemsPerView, targetWidth, targetHeight } = layout;
+        const viewport = document.querySelector('.food-banner-viewport');
+        if (!viewport) return;
+        
+        const viewportWidth = viewport.offsetWidth;
+        
+        // ÁP DỤNG KÍCH THƯỚC ITEMS
+        this.items.forEach((item, index) => {
+            const foodCircle = item.querySelector('.food-circle');
+            const foodName = item.querySelector('.food-name');
+            
+            item.style.width = targetWidth + 'px';
+            item.style.height = targetHeight + 'px';
+            item.style.minWidth = targetWidth + 'px';
+            item.style.minHeight = targetHeight + 'px';
+            item.style.maxWidth = targetWidth + 'px';
+            item.style.maxHeight = targetHeight + 'px';
+            item.style.flexShrink = '0';
+            
+            // Tính toán kích thước cho food circle và name dựa trên targetWidth
+            const circleSize = Math.round(targetWidth * 0.76); // 76% của item width
+            const nameWidth = Math.round(targetWidth * 0.74); // 74% của item width
+            const nameHeight = Math.round(targetHeight * 0.17); // 17% của item height
+            
+            if (foodCircle) {
+                foodCircle.style.width = circleSize + 'px';
+                foodCircle.style.height = circleSize + 'px';
+                foodCircle.style.minWidth = circleSize + 'px';
+                foodCircle.style.minHeight = circleSize + 'px';
+            }
+            
+            if (foodName) {
+                foodName.style.width = nameWidth + 'px';
+                foodName.style.height = nameHeight + 'px';
+                foodName.style.minWidth = nameWidth + 'px';
+                foodName.style.minHeight = nameHeight + 'px';
+                foodName.style.fontSize = Math.max(14, Math.round(targetWidth * 0.044)) + 'px'; // 4.4% của item width
+            }
+        });
+        
+        // ÁP DỤNG SPACE EVENLY
+        if (itemsPerView > 1) {
+            const totalItemsWidth = targetWidth * itemsPerView;
+            const totalAvailableSpace = viewportWidth - totalItemsWidth;
+            const spaceBetween = Math.max(20, totalAvailableSpace / (itemsPerView + 1));
+            
+            this.track.style.gap = `${spaceBetween}px`;
+            this.track.style.justifyContent = 'space-evenly';
+            this.track.style.paddingLeft = `${spaceBetween}px`;
+            this.track.style.paddingRight = `${spaceBetween}px`;
+            
+            this.updateTrackWidth(targetWidth, spaceBetween);
+        } else {
+            this.track.style.justifyContent = 'center';
+            this.track.style.gap = '20px';
+            this.track.style.paddingLeft = '0px';
+            this.track.style.paddingRight = '0px';
+            this.updateTrackWidth(targetWidth, 20);
+        }
+        
+        console.log(`📐 Food Layout: ${itemsPerView} items, ${targetWidth}x${targetHeight}px`);
+    }
+    
+    updateTrackWidth(itemWidth, spaceBetween) {
+        if (!this.track) return;
+        
+        const totalWidth = (itemWidth + spaceBetween) * this.items.length + spaceBetween;
+        this.track.style.width = totalWidth + 'px';
+    }
+    
+    updateLayout() {
+        if (!this.track || !this.items.length) return;
+        
+        const layout = this.calculateFoodSize();
+        this.itemsPerView = layout.itemsPerView;
+        this.targetWidth = layout.targetWidth;
+        this.targetHeight = layout.targetHeight;
+        this.totalPositions = this.calculateTotalPositions(this.itemsPerView);
+        
+        if (this.currentPosition > this.totalPositions) {
+            this.currentPosition = this.totalPositions;
+        }
+        
+        console.log(`🔄 Food: ${this.itemsPerView} items/view, ${this.totalPositions + 1} slides, ${this.targetWidth}x${this.targetHeight}px`);
+        
+        this.applyLayout(layout);
+        this.createIndicators();
+        this.updateSlider();
+    }
+    
+    createIndicators() {
+        if (!this.indicatorsContainer) return;
+        
+        this.indicatorsContainer.innerHTML = '';
+        
+        for (let i = 0; i <= this.totalPositions; i++) {
+            const indicator = document.createElement('div');
+            indicator.className = 'food-indicator';
+            if (i === this.currentPosition) {
+                indicator.classList.add('active');
+            }
+            
+            indicator.addEventListener('click', () => {
+                this.goToPosition(i);
+            });
+            
+            this.indicatorsContainer.appendChild(indicator);
+        }
+        
+        this.indicators = document.querySelectorAll('.food-indicator');
+    }
+    
+    init() {
+        // ĐẦU TIÊN: Render food items
+        this.renderFoodItems();
+        
+        // Kiểm tra xem các element có tồn tại không
+        if (!this.track || !this.items.length || !this.prevBtn || !this.nextBtn) {
+            console.error('❌ Food banner elements not found');
+            return;
+        }
+        
+        console.log('🚀 Initializing Food Banner Slider...');
+        
+        this.updateLayout();
+        
+        // Event listeners với error handling
+        this.prevBtn.addEventListener('click', () => {
+            console.log('⬅️ Food Prev clicked');
+            this.prevSlide();
+        });
+        
+        this.nextBtn.addEventListener('click', () => {
+            console.log('➡️ Food Next clicked');
+            this.nextSlide();
+        });
+        
+        // TỰ ĐỘNG CHẠY NGAY KHI LOAD TRANG
+        setTimeout(() => {
+            this.startSlideShow();
+        }, 100);
+        
+        const foodContainer = document.querySelector('.food-banner-container');
+        if (foodContainer) {
+            foodContainer.addEventListener('mouseenter', () => {
+                this.pauseSlideShow();
+            });
+            
+            foodContainer.addEventListener('mouseleave', () => {
+                this.startSlideShow();
+            });
+        }
+        
+        // Touch events
+        this.setupTouchEvents();
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') this.prevSlide();
+            if (e.key === 'ArrowRight') this.nextSlide();
+        });
+        
+        // Update on resize với debounce
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                this.updateLayout();
+            }, 100);
+        });
+        
+        console.log('✅ Food Banner Slider initialized successfully - Auto slide will start immediately');
+    }
+    
+    setupTouchEvents() {
+        let startX = 0;
+        let endX = 0;
+        let isDragging = false;
+        
+        this.track.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            isDragging = true;
+            this.pauseSlideShow();
+        });
+        
+        this.track.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            endX = e.touches[0].clientX;
+        });
+        
+        this.track.addEventListener('touchend', () => {
+            if (!isDragging) return;
+            
+            const diff = startX - endX;
+            const threshold = 50;
+            
+            if (Math.abs(diff) > threshold) {
+                if (diff > 0) {
+                    this.nextSlide();
+                } else {
+                    this.prevSlide();
+                }
+            }
+            
+            isDragging = false;
+            this.startSlideShow();
+        });
+    }
+    
+    startSlideShow() {
+        this.isPaused = false;
+
+        if (this.slideInterval) {
+            clearInterval(this.slideInterval);
+        }
+        
+        // Chỉ start slideshow nếu có nhiều hơn 1 slide
+        if (this.totalPositions > 0) {
+            this.slideInterval = setInterval(() => {
+                this.nextSlide();
+            }, this.transitionTime);
+            
+            console.log('🚀 Food Auto Slide Started - 6s interval');
+        } else {
+            console.log('ℹ️ Food: Only one slide, auto slide disabled');
+        }
+    }
+    
+    pauseSlideShow() {
+        this.isPaused = true;
+        if (this.slideInterval) {
+            clearInterval(this.slideInterval);
+            this.slideInterval = null;
+            console.log('⏸️ Food Auto Slide Paused');
+        }
+    }
+    
+    nextSlide() {
+        if (this.isAnimating) return;
+        
+        this.isAnimating = true;
+        
+        console.log(`➡️ Food Next: current=${this.currentPosition}, max=${this.totalPositions}`);
+        
+        if (this.currentPosition < this.totalPositions) {
+            this.currentPosition++;
+            console.log(`📄 Food Moving to position ${this.currentPosition}`);
+        } else {
+            // QUAN TRỌNG: Roll về đầu khi hết item
+            this.currentPosition = 0;
+            console.log('🔄 Food Rolling back to start (position 0)');
+        }
+        
+        this.updateSlider();
+        
+        // QUAN TRỌNG: Reset isAnimating sau khi animation hoàn thành
         setTimeout(() => {
             this.isAnimating = false;
         }, 800);
+    }
+    
+    prevSlide() {
+        if (this.isAnimating) return;
         
-        this.startSlideShow();
+        this.isAnimating = true;
+        
+        console.log(`⬅️ Food Prev: current=${this.currentPosition}, max=${this.totalPositions}`);
+        
+        if (this.currentPosition > 0) {
+            this.currentPosition--;
+            console.log(`📄 Food Moving to position ${this.currentPosition}`);
+        } else {
+            // QUAN TRỌNG: Roll về cuối khi ở đầu
+            this.currentPosition = this.totalPositions;
+            console.log(`🔄 Food Rolling to end (position ${this.totalPositions})`);
+        }
+        
+        this.updateSlider();
+        
+        // QUAN TRỌNG: Reset isAnimating sau khi animation hoàn thành
+        setTimeout(() => {
+            this.isAnimating = false;
+        }, 800);
+    }
+    
+    goToPosition(position) {
+        if (this.isAnimating || position === this.currentPosition) return;
+        
+        this.isAnimating = true;
+        this.currentPosition = position;
+        
+        console.log(`🎯 Food Going to position ${position}`);
+        
+        this.updateSlider();
+        
+        // QUAN TRỌNG: Reset isAnimating sau khi animation hoàn thành
+        setTimeout(() => {
+            this.isAnimating = false;
+        }, 800);
+    }
+    
+    updateSlider() {
+        if (!this.track || !this.itemsPerView || !this.targetWidth) return;
+        
+        const viewport = document.querySelector('.food-banner-viewport');
+        if (!viewport) return;
+        
+        const viewportWidth = viewport.offsetWidth;
+        
+        let spaceBetween;
+        if (this.itemsPerView > 1) {
+            const totalItemsWidth = this.targetWidth * this.itemsPerView;
+            const totalAvailableSpace = viewportWidth - totalItemsWidth;
+            spaceBetween = Math.max(20, totalAvailableSpace / (this.itemsPerView + 1));
+        } else {
+            spaceBetween = 20;
+        }
+        
+        const itemWidthWithSpace = this.targetWidth + spaceBetween;
+        const translateValue = -this.currentPosition * itemWidthWithSpace;
+        
+        this.track.style.transform = `translateX(${translateValue}px)`;
+        this.track.style.transition = this.isAnimating ? 'transform 0.8s ease-in-out' : 'none';
+        
+        if (this.indicators) {
+            this.indicators.forEach((indicator, index) => {
+                indicator.classList.toggle('active', index === this.currentPosition);
+            });
+        }
+        
+        // Update button states - KHÔNG DISABLE NÚT NEXT
+        this.updateButtonStates();
+        
+        console.log(`🎬 Food Slider updated: position ${this.currentPosition}, translateX ${translateValue}px`);
+    }
+    
+    updateButtonStates() {
+        if (this.prevBtn) {
+            const isDisabled = this.currentPosition === 0;
+            this.prevBtn.disabled = false;
+            this.prevBtn.style.opacity = '1';
+            this.prevBtn.style.cursor = 'pointer';
+            
+            if (isDisabled) {
+                this.prevBtn.title = 'Đã ở slide đầu tiên';
+            } else {
+                this.prevBtn.title = 'Slide trước';
+            }
+        }
+        
+        if (this.nextBtn) {
+            // QUAN TRỌNG: KHÔNG BAO GIỜ DISABLE NÚT NEXT
+            // Vì khi ở slide cuối, ấn next sẽ rollback về đầu
+            this.nextBtn.disabled = false;
+            this.nextBtn.style.opacity = '1';
+            this.nextBtn.style.cursor = 'pointer';
+            
+            if (this.currentPosition === this.totalPositions) {
+                this.nextBtn.title = 'Đã ở slide cuối - Ấn để về đầu';
+            } else {
+                this.nextBtn.title = 'Slide tiếp theo';
+            }
+        }
+        
+        console.log(`🔘 Food Button states: prev=${this.currentPosition === 0 ? 'disabled' : 'enabled'}, next=ALWAYS_ENABLED`);
     }
 }
+// Khởi tạo Food Banner với error handling
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 Page loaded - Starting food banner...');
+    
+    setTimeout(() => {
+        try {
+            window.foodBannerSlider = new FoodBannerSlider();
+            console.log('🎉 Food Banner started successfully!');
+            
+            // Debug helper
+            console.log('🎮 Food Slider controls:');
+            console.log('- Click food-control-btn to navigate');
+            console.log('- Auto slide every 6 seconds');
+            console.log('- Hover to pause auto slide');
+            console.log('- Next button is ALWAYS enabled');
+            console.log('- Rollback to start when reaching end');
+            
+        } catch (error) {
+            console.error('❌ Food Banner initialization failed:', error);
+        }
+    }, 500);
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class ProductPagination {
     constructor(products) {
@@ -365,12 +953,27 @@ class ProductPagination {
         const prevBtn = document.getElementById('prevPage');
         const nextBtn = document.getElementById('nextPage');
         
-        prevBtn.replaceWith(prevBtn.cloneNode(true));
-        nextBtn.replaceWith(nextBtn.cloneNode(true));
+        // Clone và replace để tránh duplicate event listeners
+        const newPrevBtn = prevBtn.cloneNode(true);
+        const newNextBtn = nextBtn.cloneNode(true);
+        prevBtn.replaceWith(newPrevBtn);
+        nextBtn.replaceWith(newNextBtn);
         
-        document.getElementById('prevPage').addEventListener('click', () => this.previousPage());
-        document.getElementById('nextPage').addEventListener('click', () => this.nextPage());
+        document.getElementById('prevPage').addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('⬅️ Prev button clicked');
+            this.previousPage();
+        });
         
+        document.getElementById('nextPage').addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('➡️ Next button clicked');
+            this.nextPage();
+        });
+        
+        // Keyboard navigation
         document.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowLeft') this.previousPage();
             if (e.key === 'ArrowRight') this.nextPage();
@@ -397,31 +1000,44 @@ class ProductPagination {
         
         this.updatePaginationUI();
         
-        // THÊM LẠI SCROLL KHI CHUYỂN TRANG
+        // AUTO SCROLL ĐẾN SẢN PHẨM ĐẦU TIÊN CỦA TRANG MỚI
         if (animate) {
-            this.smoothScrollToFirstProduct();
+            setTimeout(() => {
+                this.smoothScrollToFirstProduct();
+            }, 400);
         }
         
         this.isAnimating = false;
     }
     
-    // THÊM LẠI METHOD SCROLL
+    // PHƯƠNG THỨC SCROLL ĐẾN SẢN PHẨM ĐẦU TIÊN
     smoothScrollToFirstProduct() {
-        const firstProduct = this.allProducts[(this.currentPage - 1) * this.itemsPerPage];
+        const firstProductIndex = (this.currentPage - 1) * this.itemsPerPage;
+        const firstProduct = this.allProducts[firstProductIndex];
+        
         if (firstProduct) {
-            const productTop = firstProduct.getBoundingClientRect().top + window.pageYOffset;
+            // Sử dụng getBoundingClientRect để lấy vị trí chính xác
+            const productRect = firstProduct.getBoundingClientRect();
+            const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+            const productTop = productRect.top + currentScroll;
             const offset = 120; // Offset để không bị che bởi header
             
-            window.scrollTo({
-                top: productTop - offset,
-                behavior: 'smooth'
-            });
+            const scrollTarget = Math.max(0, productTop - offset);
             
-            console.log('🎯 Đang scroll đến sản phẩm đầu tiên');
+            console.log(`🎯 Đang scroll đến sản phẩm đầu tiên (index ${firstProductIndex + 1}), vị trí: ${scrollTarget}px`);
+            
+            window.scrollTo({
+                top: scrollTarget,
+                behavior: 'auto'
+            });
+        } else {
+            console.warn('⚠️ Không tìm thấy sản phẩm đầu tiên để scroll');
         }
     }
     
     async smoothPageTransition(oldPage, newPage) {
+        console.log('🎬 Bắt đầu chuyển cảnh...');
+        
         const oldStartIndex = (oldPage - 1) * this.itemsPerPage;
         const oldEndIndex = oldStartIndex + this.itemsPerPage;
         const oldProducts = this.allProducts.slice(oldStartIndex, oldEndIndex);
@@ -430,6 +1046,7 @@ class ProductPagination {
         const newEndIndex = newStartIndex + this.itemsPerPage;
         const newProducts = this.allProducts.slice(newStartIndex, newEndIndex);
         
+        // Ẩn sản phẩm cũ với hiệu ứng
         oldProducts.forEach((product, index) => {
             product.style.transitionDelay = `${index * 0.08}s`;
             product.classList.add('fade-out');
@@ -443,6 +1060,7 @@ class ProductPagination {
             product.style.transitionDelay = '0s';
         });
         
+        // Hiển thị sản phẩm mới với hiệu ứng
         newProducts.forEach(product => {
             product.style.display = 'block';
             product.classList.add('fade-in');
@@ -503,43 +1121,106 @@ class ProductPagination {
             nextBtn.style.cursor = isDisabled ? 'not-allowed' : 'pointer';
         }
     }
+    // PHƯƠNG THỨC SCROLL ĐÃ SỬA - CHẮC CHẮN HOẠT ĐỘNG
+smoothScrollToFirstProduct() {
+    const firstProductIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const firstProduct = this.allProducts[firstProductIndex];
     
+    if (firstProduct) {
+        console.log('🎯 Tìm thấy sản phẩm đầu tiên, đang scroll...');
+        
+        // Phương pháp 1: scrollIntoView - đơn giản và hiệu quả nhất
+        firstProduct.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start',
+            inline: 'nearest'
+        });
+        
+        console.log('✅ Đã kích hoạt scrollIntoView');
+        
+    } else {
+        console.warn('⚠️ Không tìm thấy sản phẩm đầu tiên');
+        
+        // Fallback: Scroll đến filter
+        this.smoothScrollToFilter();
+    }
+}
+
+// PHƯƠNG THỨC SCROLL ĐẾN FILTER - DỰ PHÒNG
+    smoothScrollToFilter() {
+        const filterRoom = document.querySelector('.filterRoom');
+        if (filterRoom) {
+            filterRoom.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start'
+            });
+            console.log('🎯 Đã scroll đến filter');
+            return;
+        }
+        
+        // Fallback cuối cùng: Scroll đến products section
+        const productsSection = document.querySelector('.products-section');
+        if (productsSection) {
+            productsSection.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start'
+            });
+            console.log('🔄 Đã scroll đến products section');
+        } else {
+            // Fallback cuối cùng
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+            console.log('🔄 Scroll về đầu trang');
+        }
+    }
     nextPage() {
+        console.log('➡️ Next page called, current:', this.currentPage, 'total:', this.totalPages);
         if (this.currentPage < this.totalPages) {
             this.showPage(this.currentPage + 1);
         }
     }
     
     previousPage() {
+        console.log('⬅️ Previous page called, current:', this.currentPage, 'total:', this.totalPages);
         if (this.currentPage > 1) {
             this.showPage(this.currentPage - 1);
         }
     }
 }
 
-// Filter với pagination động
+// Khởi tạo hệ thống pagination
 document.addEventListener('DOMContentLoaded', function() {
-    const filterSelect = document.querySelector('.filterRoom select');
-    const allProducts = document.querySelectorAll('.cyberpunk-card');
+    console.log('🚀 DOM loaded - initializing pagination system...');
     
-    // MẶC ĐỊNH: Lọc theo "Tất cả phòng" khi load trang
+    const filterSelect = document.querySelector('.filterRoom select');
+    let allProducts = document.querySelectorAll('.cyberpunk-card');
+    
+    // Hàm khởi tạo filter mặc định
     function initializeDefaultFilter() {
-        console.log('🚀 Đang khởi tạo mặc định với "Tất cả phòng"...');
+        console.log('🎯 Đang khởi tạo mặc định với "Tất cả phòng"...');
         
-        // Set giá trị select
         if (filterSelect) {
             filterSelect.value = 'Tất cả phòng';
         }
         
-        // Lọc và tạo pagination
         const filteredProducts = Array.from(allProducts).filter(product => {
-            return true; // Hiển thị tất cả
+            return true; // Hiển thị tất cả sản phẩm
         });
         
         console.log('📦 Tổng sản phẩm:', filteredProducts.length);
         
-        // Tạo pagination mới
-        window.productPagination = new ProductPagination(filteredProducts);
+        if (filteredProducts.length > 0) {
+            window.productPagination = new ProductPagination(filteredProducts);
+            console.log('✅ Pagination khởi tạo thành công');
+        } else {
+            console.log('ℹ️ Không có sản phẩm để hiển thị');
+            const paginationControls = document.querySelector('.pagination-controls');
+            if (paginationControls) {
+                paginationControls.style.display = 'none';
+            }
+        }
     }
     
     // Gọi ngay khi load trang
@@ -549,16 +1230,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (filterSelect) {
         filterSelect.addEventListener('change', function(e) {
             const selectedValue = e.target.value;
-            const allProducts = document.querySelectorAll('.cyberpunk-card');
-            
             console.log('🎯 Filter selected:', selectedValue);
+            
+            allProducts = document.querySelectorAll('.cyberpunk-card');
             
             // Ẩn tất cả sản phẩm trước
             allProducts.forEach(product => {
                 product.style.display = 'none';
             });
             
-            // Lọc sản phẩm dựa trên loại phòng
+            // Lọc sản phẩm
             const filteredProducts = Array.from(allProducts).filter(product => {
                 const roomType = product.querySelector('.badge-text')?.textContent || '';
                 
@@ -571,494 +1252,15 @@ document.addEventListener('DOMContentLoaded', function() {
             
             console.log('📦 Filtered products:', filteredProducts.length);
             
-            // Tạo pagination mới dựa trên kết quả lọc
-            window.productPagination = new ProductPagination(filteredProducts);
-        });
-    }
-});
-// Filter với pagination động
-document.addEventListener('DOMContentLoaded', function() {
-    const filterSelect = document.querySelector('.filterRoom select');
-    
-    if (!filterSelect) return;
-    
-    filterSelect.addEventListener('change', function(e) {
-        const selectedValue = e.target.value;
-        const allProducts = document.querySelectorAll('.cyberpunk-card');
-        
-        console.log('🎯 Filter selected:', selectedValue);
-        
-        // Ẩn tất cả sản phẩm trước
-        allProducts.forEach(product => {
-            product.style.display = 'none';
-        });
-        
-        // Lọc sản phẩm dựa trên loại phòng
-        const filteredProducts = Array.from(allProducts).filter(product => {
-            const roomType = product.querySelector('.badge-text')?.textContent || '';
-            
-            if (selectedValue === '' || selectedValue === 'Tất cả phòng') {
-                return true; // Hiển thị tất cả
+            if (filteredProducts.length > 0) {
+                window.productPagination = new ProductPagination(filteredProducts);
             } else {
-                return roomType.includes(selectedValue);
-            }
-        });
-        
-        console.log('📦 Filtered products:', filteredProducts.length);
-        
-        // Tạo pagination mới dựa trên kết quả lọc
-        if (window.productPagination) {
-            // Xóa pagination cũ
-            window.productPagination = null;
-        }
-        
-        // Tạo pagination mới với danh sách đã lọc
-        window.productPagination = new ProductPagination(filteredProducts);
-    });
-});
-// Khởi tạo
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 Đang khởi tạo pagination...');
-    
-    setTimeout(() => {
-        try {
-            const productsGrid = document.getElementById('productsGrid');
-            if (!productsGrid) {
-                console.error('❌ Không tìm thấy products grid');
-                return;
-            }
-            
-            const products = productsGrid.querySelectorAll('.cyberpunk-card');
-            console.log(`📦 Tìm thấy ${products.length} sản phẩm`);
-            
-            if (products.length > 6) {
-                const pagination = new ProductPagination();
-                console.log('✅ Pagination khởi tạo thành công');
-                window.productPagination = pagination;
-            } else {
-                console.log('ℹ️ Không cần pagination');
+                console.log('ℹ️ Không có sản phẩm phù hợp');
                 const paginationControls = document.querySelector('.pagination-controls');
                 if (paginationControls) {
                     paginationControls.style.display = 'none';
                 }
             }
-        } catch (error) {
-            console.error('❌ Lỗi khởi tạo pagination:', error);
-        }
-    }, 100);
-});
-
-// Khởi tạo với hiệu ứng
-document.addEventListener('DOMContentLoaded', () => {
-    const slider = new TripleBannerSlider();
-    console.log('🚀 Banner Slider with Bottom 0px loaded!');
-
-    console.log('🚀 Đang khởi tạo pagination với hiệu ứng...');
-    
-    setTimeout(() => {
-        try {
-            const productsGrid = document.getElementById('productsGrid');
-            if (!productsGrid) {
-                console.error('❌ Không tìm thấy products grid');
-                return;
-            }
-            
-            const products = productsGrid.querySelectorAll('.cyberpunk-card');
-            console.log(`📦 Tìm thấy ${products.length} sản phẩm`);
-            
-            if (products.length > 6) {
-                const pagination = new ProductPagination();
-                console.log(`✅ Pagination với hiệu ứng khởi tạo thành công`);
-                
-                // Expose để debug
-                window.productPagination = pagination;
-            } else {
-                console.log('ℹ️ Không cần pagination - chỉ có', products.length, 'products');
-                const paginationControls = document.querySelector('.pagination-controls');
-                if (paginationControls) {
-                    paginationControls.style.display = 'none';
-                }
-            }
-        } catch (error) {
-            console.error('❌ Lỗi khởi tạo pagination:', error);
-        }
-    }, 100);
-});
-
-class FoodBannerSlider {
-    constructor() {
-        this.track = document.getElementById('foodBannerTrack');
-        this.indicatorsContainer = document.querySelector('.food-indicators');
-        this.prevBtn = document.querySelector('.food-prev-btn');
-        this.nextBtn = document.querySelector('.food-next-btn');
-        this.progressBar = document.querySelector('.food-progress');
-        
-        this.currentPosition = 0;
-        this.transitionTime = 7000;
-        this.slideInterval = null;
-        this.progressInterval = null;
-        this.isAnimating = false;
-        
-        // KÍCH THƯỚC CƠ SỞ CHO TỪNG BREAKPOINT
-        this.breakpoints = {
-            '1920+': { baseWidth: 420, itemsPerView: 3 },
-            '1440-1919': { baseWidth: 400, itemsPerView: 3 },
-            '1200-1439': { baseWidth: 360, itemsPerView: 3 },
-            '1024-1199': { baseWidth: 320, itemsPerView: 3 },
-            '768-1023': { baseWidth: 300, itemsPerView: 2 },
-            '600-767': { baseWidth: 280, itemsPerView: 2 },
-            '480-599': { baseWidth: 260, itemsPerView: 1 },
-            '375-479': { baseWidth: 240, itemsPerView: 1 },
-            '320-374': { baseWidth: 220, itemsPerView: 1 },
-            '0-319': { baseWidth: 200, itemsPerView: 1 }
-        };
-        
-        this.foodItems = [
-            {
-                id: 1,
-                name: "SÒ DIỆP NƯỚNG PHÔ MAI",
-                image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
-            },
-            {
-                id: 2,
-                name: "XÔI GÀ RÔ TI",
-                image: "https://images.unsplash.com/photo-1563379091339-03246963d96f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
-            },
-            {
-                id: 3,
-                name: "BÒ NƯỚNG SỐT TIÊU ĐEN",
-                image: "https://images.unsplash.com/photo-1588168333986-5078d3ae3976?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
-            },
-            {
-                id: 4,
-                name: "GÀ NƯỚNG MUỐI ỚT",
-                image: "https://images.unsplash.com/photo-1604503468506-a8da13d82791?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
-            },
-            {
-                id: 5,
-                name: "CÁ HỒI SỐT CAM",
-                image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
-            },
-            {
-                id: 6,
-                name: "TÔM SỐT XOÀI",
-                image: "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
-            },
-            {
-                id: 7,
-                name: "LẨU THÁI CHUA CAY",
-                image: "https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
-            },
-            {
-                id: 8,
-                name: "CƠM CHIÊN HẢI SẢN",
-                image: "https://images.unsplash.com/photo-1585032226651-759b368d7246?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
-            },
-            {
-                id: 9,
-                name: "BÁNH XÈO TÔM NHẢY",
-                image: "https://images.unsplash.com/photo-1563245372-f21724e3856d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
-            }
-        ];
-        
-        this.init();
-        this.updateLayout();
-        
-        // DEBOUNCE RESIZE EVENT
-        let resizeTimeout;
-        window.addEventListener('resize', () => {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(() => {
-                this.updateLayout();
-            }, 100);
         });
     }
-    
-    getCurrentBreakpoint() {
-        const width = window.innerWidth;
-        
-        if (width >= 1920) return '1920+';
-        if (width >= 1440) return '1440-1919';
-        if (width >= 1200) return '1200-1439';
-        if (width >= 1024) return '1024-1199';
-        if (width >= 768) return '768-1023';
-        if (width >= 600) return '600-767';
-        if (width >= 480) return '480-599';
-        if (width >= 375) return '375-479';
-        if (width >= 320) return '320-374';
-        return '0-319';
-    }
-    
-    calculateFoodSize() {
-        const breakpoint = this.getCurrentBreakpoint();
-        const config = this.breakpoints[breakpoint];
-        const viewport = document.querySelector('.food-banner-viewport');
-        
-        if (!viewport) return config;
-        
-        const viewportWidth = viewport.offsetWidth - 40; // Trừ padding
-        let targetWidth = config.baseWidth;
-        
-        // ĐIỀU CHỈNH KÍCH THƯỚC DỰA TRÊN VIEWPORT THỰC TẾ
-        if (config.itemsPerView > 1) {
-            const totalNeededWidth = config.baseWidth * config.itemsPerView + 60;
-            if (viewportWidth < totalNeededWidth) {
-                const scale = (viewportWidth - 80) / (config.baseWidth * config.itemsPerView);
-                targetWidth = Math.max(config.baseWidth * scale, 200);
-            }
-        } else {
-            // Mobile - chiếm toàn bộ chiều rộng có sẵn
-            targetWidth = Math.min(viewportWidth - 20, config.baseWidth);
-        }
-        
-        return {
-            itemsPerView: config.itemsPerView,
-            targetWidth: Math.round(targetWidth)
-        };
-    }
-    
-    renderFoodItems() {
-        let html = '';
-        this.foodItems.forEach(item => {
-            html += `
-                <div class="food-banner-item">
-                    <div class="food-circle">
-                        <div class="food-image" style="background-image: url('${item.image}')"></div>
-                        <div class="food-overlay">
-                            <i class="fas fa-utensils"></i>
-                        </div>
-                    </div>
-                    <div class="food-name">${item.name}</div>
-                </div>
-            `;
-        });
-        
-        this.track.innerHTML = html;
-        this.items = document.querySelectorAll('.food-banner-item');
-    }
-    
-    calculateTotalPositions(itemsPerView) {
-        return Math.max(0, this.items.length - itemsPerView);
-    }
-    
-    applyLayout(layout) {
-        const { itemsPerView, targetWidth } = layout;
-        const viewport = document.querySelector('.food-banner-viewport');
-        if (!viewport) return;
-        
-        const viewportWidth = viewport.offsetWidth;
-        
-        console.log(`🎯 Applying layout: ${itemsPerView} items, ${targetWidth}px width, viewport: ${viewportWidth}px`);
-        
-        // ÁP DỤNG KÍCH THƯỚC ITEMS
-        this.items.forEach((item) => {
-            item.style.width = targetWidth + 'px';
-            item.style.minWidth = targetWidth + 'px';
-            item.style.maxWidth = targetWidth + 'px';
-            item.style.flexShrink = '0';
-        });
-        
-        // TÍNH TOÁN KHOẢNG CÁCH CHÍNH XÁC
-        let spaceBetween;
-        if (itemsPerView > 1) {
-            const totalItemsWidth = targetWidth * itemsPerView;
-            const totalAvailableSpace = viewportWidth - totalItemsWidth;
-            spaceBetween = Math.max(20, totalAvailableSpace / (itemsPerView + 1));
-            
-            this.track.style.gap = `${spaceBetween}px`;
-            this.track.style.justifyContent = 'space-evenly';
-            this.track.style.paddingLeft = `${spaceBetween}px`;
-            this.track.style.paddingRight = `${spaceBetween}px`;
-        } else {
-            // Mobile - căn giữa
-            this.track.style.justifyContent = 'center';
-            this.track.style.gap = '0px';
-            this.track.style.paddingLeft = '0px';
-            this.track.style.paddingRight = '0px';
-            spaceBetween = 0;
-        }
-        
-        // CẬP NHẬT CHIỀU RỘNG TRACK
-        this.updateTrackWidth(targetWidth, spaceBetween);
-    }
-    
-    updateTrackWidth(itemWidth, spaceBetween) {
-        const totalWidth = (itemWidth + spaceBetween) * this.items.length;
-        this.track.style.width = totalWidth + 'px';
-    }
-    
-    updateLayout() {
-        const layout = this.calculateFoodSize();
-        this.itemsPerView = layout.itemsPerView;
-        this.targetWidth = layout.targetWidth;
-        this.totalPositions = this.calculateTotalPositions(this.itemsPerView);
-        
-        // ĐẢM BẢO CURRENT POSITION HỢP LỆ
-        if (this.currentPosition > this.totalPositions) {
-            this.currentPosition = this.totalPositions;
-        }
-        
-        console.log(`🔄 Food Slider: ${this.itemsPerView} items/view, ${this.totalPositions + 1} slides, ${this.targetWidth}px width`);
-        
-        this.applyLayout(layout);
-        this.createIndicators();
-        this.updateSlider();
-    }
-    
-    createIndicators() {
-        this.indicatorsContainer.innerHTML = '';
-        
-        for (let i = 0; i <= this.totalPositions; i++) {
-            const indicator = document.createElement('div');
-            indicator.className = 'food-indicator';
-            indicator.setAttribute('data-slide', i);
-            if (i === this.currentPosition) {
-                indicator.classList.add('active');
-            }
-            
-            indicator.addEventListener('click', () => {
-                this.goToPosition(i);
-            });
-            
-            this.indicatorsContainer.appendChild(indicator);
-        }
-        
-        this.indicators = document.querySelectorAll('.food-indicator');
-    }
-    
-    init() {
-        this.renderFoodItems();
-        this.updateSlider();
-        
-        this.prevBtn.addEventListener('click', () => this.prevSlide());
-        this.nextBtn.addEventListener('click', () => this.nextSlide());
-        
-        this.startSlideShow();
-        
-        const bannerContainer = document.querySelector('.food-banner-container');
-        bannerContainer.addEventListener('mouseenter', () => {
-            this.pauseSlideShow();
-        });
-        
-        bannerContainer.addEventListener('mouseleave', () => {
-            this.startSlideShow();
-        });
-    }
-    
-    startSlideShow() {
-        if (this.slideInterval) {
-            clearInterval(this.slideInterval);
-        }
-        
-        if (this.totalPositions > 0) {
-            this.slideInterval = setInterval(() => {
-                this.nextSlide();
-            }, this.transitionTime);
-            
-            this.startProgressBar();
-        }
-    }
-    
-    startProgressBar() {
-        this.progressBar.style.width = '0%';
-        
-        if (this.progressInterval) {
-            clearInterval(this.progressInterval);
-        }
-        
-        let width = 0;
-        const increment = 100 / (this.transitionTime / 100);
-        
-        this.progressInterval = setInterval(() => {
-            if (width >= 100) {
-                clearInterval(this.progressInterval);
-            } else {
-                width += increment;
-                this.progressBar.style.width = width + '%';
-            }
-        }, 100);
-    }
-    
-    pauseSlideShow() {
-        clearInterval(this.slideInterval);
-        clearInterval(this.progressInterval);
-    }
-    
-    nextSlide() {
-        if (this.isAnimating || this.totalPositions === 0) return;
-        
-        this.isAnimating = true;
-        
-        if (this.currentPosition < this.totalPositions) {
-            this.currentPosition++;
-        } else {
-            this.currentPosition = 0;
-        }
-        
-        this.updateSlider();
-    }
-    
-    prevSlide() {
-        if (this.isAnimating || this.totalPositions === 0) return;
-        
-        this.isAnimating = true;
-        
-        if (this.currentPosition > 0) {
-            this.currentPosition--;
-        } else {
-            this.currentPosition = this.totalPositions;
-        }
-        
-        this.updateSlider();
-    }
-    
-    goToPosition(position) {
-        if (this.isAnimating || position === this.currentPosition || this.totalPositions === 0) return;
-        
-        this.isAnimating = true;
-        this.currentPosition = position;
-        this.updateSlider();
-    }
-    
-    updateSlider() {
-        if (!this.itemsPerView || !this.targetWidth || this.totalPositions === 0) return;
-        
-        const viewport = document.querySelector('.food-banner-viewport');
-        if (!viewport) return;
-        
-        const viewportWidth = viewport.offsetWidth;
-        
-        let spaceBetween;
-        if (this.itemsPerView > 1) {
-            const totalItemsWidth = this.targetWidth * this.itemsPerView;
-            const totalAvailableSpace = viewportWidth - totalItemsWidth;
-            spaceBetween = Math.max(20, totalAvailableSpace / (this.itemsPerView + 1));
-        } else {
-            spaceBetween = 0;
-        }
-        
-        const itemWidthWithSpace = this.targetWidth + spaceBetween;
-        const translateValue = -this.currentPosition * itemWidthWithSpace;
-        
-        this.track.style.transform = `translateX(${translateValue}px)`;
-        this.track.style.transition = 'transform 0.8s ease-in-out';
-        
-        if (this.indicators) {
-            this.indicators.forEach((indicator, index) => {
-                indicator.classList.toggle('active', index === this.currentPosition);
-            });
-        }
-        
-        setTimeout(() => {
-            this.isAnimating = false;
-        }, 800);
-        
-        this.startSlideShow();
-    }
-}
-
-// Khởi tạo Food Banner Slider
-document.addEventListener('DOMContentLoaded', () => {
-    const foodSlider = new FoodBannerSlider();
-    console.log('🚀 Food Banner Slider với responsive chi tiết đã loaded!');
 });
