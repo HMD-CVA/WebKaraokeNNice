@@ -317,21 +317,26 @@ app.get('/admin/loaiphong', async (req, res) => {
 });
 
 // API kiểm tra loại phòng có đang được sử dụng không
-app.get('/api/phonghat/check-loai-phong', async (req, res) => {
+app.get('/api/phonghat/check-loai-phong/:loaiPhong', async (req, res) => {
     try {
-        const { loaiPhong } = req.query;
+        const { loaiPhong } = req.params;
         
         // Kiểm tra xem có phòng nào đang sử dụng loại phòng này không
         const roomsUsingType = await DataModel.Data_PhongHat_Model.find({ 
             LoaiPhong: loaiPhong 
         });
         
-        const isUsed = roomsUsingType.length > 0;
+        const roomDetails = roomsUsingType.map(room => ({
+            TenPhong: room.TenPhong,
+            MaPhong: room.MaPhong,
+            TrangThai: room.TrangThai
+        }));
         
         res.json({ 
-            isUsed, 
+            isUsed: roomsUsingType.length > 0,
             loaiPhong,
-            count: roomsUsingType.length 
+            count: roomsUsingType.length,
+            rooms: roomDetails
         });
         
     } catch (err) {
@@ -963,6 +968,17 @@ app.delete('/api/banggia/:loaiPhong', async (req, res) => {
         const { loaiPhong } = req.params;
         
         console.log('🗑️ Đang xóa bảng giá cho:', loaiPhong);
+
+        const roomsUsingType = await DataModel.Data_PhongHat_Model.find({ 
+            LoaiPhong: loaiPhong 
+        });
+        
+        if (roomsUsingType.length > 0) {
+            return res.status(400).json({
+                success: false,
+                error: `Không thể xóa loại phòng "${loaiPhong}"! Có ${roomsUsingType.length} phòng đang sử dụng loại phòng này.`
+            });
+        }
         
         const deleteResult = await DataModel.Data_BangGiaPhong_Model.deleteMany({ 
             LoaiPhong: loaiPhong 

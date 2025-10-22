@@ -369,6 +369,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
+  
   // ===== CONFIGURATION & STATE =====
   const CONFIG = {
     roomsPerPage: 4,
@@ -390,6 +391,7 @@
   let currentEditingLoaiPhong = null;
   let hasUnsavedChanges = false;
   let currentLoaiPhong = null;
+  let initialPriceItemsCount = 0;
 
   // ===== UTILITY FUNCTIONS =====
   function formatNumber(price) {
@@ -534,22 +536,59 @@
   }
 
   function editRoom(id, name, type, size, status, description, image) {
+    // 🔥 LƯU THÔNG TIN ĐỂ TÌM LẠI SAU KHI RELOAD
+    sessionStorage.setItem('lastActionRoomId', id);
+    sessionStorage.setItem('lastActionType', 'room');
+    
+    // Lưu filters hiện tại
+    const currentFilters = {
+        search: document.getElementById('searchInput').value,
+        type: document.getElementById('typeFilter').value,
+        status: document.getElementById('statusFilter').value
+    };
+    sessionStorage.setItem('currentFilters', JSON.stringify(currentFilters));
+    
+    // 🔥 LƯU STATE HIỆN TẠI
+    const currentState = {
+        page: currentPage,
+        filters: currentFilters,
+        timestamp: Date.now()
+    };
+    sessionStorage.setItem('karaokeAppStateBeforeReload', JSON.stringify(currentState));
+
+    console.log('💾 Đã lưu state trước khi mở modal:', currentState);
+
     const roomData = {
-      _id: id,
-      TenPhong: name,
-      LoaiPhong: type,
-      SucChua: size,
-      TrangThai: status,
-      GhiChu: description,
-      LinkAnh: image
+        _id: id,
+        TenPhong: name,
+        LoaiPhong: type,
+        SucChua: size,
+        TrangThai: status,
+        GhiChu: description,
+        LinkAnh: image
     };
     openRoomModal(roomData);
-  }
+}
 
   function closeRoomModal() {
+    // LƯU TRẠNG THÁI HIỆN TẠI (giữ nguyên trang và filters)
+    const currentState = {
+        page: currentPage, // 🔥 Giữ nguyên trang hiện tại
+        filters: {
+            search: document.getElementById('searchInput').value,
+            type: document.getElementById('typeFilter').value,
+            status: document.getElementById('statusFilter').value
+        },
+        timestamp: Date.now()
+    };
+    sessionStorage.setItem('karaokeAppStateBeforeReload', JSON.stringify(currentState));
+
     document.getElementById('roomModal').style.display = 'none';
     document.body.style.overflow = 'auto';
-  }
+
+    console.log('💾 Đã lưu state trước khi đóng room modal - Giữ nguyên trang:', currentPage);
+    location.reload(); // 🔥 Reload để cập nhật dữ liệu
+}
 
   function resetRoomForm() {
     document.getElementById('roomForm').reset();
@@ -613,27 +652,41 @@
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || result.message || 'Lỗi server');
 
-        // Lưu thông tin để tự động chuyển trang sau khi reload
         const targetRoomId = roomId || result.data?._id;
+
+        // 🔥 LƯU THÔNG TIN ĐỂ TÌM TRANG SAU KHI RELOAD
         if (targetRoomId) {
+            // Lưu thông tin để auto navigation
             sessionStorage.setItem('lastActionRoomId', targetRoomId);
             sessionStorage.setItem('lastActionType', 'room');
+            
+            // 🔥 LƯU STATE HIỆN TẠI (giữ nguyên trang và filters)
+            const currentState = {
+                page: currentPage, // 🔥 Giữ nguyên trang hiện tại
+                filters: {
+                    search: document.getElementById('searchInput').value,
+                    type: document.getElementById('typeFilter').value,
+                    status: document.getElementById('statusFilter').value
+                },
+                timestamp: Date.now()
+            };
+            sessionStorage.setItem('karaokeAppStateBeforeReload', JSON.stringify(currentState));
+            
+            console.log('💾 Đã lưu state cho reload - Giữ nguyên trang:', currentPage);
         }
-
-        appState.activeModal = 'roomModal';
-        appState.modalData = formData;
-        saveAppState();
 
         Swal.fire({
             icon: 'success',
             title: 'Thành công!',
             text: result.message || `Phòng "${formData.TenPhong}" đã được ${roomId ? 'cập nhật' : 'thêm'} thành công!`,
-            timer: 2000,
+            timer: 1500,
             showConfirmButton: false
         });
 
-        closeRoomModal();
-        location.reload();
+        // RELOAD TRANG (sẽ giữ nguyên trang và filters)
+        setTimeout(() => {
+            location.reload();
+        }, 1500);
 
     } catch (error) {
         console.error('❌ Lỗi khi lưu phòng:', error);
@@ -646,6 +699,9 @@
     }
 }
   
+
+
+
   async function deleteRoom(roomId, roomName) {
     const result = await Swal.fire({
       title: 'Xác nhận xóa?',
@@ -763,34 +819,8 @@ async function deleteRoomType() {
         return;
     }
 
-    // Kiểm tra xem loại phòng có đang được sử dụng không
-    const isUsed = await checkRoomTypeInUse(currentRoomType);
     
-    if (isUsed) {
-        await Swal.fire({
-            icon: 'error',
-            title: 'Không thể xoá',
-            html: `Loại phòng <strong>"${currentRoomType}"</strong> đang được sử dụng bởi các phòng hát.<br><br>Vui lòng xoá hoặc đổi loại phòng của các phòng liên quan trước.`,
-            confirmButtonColor: '#667eea'
-        });
-        return;
-    }
-
-    const result = await Swal.fire({
-        title: 'Xác nhận xoá?',
-        html: `Bạn có chắc muốn xoá loại phòng <strong>"${currentRoomType}"</strong>?<br><br><span style="color: #e53e3e; font-weight: 600;">Hành động này không thể hoàn tác!</span>`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#e53e3e',
-        cancelButtonColor: '#667eea',
-        confirmButtonText: 'Xoá',
-        cancelButtonText: 'Hủy',
-        reverseButtons: true
-    });
-
-    if (result.isConfirmed) {
-        await deleteRoomTypeFromServer(currentRoomType);
-    }
+        await checkAndDeleteEmptyRoomType(currentRoomType);
 }
 
 // ===== HELPER FUNCTIONS =====
@@ -888,10 +918,10 @@ async function saveRoomType(roomType, action, oldRoomType = null) {
 
 async function checkRoomTypeInUse(roomType) {
     try {
-        const response = await fetch(`/api/loaiphong?loaiPhong=${encodeURIComponent(roomType)}`);
+        const response = await fetch(`/api/phonghat/check-loai-phong/${roomType}`);
         if (response.ok) {
             const rooms = await response.json();
-            return rooms.length > 0;
+            return rooms.isUsed;
         }
         return false;
     } catch (error) {
@@ -930,8 +960,10 @@ async function deleteRoomTypeFromServer(roomType) {
             showConfirmButton: false
         });
 
-        // Reset select về trạng thái ban đầu
-        document.getElementById('bangGiaLoaiPhong').value = '';
+    
+         // Reset và đóng modal
+        document.getElementById('bangGiaModal').style.display = 'none';
+        document.body.style.overflow = 'auto';
         resetBangGiaModal();
 
     } catch (error) {
@@ -1043,20 +1075,41 @@ async function updateRoomTypeInUI(newRoomType, action, oldRoomType = null) {
 
   // ===== PAGE NAVIGATION FUNCTIONS =====
 function findRoomPage(roomId) {
+    console.log('🔍 Đang tìm trang cho phòng:', roomId);
+    console.log('📊 Tổng số phòng:', allRooms.length);
+    
     for (let i = 0; i < allRooms.length; i++) {
-        if (allRooms[i].getAttribute('data-id') === roomId) {
-            return Math.floor(i / CONFIG.roomsPerPage) + 1;
+        const roomElement = allRooms[i];
+        const roomDataId = roomElement.getAttribute('data-id');
+        
+        console.log(`   Phòng ${i}:`, roomDataId);
+        
+        if (roomDataId === roomId) {
+            const page = Math.floor(i / CONFIG.roomsPerPage) + 1;
+            console.log(`✅ Tìm thấy! Phòng ở vị trí ${i} -> Trang ${page}`);
+            return page;
         }
     }
-    return 1; // Mặc định về trang 1 nếu không tìm thấy
+    
+    console.log('❌ Không tìm thấy phòng, trả về trang 1');
+    return 1;
 }
 
 function findRoomPageByType(loaiPhong) {
+    console.log('🔍 Đang tìm trang cho loại phòng:', loaiPhong);
+    
     for (let i = 0; i < allRooms.length; i++) {
-        if (allRooms[i].getAttribute('data-type') === loaiPhong) {
-            return Math.floor(i / CONFIG.roomsPerPage) + 1;
+        const roomElement = allRooms[i];
+        const roomType = roomElement.getAttribute('data-type');
+        
+        if (roomType === loaiPhong) {
+            const page = Math.floor(i / CONFIG.roomsPerPage) + 1;
+            console.log(`✅ Tìm thấy loại phòng "${loaiPhong}" ở vị trí ${i} -> Trang ${page}`);
+            return page;
         }
     }
+    
+    console.log(`❌ Không tìm thấy loại phòng "${loaiPhong}", trả về trang 1`);
     return 1;
 }
   
@@ -1066,24 +1119,42 @@ function findRoomPageByType(loaiPhong) {
     const typeFilter = document.getElementById('typeFilter').value;
     const statusFilter = document.getElementById('statusFilter').value;
 
+    console.log('🔍 Filtering rooms:', { searchTerm, typeFilter, statusFilter });
+
     filteredRooms = allRooms.filter(card => {
-      const name = card.getAttribute('data-name').toLowerCase();
-      const type = card.getAttribute('data-type');
-      const status = card.getAttribute('data-status');
+        const name = card.getAttribute('data-name').toLowerCase();
+        const type = card.getAttribute('data-type');
+        const status = card.getAttribute('data-status');
 
-      const matchesSearch = !searchTerm || name.includes(searchTerm);
-      const matchesType = !typeFilter || type === typeFilter;
-      const matchesStatus = !statusFilter || status === statusFilter;
+        const matchesSearch = !searchTerm || name.includes(searchTerm);
+        const matchesType = !typeFilter || type === typeFilter;
+        const matchesStatus = !statusFilter || status === statusFilter;
 
-      return matchesSearch && matchesType && matchesStatus;
+        const shouldShow = matchesSearch && matchesType && matchesStatus;
+        return shouldShow;
     });
 
-    currentPage = 1;
+    console.log('📊 Kết quả filter:', filteredRooms.length, 'phòng');
+
+    // 🔥 QUAN TRỌNG: KHÔNG reset currentPage về 1 ở đây
+    // Chỉ điều chỉnh nếu currentPage vượt quá tổng số trang
+    const totalPages = Math.ceil(filteredRooms.length / CONFIG.roomsPerPage);
+    if (currentPage > totalPages && totalPages > 0) {
+        currentPage = totalPages;
+    } else if (totalPages === 0) {
+        currentPage = 1;
+    }
+
     showCurrentPage();
     updatePaginationInfo();
     togglePaginationVisibility();
     toggleEmptyState(filteredRooms.length === 0);
-  }
+}
+
+
+
+
+
 
   function clearFilters() {
     document.getElementById('searchInput').value = '';
@@ -1131,25 +1202,40 @@ function findRoomPageByType(loaiPhong) {
 
   // ===== PAGINATION =====
   function showCurrentPage() {
-    allRooms.forEach(room => room.style.display = 'none');
+    console.log('📄 Hiển thị trang:', currentPage, 'tổng phòng filtered:', filteredRooms.length);
+    
+    // Ẩn tất cả phòng trước
+    allRooms.forEach(room => {
+        room.style.display = 'none';
+    });
 
+    // Hiển thị phòng thuộc trang hiện tại
     const startIndex = (currentPage - 1) * CONFIG.roomsPerPage;
     const endIndex = startIndex + CONFIG.roomsPerPage;
 
+    console.log('📄 Chỉ số:', startIndex, 'đến', endIndex - 1);
+
+    let displayedCount = 0;
     for (let i = startIndex; i < endIndex && i < filteredRooms.length; i++) {
-      if (filteredRooms[i]) {
-        filteredRooms[i].style.display = 'block';
-      }
+        if (filteredRooms[i]) {
+            filteredRooms[i].style.display = 'block';
+            displayedCount++;
+            console.log('👉 Hiển thị phòng:', filteredRooms[i].getAttribute('data-name'));
+        }
     }
 
+    console.log('✅ Đã hiển thị:', displayedCount, 'phòng');
     updatePaginationInfo();
-  }
+}
 
   function updatePaginationInfo() {
     const currentRange = document.getElementById('currentRange');
     const totalRoomsCount = document.getElementById('totalRoomsCount');
 
-    if (!currentRange || !totalRoomsCount) return;
+    if (!currentRange || !totalRoomsCount) {
+        console.log('❌ Không tìm thấy phần tử pagination');
+        return;
+    }
 
     const totalFilteredRooms = filteredRooms.length;
     const totalPages = Math.ceil(totalFilteredRooms / CONFIG.roomsPerPage);
@@ -1160,8 +1246,16 @@ function findRoomPageByType(loaiPhong) {
     currentRange.textContent = totalFilteredRooms === 0 ? '0-0' : `${start}-${end}`;
     totalRoomsCount.textContent = totalFilteredRooms;
 
+    console.log('📊 Pagination info:', {
+        currentPage,
+        totalPages,
+        totalFilteredRooms,
+        range: `${start}-${end}`,
+        roomsPerPage: CONFIG.roomsPerPage
+    });
+
     updatePaginationControls(totalPages);
-  }
+}
 
   function updatePaginationControls(totalPages) {
     const paginationPages = document.getElementById('paginationPages');
@@ -1235,14 +1329,22 @@ function findRoomPageByType(loaiPhong) {
 
   function togglePaginationVisibility() {
     const paginationContainer = document.getElementById('paginationContainer');
-    if (!paginationContainer) return;
-
-    if (filteredRooms.length <= CONFIG.roomsPerPage) {
-      paginationContainer.classList.add('hidden');
-    } else {
-      paginationContainer.classList.remove('hidden');
+    if (!paginationContainer) {
+        console.log('❌ Không tìm thấy paginationContainer');
+        return;
     }
-  }
+
+    const shouldShow = filteredRooms.length > CONFIG.roomsPerPage;
+    console.log('👀 Pagination visibility:', shouldShow ? 'HIỆN' : 'ẨN', '- Số phòng:', filteredRooms.length);
+
+    if (shouldShow) {
+        paginationContainer.classList.remove('hidden');
+        paginationContainer.style.display = 'flex';
+    } else {
+        paginationContainer.classList.add('hidden');
+        paginationContainer.style.display = 'none';
+    }
+}
 
   // ===== BANG GIA MANAGEMENT =====
   function addBangGia(loaiPhong) {
@@ -1270,6 +1372,19 @@ function findRoomPageByType(loaiPhong) {
   }
 
   function openPriceModal(loaiPhong = null) {
+    // LƯU TRẠNG THÁI HIỆN TẠI TRƯỚC KHI MỞ MODAL
+    const currentState = {
+        page: currentPage,
+        filters: {
+            search: document.getElementById('searchInput').value,
+            type: document.getElementById('typeFilter').value,
+            status: document.getElementById('statusFilter').value
+        },
+        timestamp: Date.now()
+    };
+    sessionStorage.setItem('karaokeAppStateBeforeModal', JSON.stringify(currentState));
+
+
     document.getElementById('bangGiaModalTitle').textContent = 'Quản lý bảng giá theo loại phòng';
     document.getElementById('bangGiaModal').style.display = 'flex';
     document.body.style.overflow = 'hidden';
@@ -1286,7 +1401,7 @@ function findRoomPageByType(loaiPhong) {
 
   async function closeBangGiaModal() {
     // Kiểm tra nếu có thay đổi chưa lưu
-    if (!hasUnsavedChanges) {
+    if (hasUnsavedChanges) {
         const result = await Swal.fire({
             title: 'Thay đổi chưa được lưu!',
             text: 'Bạn có chắc muốn thoát? Các thay đổi sẽ bị mất.',
@@ -1304,12 +1419,20 @@ function findRoomPageByType(loaiPhong) {
         }
 
         // Nếu là loại phòng mới chưa có khung giờ, xóa loại phòng đó
-        try {
-            await checkAndDeleteEmptyRoomType();
-        } catch (error) {
-            console.error('Lỗi khi xóa loại phòng trống:', error);
-        }
+        
     }
+
+    // 🔥 LƯU STATE HIỆN TẠI (giữ nguyên trang và filters)
+    const currentState = {
+        page: currentPage, // 🔥 Giữ nguyên trang hiện tại
+        filters: {
+            search: document.getElementById('searchInput').value,
+            type: document.getElementById('typeFilter').value,
+            status: document.getElementById('statusFilter').value
+        },
+        timestamp: Date.now()
+    };
+    sessionStorage.setItem('karaokeAppStateBeforeReload', JSON.stringify(currentState));
 
     // Đóng modal
     document.getElementById('bangGiaModal').style.display = 'none';
@@ -1320,65 +1443,152 @@ function findRoomPageByType(loaiPhong) {
     // Reset trạng thái
     hasUnsavedChanges = false;
     currentLoaiPhong = null;
-  
-  }
+
+    console.log('💾 Đã lưu state trước khi đóng bảng giá modal - Giữ nguyên trang:', currentPage);
+    //location.reload(); // 🔥 Reload để cập nhật dữ liệu
+}
+  // ===== RESTORE STATE AFTER MODAL CLOSE =====
+// ===== RESTORE STATE AFTER RELOAD =====
+function restoreStateAfterReload() {
+    try {
+        const savedState = sessionStorage.getItem('karaokeAppStateBeforeReload');
+        
+        if (savedState) {
+            const state = JSON.parse(savedState);
+            
+            console.log('🔄 Khôi phục state sau reload:', state);
+
+            // Kiểm tra nếu state chưa quá cũ (dưới 10 giây)
+            if (Date.now() - state.timestamp < 10000) {
+                
+                // 🔥 KHÔI PHỤC CẢ FILTERS VÀ TRANG
+                if (state.filters) {
+                    const searchInput = document.getElementById('searchInput');
+                    const typeFilter = document.getElementById('typeFilter');
+                    const statusFilter = document.getElementById('statusFilter');
+                    
+                    if (searchInput) searchInput.value = state.filters.search || '';
+                    if (typeFilter) typeFilter.value = state.filters.type || '';
+                    if (statusFilter) statusFilter.value = state.filters.status || '';
+                    
+                    console.log('✅ Đã khôi phục filters:', state.filters);
+                }
+                
+                // 🔥 KHÔI PHỤC TRANG
+                if (state.page) {
+                    currentPage = state.page;
+                    console.log('✅ Khôi phục về trang từ state:', currentPage);
+                }
+            }
+            
+            // KHÔNG XÓA STATE Ở ĐÂY - để handleAutoNavigationAfterReload sử dụng
+        } else {
+            // Mặc định trang 1 nếu không có state
+            currentPage = 1;
+            console.log('🔄 Không có state, mặc định trang 1');
+        }
+    } catch (error) {
+        console.error('❌ Lỗi khi khôi phục state:', error);
+        currentPage = 1;
+    }
+}
+
+
+
+
+
+
+
+function restoreStateAfterModalClose() {
+    try {
+        const savedState = sessionStorage.getItem('karaokeAppStateBeforeModal');
+        if (savedState) {
+            const state = JSON.parse(savedState);
+            
+            // Kiểm tra nếu state chưa quá cũ (dưới 10 giây)
+            if (Date.now() - state.timestamp < 10000) {
+                console.log('🔄 Khôi phục trạng thái trước khi mở modal:', state);
+                
+                // Khôi phục filters
+                if (state.filters) {
+                    const searchInput = document.getElementById('searchInput');
+                    const typeFilter = document.getElementById('typeFilter');
+                    const statusFilter = document.getElementById('statusFilter');
+                    
+                    if (searchInput && searchInput.value !== state.filters.search) {
+                        searchInput.value = state.filters.search || '';
+                    }
+                    if (typeFilter && typeFilter.value !== state.filters.type) {
+                        typeFilter.value = state.filters.type || '';
+                    }
+                    if (statusFilter && statusFilter.value !== state.filters.status) {
+                        statusFilter.value = state.filters.status || '';
+                    }
+                }
+                
+                // Khôi phục trang
+                if (state.page && state.page !== currentPage) {
+                    currentPage = state.page;
+                    showCurrentPage();
+                    updatePaginationInfo();
+                }
+                
+                // Áp dụng filters nếu có thay đổi
+                filterRooms();
+            }
+            
+            // Xóa state đã khôi phục
+            sessionStorage.removeItem('karaokeAppStateBeforeModal');
+        }
+    } catch (error) {
+        console.error('❌ Lỗi khi khôi phục trạng thái:', error);
+        sessionStorage.removeItem('karaokeAppStateBeforeModal');
+    }
+}
 
   async function checkAndDeleteEmptyRoomType() {
     const loaiPhong = document.getElementById('bangGiaLoaiPhong').value;
-    if (!loaiPhong) return;
+    if (!loaiPhong) {
+        await Swal.fire({
+            icon: 'warning',
+            title: 'Chưa chọn loại phòng',
+            text: 'Vui lòng chọn loại phòng muốn xóa',
+            confirmButtonColor: '#667eea'
+        });
+        return;
+    }
 
     try {
-        // Kiểm tra xem loại phòng có bảng giá không
-        const response = await fetch(`/api/banggia/${loaiPhong}`);
-        if (response.ok) {
-            const bangGiaData = await response.json();
-            
-            // Kiểm tra nếu loại phòng không có khung giờ nào
-            const isEmpty = !bangGiaData || bangGiaData.length === 0 || 
-                           (bangGiaData[0] && (!bangGiaData[0].BangGia || bangGiaData[0].BangGia.length === 0));
-            
-            if (isEmpty) {
-                console.log(`🗑️ Loại phòng "${loaiPhong}" chưa có khung giờ, đang xóa...`);
-                
-                const deleteResult = await Swal.fire({
-                    title: 'Xóa loại phòng trống?',
-                    html: `Loại phòng <strong>"${loaiPhong}"</strong> chưa có khung giờ nào.<br>Bạn có muốn xóa loại phòng này?`,
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    cancelButtonColor: '#3085d6',
-                    confirmButtonText: 'Xóa loại phòng',
-                    cancelButtonText: 'Giữ lại',
-                    reverseButtons: true
-                });
-
-                if (deleteResult.isConfirmed) {
-                    // Gọi API DELETE để xóa loại phòng
-                    const deleteResponse = await fetch(`/api/banggia/${loaiPhong}`, {
-                        method: 'DELETE'
-                    });
-
-                    if (deleteResponse.ok) {
-                        const result = await deleteResponse.json();
-                        
-                        // Cập nhật UI
-                        await updateRoomTypeInUI(loaiPhong, 'delete');
-                        
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Đã xóa!',
-                            text: result.message || `Đã xóa loại phòng "${loaiPhong}"`,
-                            timer: 1500,
-                            showConfirmButton: false
-                        });
-                    } else {
-                        const errorResult = await deleteResponse.json();
-                        throw new Error(errorResult.error || 'Lỗi khi xóa loại phòng');
-                    }
-                }
-            }
+       const isUsed = await checkRoomTypeInUse(loaiPhong);
+       if (isUsed) {
+            await Swal.fire({
+                icon: 'error',
+                title: 'Không thể xóa',
+                html: `Loại phòng <strong>"${loaiPhong}"</strong> đang được sử dụng bởi các phòng hát.<br><br>Vui lòng xóa hoặc đổi loại phòng của các phòng liên quan trước.`,
+                confirmButtonColor: '#667eea'
+            });
+            return;
         }
-    } catch (error) {
+        const result = await Swal.fire({
+            title: 'Xác nhận xóa loại phòng?',
+            html: `Bạn có chắc muốn xóa loại phòng <strong>"${loaiPhong}"</strong>?<br><br>
+                   <span style="color: #e53e3e; font-weight: 600;">
+                   ⚠️ Cảnh báo: Tất cả khung giờ của loại phòng này sẽ bị xóa vĩnh viễn!
+                   </span>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#e53e3e',
+            cancelButtonColor: '#667eea',
+            confirmButtonText: 'Xóa loại phòng',
+            cancelButtonText: 'Hủy',
+            reverseButtons: true
+        });
+        if (result.isConfirmed) {
+            await deleteRoomTypeFromServer(loaiPhong);
+        }
+        // Kiểm tra xem loại phòng có bảng giá không --}}
+    } 
+    catch (error) {
         console.error('❌ Lỗi khi kiểm tra loại phòng trống:', error);
         
         // Vẫn hiển thị lỗi nhưng không chặn đóng modal
@@ -1943,11 +2153,10 @@ function findRoomPageByType(loaiPhong) {
             didOpen: () => Swal.showLoading()
         });
 
-        // SỬ DỤNG PUT ĐỂ UPDATE/CREATE - ĐƠN GIẢN HƠN
         const response = await fetch(`/api/banggia/${loaiPhong}`, {
-            method: 'PUT', // Hoặc 'POST' tùy vào API của bạn
+            method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ loaiPhong:loaiPhong, bangGia: bangGiaData })
+            body: JSON.stringify({ loaiPhong: loaiPhong, bangGia: bangGiaData })
         });
 
         if (!response.ok) {
@@ -1956,6 +2165,18 @@ function findRoomPageByType(loaiPhong) {
         }
 
         Swal.close();
+
+        // 🔥 LƯU STATE HIỆN TẠI (giữ nguyên trang và filters)
+        const currentState = {
+            page: currentPage, // 🔥 Giữ nguyên trang hiện tại
+            filters: {
+                search: document.getElementById('searchInput').value,
+                type: document.getElementById('typeFilter').value,
+                status: document.getElementById('statusFilter').value
+            },
+            timestamp: Date.now()
+        };
+        sessionStorage.setItem('karaokeAppStateBeforeReload', JSON.stringify(currentState));
 
         // Lưu thông tin để tự động chuyển trang sau khi reload
         sessionStorage.setItem('lastActionLoaiPhong', loaiPhong);
@@ -1972,8 +2193,8 @@ function findRoomPageByType(loaiPhong) {
 
         hasUnsavedChanges = true;
 
-        closeBangGiaModal();
-        location.reload();
+        console.log('💾 Đã lưu state trước khi đóng bảng giá modal - Giữ nguyên trang:', currentPage);
+        location.reload(); // 🔥 Reload để cập nhật dữ liệu
 
     } catch (error) {
         Swal.close();
@@ -1987,7 +2208,6 @@ function findRoomPageByType(loaiPhong) {
         });
     }
 }
-  
   
   
   
@@ -2057,22 +2277,32 @@ function findRoomPageByType(loaiPhong) {
   // ===== AUTO NAVIGATION AFTER RELOAD =====
 function handleAutoNavigationAfterReload() {
     const lastActionType = sessionStorage.getItem('lastActionType');
+    const savedState = sessionStorage.getItem('karaokeAppStateBeforeReload');
     
-    if (!lastActionType) return;
+    console.log('🎯 Auto Navigation - lastActionType:', lastActionType, 'savedState:', !!savedState);
 
-    // Đợi một chút để đảm bảo DOM đã load xong
+    if (!lastActionType && !savedState) {
+        console.log('🔄 Không có action nào cần xử lý');
+        return;
+    }
+
+    // Đợi DOM load xong
     setTimeout(() => {
+        let shouldUpdateDisplay = false;
+
         if (lastActionType === 'room') {
             const roomId = sessionStorage.getItem('lastActionRoomId');
             if (roomId) {
+                // TÌM TRANG CHỨA PHÒNG
                 const targetPage = findRoomPage(roomId);
+                console.log('🎯 Phòng được sửa ở trang:', targetPage, 'currentPage:', currentPage);
+                
                 if (targetPage !== currentPage) {
                     currentPage = targetPage;
-                    showCurrentPage();
-                    updatePaginationInfo();
+                    console.log('✅ Đã chuyển đến trang:', currentPage);
+                    shouldUpdateDisplay = true;
                 }
                 
-                // Highlight phòng vừa thao tác
                 highlightRoom(roomId);
             }
         } 
@@ -2080,24 +2310,40 @@ function handleAutoNavigationAfterReload() {
             const loaiPhong = sessionStorage.getItem('lastActionLoaiPhong');
             if (loaiPhong) {
                 const targetPage = findRoomPageByType(loaiPhong);
+                console.log('🎯 Loại phòng ở trang:', targetPage, 'currentPage:', currentPage);
+                
                 if (targetPage !== currentPage) {
                     currentPage = targetPage;
-                    showCurrentPage();
-                    updatePaginationInfo();
+                    console.log('✅ Đã chuyển đến trang:', currentPage);
+                    shouldUpdateDisplay = true;
                 }
                 
-                // Highlight các phòng cùng loại
                 highlightRoomsByType(loaiPhong);
             }
         }
 
-        // Xóa thông tin sau khi đã xử lý
-        sessionStorage.removeItem('lastActionType');
-        sessionStorage.removeItem('lastActionRoomId');
-        sessionStorage.removeItem('lastActionLoaiPhong');
-        
-    }, 500);
+        // 🔥 CẬP NHẬT HIỂN THỊ NẾU CÓ THAY ĐỔI
+        if (shouldUpdateDisplay) {
+            showCurrentPage();
+            updatePaginationInfo();
+        }
+
+        // 🔥 XÓA STATE SAU KHI ĐÃ XỬ LÝ XONG
+        cleanupAfterNavigation();
+
+    }, 300);
 }
+
+function cleanupAfterNavigation() {
+    console.log('🧹 Đang dọn dẹp state sau navigation...');
+    sessionStorage.removeItem('lastActionType');
+    sessionStorage.removeItem('lastActionRoomId');
+    sessionStorage.removeItem('lastActionLoaiPhong');
+    sessionStorage.removeItem('currentFilters');
+    sessionStorage.removeItem('karaokeAppStateBeforeReload');
+    console.log('✅ Đã dọn dẹp xong state');
+}
+
 
 function highlightRoom(roomId) {
     const roomElement = document.querySelector(`.room-card[data-id="${roomId}"]`);
@@ -2153,29 +2399,96 @@ function highlightRoomsByType(loaiPhong) {
         });
     }
 }
+// Thêm hàm này để reset state khi trang load
+function resetPaginationState() {
+    currentPage = 1;
+    sessionStorage.removeItem('karaokeAppStateBeforeModal');
+    sessionStorage.removeItem('shouldRestoreAfterReload');
+    sessionStorage.removeItem('lastActionType');
+    sessionStorage.removeItem('lastActionRoomId');
+    sessionStorage.removeItem('lastActionLoaiPhong');
+    
+    console.log('🔄 Đã reset pagination state, currentPage =', currentPage);
+}
+
   // ===== INITIALIZATION =====
 function initializePaginationAndFilter() {
     allRooms = Array.from(document.querySelectorAll('.room-card'));
-    filteredRooms = [...allRooms];
-    currentPage = 1;
-
+    console.log('🏠 Tổng số phòng tìm thấy:', allRooms.length);
+    
+    // 🔥 QUAN TRỌNG: KHÔI PHỤC STATE TRƯỚC (chỉ khôi phục trang, không khôi phục filters)
+    restoreStateAfterReload();
+    
+    // 🔥 KHÔNG KHÔI PHỤC FILTERS TỪ currentFilters NỮA
+    // Luôn reset filters về "Tất cả" khi reload
     const searchInput = document.getElementById('searchInput');
     const typeFilter = document.getElementById('typeFilter');
     const statusFilter = document.getElementById('statusFilter');
-
+    
     if (searchInput) searchInput.value = '';
     if (typeFilter) typeFilter.value = '';
     if (statusFilter) statusFilter.value = '';
+    
+    console.log('✅ Đã reset filters về trạng thái mặc định');
+    
+    // ÁP DỤNG FILTERS (sẽ là "Tất cả")
+    applyFiltersWithoutPageReset();
+    
+    // 🔥 SAU CÙNG MỚI XỬ LÝ AUTO NAVIGATION
+    setTimeout(() => {
+        handleAutoNavigationAfterReload();
+    }, 100);
+    
+    console.log('🎯 Khởi tạo xong, trang hiện tại:', currentPage);
+}
+
+
+
+
+
+
+
+
+
+
+function applyFiltersWithoutPageReset() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const typeFilter = document.getElementById('typeFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+
+    console.log('🔍 Áp dụng filters:', { searchTerm, typeFilter, statusFilter });
+
+    filteredRooms = allRooms.filter(card => {
+        const name = card.getAttribute('data-name').toLowerCase();
+        const type = card.getAttribute('data-type');
+        const status = card.getAttribute('data-status');
+
+        const matchesSearch = !searchTerm || name.includes(searchTerm);
+        const matchesType = !typeFilter || type === typeFilter;
+        const matchesStatus = !statusFilter || status === statusFilter;
+
+        return matchesSearch && matchesType && matchesStatus;
+    });
+
+    console.log('📊 Kết quả filter:', filteredRooms.length, 'phòng');
+
+    // 🔥 KHÔNG reset currentPage, chỉ điều chỉnh nếu vượt quá
+    const totalPages = Math.ceil(filteredRooms.length / CONFIG.roomsPerPage);
+    console.log('📄 Tổng số trang:', totalPages, 'currentPage:', currentPage);
+    
+    if (currentPage > totalPages && totalPages > 0) {
+        currentPage = totalPages;
+        console.log('🔄 Điều chỉnh currentPage về:', currentPage);
+    } else if (totalPages === 0) {
+        currentPage = 1;
+        console.log('🔄 Không có phòng, reset về trang 1');
+    }
 
     showCurrentPage();
     updatePaginationInfo();
     togglePaginationVisibility();
-    toggleEmptyState(false);
-    
-    // Xử lý tự động chuyển trang sau reload
-    handleAutoNavigationAfterReload();
+    toggleEmptyState(filteredRooms.length === 0);
 }
-
 
   document.addEventListener('DOMContentLoaded', function () {
     console.log('🏠 DOM đã load xong');
@@ -2254,13 +2567,17 @@ function setupEventListeners() {
 
     if (roomModal) {
         roomModal.addEventListener('click', function (e) {
-            if (e.target === roomModal) closeRoomModal();
+            if (e.target === roomModal) {
+                closeRoomModal();
+            }
         });
     }
 
     if (bangGiaModal) {
         bangGiaModal.addEventListener('click', function (e) {
-            if (e.target === bangGiaModal) closeBangGiaModal();
+            if (e.target === bangGiaModal) {
+                closeBangGiaModal();
+            }
         });
     }
 }
@@ -2268,24 +2585,8 @@ function setupEventListeners() {
 function initializeApp() {
     console.log('🏠 DOM đã load xong');
 
-    // Khôi phục state
-    loadAppState();
-
-    // Áp dụng filters từ state
-    if (appState.filters) {
-        const searchInput = document.getElementById('searchInput');
-        const typeFilter = document.getElementById('typeFilter');
-        const statusFilter = document.getElementById('statusFilter');
-        
-        if (searchInput) searchInput.value = appState.filters.search || '';
-        if (typeFilter) typeFilter.value = appState.filters.type || '';
-        if (statusFilter) statusFilter.value = appState.filters.status || '';
-    }
-
-    // Khôi phục trang hiện tại
-    if (appState.pagination?.currentPage) {
-        currentPage = appState.pagination.currentPage;
-    }
+    // RESET STATE TRƯỚC KHI KHỞI TẠO
+    resetPaginationState();
 
     // Khởi tạo dữ liệu bảng giá
     try {
@@ -4882,5 +5183,25 @@ document.addEventListener('DOMContentLoaded', initializeApp);
         padding: 10px;
         font-size: 0.9rem;
     }
+}
+.hidden {
+    display: none !important;
+}
+
+.pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 32px;
+    padding: 20px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Đảm bảo khi không hidden thì hiển thị flex */
+.pagination-container:not(.hidden) {
+    display: flex !important;
 }
 </style>
