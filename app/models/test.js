@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import models from '../model/index.js';
+import models from './index.js';
 
 // Kết nối MongoDB
 mongoose.connect('mongodb+srv://huynhmyduc2005_db_user:5oLJA7f9uK9WQXXT@cluster0.c2otaab.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
