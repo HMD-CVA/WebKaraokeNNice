@@ -26,10 +26,7 @@ router.post('/', async (req, res, next) => {
     try {
         const { TenHang, DonGia, DonViTinh, SoLuongTon, LinkAnh } = req.body
         await DataModel.Data_MatHang_Model.create({ TenHang, DonGia, DonViTinh, SoLuongTon, LinkAnh })
-        res.json({
-            success: true,
-            message: 'Them mat hang thanh cong',
-        })
+        res.json({ message: 'Them mat hang thanh cong' })
     } catch (error) {
         res.status(500).json({ message: 'Loi server', error: error.message })
     }
@@ -40,8 +37,8 @@ router.put('/:id', async (req, res, next) => {
         const id = req.params.id
         const { TenHang, DonGia, DonViTinh, SoLuongTon, LinkAnh } = req.body
         const matHang = await DataModel.Data_MatHang_Model.findById(id)
-        if(!matHang) return res.status(404).json('Khong co mat hang')
-        
+        if (!matHang) return res.status(404).json('Khong co mat hang')
+
         matHang.TenHang = TenHang ? TenHang : matHang.TenHang
         matHang.DonGia = DonGia ? DonGia : matHang.DonGia
         matHang.DonViTinh = DonViTinh ? DonViTinh : matHang.DonViTinh
@@ -49,7 +46,7 @@ router.put('/:id', async (req, res, next) => {
         matHang.LinkAnh = LinkAnh ? LinkAnh : matHang.LinkAnh
 
         await matHang.save()
-        res.json({message: 'Cap nhat mat hang thanh cong'})
+        res.json({ message: 'Cap nhat mat hang thanh cong' })
     } catch (error) {
         res.status(500).json({ message: 'Loi server', error: error.message })
     }
@@ -59,8 +56,8 @@ router.delete('/:id', async (req, res, next) => {
     try {
         const id = req.params.id
         const deleted = await DataModel.Data_MatHang_Model.findByIdAndDelete(id)
-        if(!deleted) return res.status(404).json({message: 'Khong co mat hang can xoa'})
-        res.json({message: 'Xoa mat hang thanh cong'})
+        if (!deleted) return res.status(404).json({ message: 'Khong co mat hang can xoa' })
+        res.json({ message: 'Xoa mat hang thanh cong' })
     } catch (error) {
         res.status(500).json({ message: 'Loi server', error: error.message })
     }
