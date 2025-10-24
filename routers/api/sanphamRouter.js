@@ -1,5 +1,5 @@
 import express from 'express'
-import DataModel from '../../app/models/index.js'
+import DataModel from '../../models/index.js'
 const router = express.Router()
 
 // Thêm sản phẩm

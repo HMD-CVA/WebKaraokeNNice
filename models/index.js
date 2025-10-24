@@ -59,14 +59,13 @@ const HoaDonSchema = new mongoose.Schema({
 
 // 6. MatHang Schema
 const MatHangSchema = new mongoose.Schema({
-  MaHang: { type: String, required: true, unique: true },
+  MaHang: { type: String, unique: true },
   TenHang: { type: String, required: true },
-  DonGia: { type: Number, required: true },
+  DonGia: { type: Number, required: true, min: [0, 'Don gia khong duoc am'] },
   DonViTinh: { type: String, required: true },
-  SoLuongTon: { type: Number, default: 0 },
+  SoLuongTon: { type: Number, required: true, default: 0 , min: [0, 'So luong ton khong duoc am']},
   LinkAnh: { type: String },
-  createdAt: { type: Date, default: Date.now }
-});
+}, {timestamps: true});
 
 // 7. ChiTietHoaDon Schema
 const ChiTietHoaDonSchema = new mongoose.Schema({

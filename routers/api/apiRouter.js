@@ -1,10 +1,11 @@
 import express from 'express'
-import DataModel from '../../app/models/index.js'
+import DataModel from '../../models/index.js'
 import banggialoaiphongRouter from './banggialoaiphongRouter.js'
 import khachhangRouter from './khachhangRouter.js'
 import nhanvienRouter from './nhanvienRouter.js'
 import phonghatRouter from './phonghatRouter.js'
 import sanphamRouter from './sanphamRouter.js'
+import mathangRouter from './mathangRouter.js'
 const router = express.Router()
 
 // Admin login
@@ -26,6 +27,7 @@ router.use('/khachhang', khachhangRouter)
 router.use('/nhanvien', nhanvienRouter)
 router.use('/phonghat', phonghatRouter)
 router.use('/sanpham', sanphamRouter)
+router.use('/mathang', mathangRouter)
 router.use('/', banggialoaiphongRouter)
 
 export default router

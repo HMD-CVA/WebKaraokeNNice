@@ -1,6 +1,6 @@
 import express from 'express'
-import DataModel from '../../app/models/index.js'
-import { generateCode } from '../../app/utils/codeGenerator.js'
+import DataModel from '../../models/index.js'
+import { generateCode } from '../../utils/codeGenerator.js'
 
 const router = express.Router()
 
