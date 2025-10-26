@@ -316,6 +316,27 @@ app.get('/admin/loaiphong', async (req, res) => {
     }
 });
 
+app.get('/api/loaiphong/check-loai-phong/:loaiPhong', async (req, res) => {
+    try {
+        const { loaiPhong } = req.params;
+        console.log('📦 Loại phòng nhận được:', loaiPhong);
+        console.log('🔍 Kiểu dữ liệu:', typeof loaiPhong);
+        
+        // Kiểm tra xem có phòng nào đang sử dụng loại phòng này không
+        const roomsUsingType = await DataModel.Data_BangGiaPhong_Model.find({ 
+            LoaiPhong: loaiPhong 
+        });
+        
+        res.json({ 
+            isUsed: roomsUsingType.length > 0
+        });
+        
+    } catch (err) {
+        console.error('Lỗi kiểm tra loại phòng:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // API kiểm tra loại phòng có đang được sử dụng không
 app.get('/api/phonghat/check-loai-phong/:loaiPhong', async (req, res) => {
     try {
@@ -360,15 +381,31 @@ app.get('/api/banggia/:loaiPhong', async (req, res) => {
 });
 
 
-// Quản lý khách hàng
-app.get('/admin/khachhang', async (req, res) => {
+// Quản lý nhân viên
+app.get('/admin/nhanvien', async (req, res) => {
     try {
-        const khachhangs = await DataModel.Data_KhachHang_Model.find({}).lean();
-        res.render('khachhang', { layout: 'AdminMain', title: 'Quản lý khách hàng', khachhangs });
+        const nhanviens = await DataModel.Data_NhanVien_Model.find({}).lean();
+        res.render('nhanvien', { layout: 'AdminMain', title: 'Quản lý nhân viên', nhanviens });
     } catch (err) {
         res.status(500).send('Lỗi server!');
     }
 });
+
+app.get('/api/nhanvien/:maNV', async (req, res) => {
+    try {
+        const { maNV } = req.params;
+        console.log('🔍 Đang tìm nhân viên với mã:', maNV);
+        const nhanVien = await DataModel.Data_NhanVien_Model.findOne({ 
+            MaNV : maNV 
+        }).lean().exec();
+        
+        res.json(nhanVien);
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: 'Lỗi server!' });
+    }
+});
+
 
 // Admin login page
 app.get('/admin-login', (req, res) => res.redirect('/'));
@@ -405,13 +442,30 @@ app.post('/api/khachhang', async (req, res) => {
 
 // Thêm nhân viên
 app.post('/api/nhanvien', async (req, res) => {
-    try {
-        const { name, email, age } = req.body;
-        const nv = await DataModel.Data_NhanVien_Model.create({ name, email, age });
-        res.status(200).json(nv);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
+  try {
+    // const lastEmployee = await DataModel.Data_NhanVien_Model.findOne().sort({ MaNV: -1 });
+    // let newMaNV = "NV001";
+    
+    // if (lastEmployee && lastEmployee.MaNV) {
+    //   const lastNumber = parseInt(lastEmployee.MaNV.replace('NV', ''));
+    //   newMaNV = 'NV' + String(lastNumber + 1).padStart(3, '0');
+    // }
+
+    const maNV = await generateCode('NV', DataModel.Data_NhanVien_Model, 'MaNV');
+
+    const newEmployee = new DataModel.Data_NhanVien_Model({
+      ...req.body,
+      MaNV: maNV  // Tự động gán mã mới
+    });
+
+    await newEmployee.save();
+    res.status(201).json({ 
+      message: 'Thêm nhân viên thành công', 
+      data: newEmployee 
+    });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
 });
 
 // Thêm sản phẩm
@@ -918,7 +972,137 @@ app.put('/api/banggia/:loaiPhong', async (req, res) => {
     }
 });
 
+// Thêm vào routes của bạn
+app.put('/banggia/all', async (req, res) => {
+    try {
+        console.log('📥 NHẬN REQUEST TỪ CLIENT:', {
+            body: req.body,
+            headers: req.headers
+        });
 
+        const { bangGiaData } = req.body;
+        
+        if (!bangGiaData || !Array.isArray(bangGiaData)) {
+            console.log('❌ Dữ liệu không hợp lệ - bangGiaData không phải mảng:', bangGiaData);
+            return res.status(400).json({ 
+                error: 'Dữ liệu bảng giá không hợp lệ',
+                details: 'bangGiaData phải là mảng'
+            });
+        }
+
+        console.log(`✅ Nhận ${bangGiaData.length} mục dữ liệu`);
+
+        const results = [];
+        
+        // Nhóm dữ liệu theo loại phòng
+        const groupedByRoomType = {};
+        bangGiaData.forEach((item, index) => {
+            console.log(`📊 Item ${index}:`, item);
+            
+            if (!item.LoaiPhong) {
+                console.warn(`⚠️ Item ${index} thiếu LoaiPhong`);
+                return;
+            }
+            
+            if (!groupedByRoomType[item.LoaiPhong]) {
+                groupedByRoomType[item.LoaiPhong] = [];
+            }
+            groupedByRoomType[item.LoaiPhong].push({
+                KhungGio: item.KhungGio,
+                GiaTien: item.GiaTien
+            });
+        });
+
+        console.log('📦 Dữ liệu đã nhóm:', groupedByRoomType);
+
+        // Lưu từng loại phòng
+        for (const [loaiPhong, giaData] of Object.entries(groupedByRoomType)) {
+            try {
+                console.log(`🔄 Xử lý loại phòng: ${loaiPhong} với ${giaData.length} khung giờ`);
+                
+                // Xóa bảng giá cũ
+                const deleteResult = await BangGia.deleteMany({ LoaiPhong: loaiPhong });
+                console.log(`🗑️ Đã xóa ${deleteResult.deletedCount} bản ghi cũ của ${loaiPhong}`);
+                
+                // Thêm bảng giá mới
+                const newPrices = giaData.map(gia => ({
+                    LoaiPhong: loaiPhong,
+                    KhungGio: gia.KhungGio,
+                    GiaTien: gia.GiaTien
+                }));
+                
+                console.log(`💾 Đang lưu ${newPrices.length} bản ghi mới cho ${loaiPhong}`);
+                const insertResult = await BangGia.insertMany(newPrices);
+                
+                results.push({
+                    loaiPhong,
+                    success: true,
+                    count: newPrices.length
+                });
+                
+                console.log(`✅ Đã lưu thành công ${newPrices.length} khung giờ cho ${loaiPhong}`);
+                
+            } catch (error) {
+                console.error(`❌ Lỗi khi xử lý ${loaiPhong}:`, error);
+                results.push({
+                    loaiPhong,
+                    success: false,
+                    error: error.message
+                });
+            }
+        }
+
+        const successCount = results.filter(r => r.success).length;
+        const totalCount = results.length;
+        
+        console.log(`🎯 Kết quả tổng: ${successCount}/${totalCount} loại phòng thành công`);
+
+        res.json({
+            message: `Đã lưu bảng giá cho ${successCount}/${totalCount} loại phòng`,
+            results,
+            successCount,
+            totalCount
+        });
+
+    } catch (error) {
+        console.error('💥 Lỗi tổng khi lưu bảng giá:', error);
+        res.status(500).json({ 
+            error: 'Lỗi server khi lưu bảng giá',
+            details: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+});
+
+
+app.put('/api/nhanvien/:maNV', async (req, res) => {
+  try {
+    const { maNV } = req.params;
+    const updateData = { ...req.body };
+    delete updateData.MaNV; // Không cho phép cập nhật mã NV
+    delete updateData._id; // Không cho phép cập nhật _id
+
+    const employee = await DataModel.Data_NhanVien_Model.findOneAndUpdate(
+      { MaNV: maNV }, // Điều kiện tìm kiếm
+      updateData,     // Dữ liệu cập nhật
+      { 
+        new: true,    // Trả về document sau khi cập nhật
+        runValidators: true // Chạy validation
+      }
+    );
+    if (!employee) {
+      return res.status(404).json({ error: 'Không tìm thấy nhân viên' });
+    }
+    
+    res.json({ 
+      message: 'Cập nhật nhân viên thành công', 
+      data: employee 
+    });
+  } catch (error) {
+    console.error('Lỗi cập nhật nhân viên:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
 
 
 ///////////////////////////////
@@ -944,18 +1128,6 @@ app.delete('/api/sanpham/:id', async (req, res) => {
         const sp = await DataModel.Data_SanPham_Model.findByIdAndDelete(id);
         if (!sp) return res.status(404).json({ error: 'Không tìm thấy sản phẩm' });
         res.json({ message: 'Xóa sản phẩm thành công' });
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
-});
-
-// Xóa phòng hát
-app.delete('/api/phonghat/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const ph = await DataModel.Data_PhongHat_Model.findByIdAndDelete(id);
-        if (!ph) return res.status(404).json({ error: 'Không tìm thấy phòng hát' });
-        res.json({ message: 'Xóa phòng hát thành công' });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
@@ -1001,12 +1173,93 @@ app.delete('/api/banggia/:loaiPhong', async (req, res) => {
     }
 });
 
+app.delete('/api/banggiaphong/:loaiPhong', async (req, res) => {
+    try {
+        const { loaiPhong } = req.params;
+        
+        const deleteResult = await DataModel.Data_BangGiaPhong_Model.deleteMany({ 
+            LoaiPhong: loaiPhong 
+        });
+        
+        console.log('✅ Đã xóa:', deleteResult.deletedCount, 'khung giờ');
+        
+        res.json({
+            success: true,
+            message: `Đã xóa ${deleteResult.deletedCount} khung giờ`,
+            deletedCount: deleteResult.deletedCount
+        });
+
+    } catch (error) {
+        console.error('❌ Lỗi xóa bảng giá:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi xóa bảng giá: ' + error.message
+        });
+    }
+});
 
 
+app.delete('/api/phonghatt', async (req, res) => {
+    try {
+        
+        const deleteResult = await DataModel.Data_BangGiaPhong_Model.deleteMany({ 
+            GiaTien: null,
+            KhungGio: null,
+        });
+        
+        console.log('✅ Đã xóa:', deleteResult.deletedCount, 'khung giờ');
+        
+        res.json({
+            success: true,
+            message: `Đã xóa ${deleteResult.deletedCount} khung giờ`,
+            deletedCount: deleteResult.deletedCount
+        });
 
+    } catch (error) {
+        console.error('❌ Lỗi xóa bảng giá:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi xóa bảng giá: ' + error.message
+        });
+    }
+});
 
+// Xóa phòng hát
+app.delete('/api/phonghat/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const ph = await DataModel.Data_PhongHat_Model.findByIdAndDelete(id);
+        if (!ph) return res.status(404).json({ error: 'Không tìm thấy phòng hát' });
+        res.json({ message: 'Xóa phòng hát thành công' });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
 
+app.delete('/api/nhanvien/:maNV', async (req, res) => {
+  try {
+    const { maNV } = req.params;
 
+    const employee = await DataModel.Data_NhanVien_Model.findOneAndDelete(
+      { MaNV: maNV }, // Điều kiện tìm kiếm
+      { 
+        message: true,    // Trả về document sau khi cập nhật
+        runValidators: true // Chạy validation
+      }
+    );
+    if (!employee) {
+      return res.status(404).json({ error: 'Không tìm thấy nhân viên' });
+    }
+    
+    res.json({ 
+      message: 'Xoá nhân viên thành công', 
+      data: employee 
+    });
+  } catch (error) {
+    console.error('Lỗi xoá nhân viên:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
 
 
 

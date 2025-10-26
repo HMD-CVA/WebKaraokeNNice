@@ -17,14 +17,41 @@ const PhongHatSchema = new mongoose.Schema({
 
 // 2. NhanVien Schema
 const NhanVienSchema = new mongoose.Schema({
-  MaNV: { type: String, unique: true },
+  MaNV: { type: String, unique: true, required: true },
   TenNV: { type: String, required: true },
-  VaiTro: { type: String, required: true },
-  LuongCoBan: { type: Number },
+  SĐT: { type: String, required: true },
+  Email: { type: String, required: true, unique: true },
+  VaiTro: { 
+    type: String, 
+    required: true,
+    enum: ['Lễ tân', 'Phục vụ', 'Kỹ thuật', 'Quản lý', 'Bảo vệ']
+  },
+  CaTruc: {
+    type: String,
+    enum: ['Sáng (6h-14h)', 'Chiều (14h-22h)', 'Tối (22h-6h)', 'Full-time']
+  },
+  LuongCoBan: { type: Number, required: true },
+  PhuCap: { type: Number, default: 0 },
   NgayVaoLam: { type: Date, required: true },
-  TrangThai: { type: Boolean, default: true },
+  TrangThai: { 
+    type: String, 
+    enum: ['Đang làm việc', 'Nghỉ phép', 'Đã nghỉ việc'],
+    default: 'Đang làm việc'
+  },
   LinkAvatar: { type: String },
-  createdAt: { type: Date, default: Date.now }
+  // Thông tin cá nhân
+  NgaySinh: { type: Date },
+  GioiTinh: { type: String, enum: ['Nam', 'Nữ'] },
+  CCCD: { type: String },
+  DiaChi: { type: String },
+  // Thông tin công việc
+  SoGioLam: { type: Number, default: 0 }, // Số giờ làm trong tháng
+  DoanhSo: { type: Number, default: 0 }, // Doanh số bán đồ uống/thức ăn
+  DanhGia: { type: Number, min: 1, max: 5 }, // Đánh giá từ khách hàng
+  GhiChu: { type: String },
+  
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
 });
 
 // 3. KhachHang Schema
