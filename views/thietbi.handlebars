@@ -31,15 +31,6 @@
         <button class="search-btn" onclick="filterThietBi()">Tìm kiếm</button>
       </div>
       <div class="filter-controls">
-        <select class="filter-select" id="phongFilter" onchange="filterThietBi()">
-          <option value="">Tất cả phòng</option>
-          <option value="P101">P101</option>
-          <option value="P102">P102</option>
-          <option value="P103">P103</option>
-          <option value="P201">P201</option>
-          <option value="VIP01">VIP01</option>
-          <option value="VIP02">VIP02</option>
-        </select>
         <select class="filter-select" id="statusFilter" onchange="filterThietBi()">
           <option value="">Tất cả tình trạng</option>
           <option value="Tốt">Tốt</option>
@@ -101,42 +92,11 @@
           <p>Thiết bị hỏng</p>
         </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon technical">
-          <i class="fas fa-tv"></i>
-        </div>
-        <div class="stat-info">
-          <h3 id="statMicro">0</h3>
-          <p>Micro</p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon manager">
-          <i class="fas fa-volume-up"></i>
-        </div>
-        <div class="stat-info">
-          <h3 id="statLoa">0</h3>
-          <p>Loa</p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon security">
-          <i class="fas fa-desktop"></i>
-        </div>
-        <div class="stat-info">
-          <h3 id="statScreen">0</h3>
-          <p>Màn hình</p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon fulltime">
-          <i class="fas fa-snowflake"></i>
-        </div>
-        <div class="stat-info">
-          <h3 id="statAC">0</h3>
-          <p>Điều hòa</p>
-        </div>
-      </div>
+    </div>
+
+    <!-- Room Navigation -->
+    <div class="room-navigation" id="roomNavigation">
+      <!-- Room buttons will be dynamically generated -->
     </div>
 
     <!-- ThietBi Grid -->
@@ -181,12 +141,9 @@
         <div class="room-content">
           <h3 class="room-title">{{this.TenThietBi}}</h3>
           <p class="room-code">Mã: {{this.MaThietBi}}</p>
+          <p class="room-phong">Phòng: {{this.MaPhong}}</p>
 
           <div class="room-details">
-            <div class="detail-item">
-              <i class="fas fa-door-open"></i>
-              <span>Phòng: {{this.MaPhong}}</span>
-            </div>
             <div class="detail-item">
               <i class="fas fa-calendar-alt"></i>
               <span>Ngày nhập: {{formatDate this.NgayNhap}}</span>
@@ -277,6 +234,7 @@
                 <option value="P201">P201</option>
                 <option value="VIP01">VIP01</option>
                 <option value="VIP02">VIP02</option>
+                <option value="Khác">Khác</option>
               </select>
             </div>
 
@@ -463,6 +421,7 @@
   let allThietBis = [];
   let filteredThietBis = [];
   let currentThietBiHistory = [];
+  let currentRoomFilter = 'all';
 
   // ===== STATISTICS CALCULATION =====
   function calculateStatistics() {
@@ -480,32 +439,11 @@
     const countBroken = thietBis.filter(tb => 
       tb.getAttribute('data-tinhtrang') === 'Hỏng'
     ).length;
-    
-    // Đếm theo loại thiết bị
-    const countMicro = thietBis.filter(tb => 
-      tb.getAttribute('data-loai') === 'Micro'
-    ).length;
-    
-    const countLoa = thietBis.filter(tb => 
-      tb.getAttribute('data-loai') === 'Loa'
-    ).length;
-    
-    const countScreen = thietBis.filter(tb => 
-      tb.getAttribute('data-loai') === 'Màn hình'
-    ).length;
-    
-    const countAC = thietBis.filter(tb => 
-      tb.getAttribute('data-loai') === 'Điều hòa'
-    ).length;
 
     updateStatCard('#statTotal', totalThietBis);
     updateStatCard('#statGood', countGood);
     updateStatCard('#statMaintenance', countMaintenance);
     updateStatCard('#statBroken', countBroken);
-    updateStatCard('#statMicro', countMicro);
-    updateStatCard('#statLoa', countLoa);
-    updateStatCard('#statScreen', countScreen);
-    updateStatCard('#statAC', countAC);
   }
 
   function updateStatCard(selector, value) {
@@ -555,6 +493,60 @@
   // Helper function cho Handlebars
   function eq(a, b) {
     return a === b;
+  }
+
+  // ===== ROOM NAVIGATION =====
+  function initRoomNavigation() {
+    const roomNavigation = document.getElementById('roomNavigation');
+    if (!roomNavigation) return;
+
+    // Lấy tất cả các phòng từ dữ liệu thiết bị
+    const rooms = [...new Set(allThietBis.map(card => card.getAttribute('data-maphong')))];
+    
+    // Thêm nút "Tất cả"
+    const allButton = document.createElement('button');
+    allButton.className = 'room-nav-btn active';
+    allButton.setAttribute('data-room', 'all');
+    allButton.innerHTML = '<i class="fas fa-th-large"></i><span>Tất cả</span>';
+    roomNavigation.appendChild(allButton);
+
+    // Thêm nút cho từng phòng
+    rooms.forEach(room => {
+      const roomButton = document.createElement('button');
+      roomButton.className = 'room-nav-btn';
+      roomButton.setAttribute('data-room', room);
+      roomButton.innerHTML = `<i class="fas fa-door-closed"></i><span>${room}</span>`;
+      roomNavigation.appendChild(roomButton);
+    });
+
+    // Thêm nút "Khác" cho các thiết bị không có phòng
+    const otherButton = document.createElement('button');
+    otherButton.className = 'room-nav-btn';
+    otherButton.setAttribute('data-room', 'other');
+    otherButton.innerHTML = '<i class="fas fa-question-circle"></i><span>Khác</span>';
+    roomNavigation.appendChild(otherButton);
+
+    // Thêm sự kiện click cho các nút
+    roomNavigation.addEventListener('click', function(e) {
+      if (e.target.closest('.room-nav-btn')) {
+        const clickedButton = e.target.closest('.room-nav-btn');
+        const room = clickedButton.getAttribute('data-room');
+        
+        // Xóa active class từ tất cả các nút
+        document.querySelectorAll('.room-nav-btn').forEach(btn => {
+          btn.classList.remove('active');
+        });
+        
+        // Thêm active class cho nút được click
+        clickedButton.classList.add('active');
+        
+        // Cập nhật bộ lọc phòng
+        currentRoomFilter = room;
+        
+        // Lọc thiết bị
+        filterThietBi();
+      }
+    });
   }
 
   // ===== THIET BI MANAGEMENT =====
@@ -877,7 +869,6 @@
   // ===== FILTER & SEARCH =====
   function filterThietBi() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const phongFilter = document.getElementById('phongFilter').value;
     const statusFilter = document.getElementById('statusFilter').value;
     const loaiFilter = document.getElementById('loaiFilter').value;
 
@@ -891,11 +882,20 @@
       const matchesSearch = !searchTerm || 
         tenthietbi.includes(searchTerm) || 
         matb.includes(searchTerm);
-      const matchesPhong = !phongFilter || maphong === phongFilter;
       const matchesStatus = !statusFilter || tinhtrang === statusFilter;
       const matchesLoai = !loaiFilter || loai === loaiFilter;
+      
+      // Lọc theo phòng
+      let matchesRoom = true;
+      if (currentRoomFilter === 'all') {
+        matchesRoom = true;
+      } else if (currentRoomFilter === 'other') {
+        matchesRoom = !maphong || maphong === '' || maphong === 'Khác';
+      } else {
+        matchesRoom = maphong === currentRoomFilter;
+      }
 
-      const shouldShow = matchesSearch && matchesPhong && matchesStatus && matchesLoai;
+      const shouldShow = matchesSearch && matchesStatus && matchesLoai && matchesRoom;
       card.style.display = shouldShow ? 'block' : 'none';
       return shouldShow;
     });
@@ -919,39 +919,24 @@
     const countBroken = thietBis.filter(tb => 
       tb.getAttribute('data-tinhtrang') === 'Hỏng'
     ).length;
-    
-    // Đếm theo loại thiết bị
-    const countMicro = thietBis.filter(tb => 
-      tb.getAttribute('data-loai') === 'Micro'
-    ).length;
-    
-    const countLoa = thietBis.filter(tb => 
-      tb.getAttribute('data-loai') === 'Loa'
-    ).length;
-    
-    const countScreen = thietBis.filter(tb => 
-      tb.getAttribute('data-loai') === 'Màn hình'
-    ).length;
-    
-    const countAC = thietBis.filter(tb => 
-      tb.getAttribute('data-loai') === 'Điều hòa'
-    ).length;
 
     updateStatCard('#statTotal', totalThietBis);
     updateStatCard('#statGood', countGood);
     updateStatCard('#statMaintenance', countMaintenance);
     updateStatCard('#statBroken', countBroken);
-    updateStatCard('#statMicro', countMicro);
-    updateStatCard('#statLoa', countLoa);
-    updateStatCard('#statScreen', countScreen);
-    updateStatCard('#statAC', countAC);
   }
 
   function clearFilters() {
     document.getElementById('searchInput').value = '';
-    document.getElementById('phongFilter').value = '';
     document.getElementById('statusFilter').value = '';
     document.getElementById('loaiFilter').value = '';
+
+    // Reset room filter to "Tất cả"
+    currentRoomFilter = 'all';
+    document.querySelectorAll('.room-nav-btn').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    document.querySelector('.room-nav-btn[data-room="all"]').classList.add('active');
 
     allThietBis.forEach(card => {
       card.style.display = 'block';
@@ -993,6 +978,7 @@
     filteredThietBis = [...allThietBis];
     
     calculateStatistics();
+    initRoomNavigation();
     
     // Setup real-time search
     const searchInput = document.getElementById('searchInput');
@@ -1312,26 +1298,6 @@
     color: #d69e2e;
   }
 
-  .stat-icon.technical {
-    background: linear-gradient(135deg, #e9d8fd, #d6bcfa);
-    color: #553c9a;
-  }
-
-  .stat-icon.manager {
-    background: linear-gradient(135deg, #bee3f8, #90cdf4);
-    color: #1a365d;
-  }
-
-  .stat-icon.security {
-    background: linear-gradient(135deg, #c6f6d5, #9ae6b4);
-    color: #276749;
-  }
-
-  .stat-icon.fulltime {
-    background: linear-gradient(135deg, #fed7d7, #feb2b2);
-    color: #c53030;
-  }
-
   .stat-info h3 {
     margin: 0;
     font-size: 2.5rem;
@@ -1344,6 +1310,50 @@
     color: #64748b;
     font-size: 1.1rem;
     font-weight: 500;
+  }
+
+  /* ===== ROOM NAVIGATION ===== */
+  .room-navigation {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 16px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow-x: auto;
+  }
+
+  .room-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    background: white;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+
+  .room-nav-btn:hover {
+    border-color: #667eea;
+    color: #667eea;
+    transform: translateY(-2px);
+  }
+
+  .room-nav-btn.active {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border-color: #667eea;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  }
+
+  .room-nav-btn i {
+    font-size: 1.1rem;
   }
 
   /* ===== ROOMS GRID ===== */
@@ -1519,16 +1529,23 @@
   }
 
   .room-title {
-    margin: 0 0 12px 0;
+    margin: 0 0 8px 0;
     color: #1e293b;
     font-size: 1.4rem;
     font-weight: 700;
   }
 
   .room-code {
-    margin: 0 0 20px 0;
+    margin: 0 0 4px 0;
     color: #64748b;
     font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .room-phong {
+    margin: 0 0 16px 0;
+    color: #667eea;
+    font-size: 0.95rem;
     font-weight: 600;
   }
 
@@ -2008,6 +2025,10 @@
     .modal-container {
       margin: 10px;
       max-width: none;
+    }
+
+    .room-navigation {
+      flex-wrap: wrap;
     }
   }
 
