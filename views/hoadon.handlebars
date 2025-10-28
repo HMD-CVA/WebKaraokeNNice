@@ -1,0 +1,987 @@
+<div class="main-content">
+  <div class="admin-dashboard">
+    <!-- Header Premium -->
+    <div class="dashboard-header">
+      <div class="header-content">
+        <div class="header-title">
+          <div class="title-icon">🧾</div>
+          <div>
+            <h1>Quản lý hóa đơn</h1>
+            <p>Theo dõi và quản lý hóa đơn karaoke</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="btn-primary" onclick="openHoaDonModal()">
+            <i class="fas fa-plus"></i>
+            <span>Tạo hóa đơn</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search and Filter Bar -->
+    <div class="search-filter-bar">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" placeholder="Tìm kiếm hóa đơn..." onkeyup="filterHoaDon()">
+        <button class="search-btn" onclick="filterHoaDon()">Tìm kiếm</button>
+      </div>
+      <div class="filter-controls">
+        <select class="filter-select" id="statusFilter" onchange="filterHoaDon()">
+          <option value="">Tất cả trạng thái</option>
+          <option value="Chưa thanh toán">Chưa thanh toán</option>
+          <option value="Đã thanh toán">Đã thanh toán</option>
+          <option value="Đã hủy">Đã hủy</option>
+        </select>
+        <input type="date" class="filter-select" id="dateFromFilter" onchange="filterHoaDon()" placeholder="Từ ngày">
+        <input type="date" class="filter-select" id="dateToFilter" onchange="filterHoaDon()" placeholder="Đến ngày">
+        <select class="filter-select" id="sortFilter" onchange="filterHoaDon()">
+          <option value="newest">Mới nhất</option>
+          <option value="oldest">Cũ nhất</option>
+          <option value="highest">Cao nhất</option>
+          <option value="lowest">Thấp nhất</option>
+        </select>
+        <button class="clear-filters" onclick="clearFilters()">
+          <i class="fas fa-times"></i>
+          Xóa lọc
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="stats-overview">
+      <div class="stat-card">
+        <div class="stat-icon total">
+          <i class="fas fa-receipt"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="statTotal">0</h3>
+          <p>Tổng hóa đơn</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon active">
+          <i class="fas fa-money-bill-wave"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="statRevenue">0</h3>
+          <p>Doanh thu hôm nay</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon reception">
+          <i class="fas fa-clock"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="statPending">0</h3>
+          <p>Chờ thanh toán</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon service">
+          <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="statPaid">0</h3>
+          <p>Đã thanh toán</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon technical">
+          <i class="fas fa-times-circle"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="statCancelled">0</h3>
+          <p>Đã hủy</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon manager">
+          <i class="fas fa-calendar-day"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="statToday">0</h3>
+          <p>Hóa đơn hôm nay</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon security">
+          <i class="fas fa-calendar-week"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="statWeek">0</h3>
+          <p>Tuần này</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon fulltime">
+          <i class="fas fa-calendar-month"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="statMonth">0</h3>
+          <p>Tháng này</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- HoaDon Grid -->
+    <div class="employees-grid" id="hoaDonGrid">
+      {{#each hoadons}}
+      <div class="employee-card" 
+           data-id="{{this._id}}" 
+           data-mahd="{{this.MaHoaDon}}"
+           data-madp="{{this.MaDatPhong}}"
+           data-tongtien="{{this.TongTien}}" 
+           data-status="{{this.TrangThai}}" 
+           data-date="{{formatDate this.ThoiGianTao}}">
+        <div class="employee-image">
+          <div class="employee-avatar-placeholder bill">
+            <i class="fas fa-receipt"></i>
+          </div>
+          <div class="employee-overlay">
+            <div class="employee-actions">
+              <button class="btn-edit" onclick="viewHoaDonDetail('{{this.MaHoaDon}}')">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="btn-edit" onclick="editHoaDon('{{this.MaHoaDon}}')">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn-delete" onclick="deleteHoaDon('{{this._id}}', '{{this.MaHoaDon}}')">
+                <i class="fas fa-trash"></i>
+              </button>
+              {{#if (eq this.TrangThai "Chưa thanh toán")}}
+              <button class="btn-primary" onclick="thanhToanHoaDon('{{this.MaHoaDon}}')">
+                <i class="fas fa-credit-card"></i>
+              </button>
+              {{/if}}
+            </div>
+          </div>
+          <div class="employee-badge {{this.TrangThai}}">
+            {{this.TrangThai}}
+          </div>
+          <div class="employee-status {{#if (eq this.TrangThai 'Đã thanh toán')}}active{{else if (eq this.TrangThai 'Chưa thanh toán')}}onleave{{else}}inactive{{/if}}">
+            {{formatCurrency this.TongTien}}
+          </div>
+        </div>
+
+        <div class="employee-content">
+          <h3 class="employee-name">HD{{this.MaHoaDon}}</h3>
+          <p class="employee-code">Đặt phòng: {{this.MaDatPhong}}</p>
+
+          <div class="employee-details">
+            <div class="detail-item">
+              <i class="fas fa-calendar-alt"></i>
+              <span>{{formatDate this.ThoiGianTao}}</span>
+            </div>
+            <div class="detail-item">
+              <i class="fas fa-money-bill-wave"></i>
+              <span>{{formatCurrency this.TongTien}}</span>
+            </div>
+            <div class="detail-item">
+              <i class="fas fa-user"></i>
+              <span>KH: {{this.MaKH}}</span>
+            </div>
+            <div class="detail-item">
+              <i class="fas fa-door-open"></i>
+              <span>Phòng: {{this.MaPhong}}</span>
+            </div>
+            {{#if this.ThoiGianBatDau}}
+            <div class="detail-item">
+              <i class="fas fa-play-circle"></i>
+              <span>Bắt đầu: {{formatTime this.ThoiGianBatDau}}</span>
+            </div>
+            {{/if}}
+            {{#if this.ThoiGianKetThuc}}
+            <div class="detail-item">
+              <i class="fas fa-stop-circle"></i>
+              <span>Kết thúc: {{formatTime this.ThoiGianKetThuc}}</span>
+            </div>
+            {{/if}}
+          </div>
+
+          <!-- Chi tiết dịch vụ -->
+          <div class="service-breakdown">
+            <h4>Dịch vụ sử dụng:</h4>
+            {{#each this.ChiTiet}}
+            <div class="service-item">
+              <span class="service-name">{{this.TenHang}}</span>
+              <span class="service-quantity">x{{this.SoLuong}}</span>
+              <span class="service-price">{{formatCurrency this.ThanhTien}}</span>
+            </div>
+            {{/each}}
+          </div>
+        </div>
+      </div>
+      {{/each}}
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" id="emptyState" style="{{#if hoadons.length}}display: none;{{else}}display: block;{{/if}}">
+      <div class="empty-icon">🧾</div>
+      <h3>Không tìm thấy hóa đơn</h3>
+      <p>Thử thay đổi bộ lọc hoặc tạo hóa đơn mới</p>
+      <button class="btn-primary" onclick="openHoaDonModal()">
+        <i class="fas fa-plus"></i>
+        Tạo hóa đơn đầu tiên
+      </button>
+    </div>
+  </div>
+
+  <!-- HoaDon Modal -->
+  <div class="modal-overlay" id="hoaDonModal" style="display: none;">
+    <div class="modal-container large">
+      <div class="modal-header">
+        <h2 id="modalTitle">Tạo hóa đơn mới</h2>
+        <button class="modal-close" onclick="closeHoaDonModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form id="hoaDonForm" onsubmit="saveHoaDon(event)">
+          <input type="hidden" id="hoaDonId">
+          <input type="hidden" id="hoaDonMaHD">
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="datPhongSelect">Đặt phòng *</label>
+              <select id="datPhongSelect" required onchange="loadDatPhongInfo()">
+                <option value="">Chọn đặt phòng</option>
+                {{#each datphongs}}
+                <option value="{{this.MaDatPhong}}" data-makh="{{this.MaKH}}" data-maphong="{{this.MaPhong}}">
+                  {{this.MaDatPhong}} - Phòng {{this.MaPhong}}
+                </option>
+                {{/each}}
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="maKH">Mã khách hàng</label>
+              <input type="text" id="maKH" readonly>
+            </div>
+
+            <div class="form-group">
+              <label for="maPhong">Mã phòng</label>
+              <input type="text" id="maPhong" readonly>
+            </div>
+
+            <div class="form-group">
+              <label for="thoiGianBatDau">Thời gian bắt đầu</label>
+              <input type="datetime-local" id="thoiGianBatDau" readonly>
+            </div>
+
+            <div class="form-group">
+              <label for="thoiGianKetThuc">Thời gian kết thúc</label>
+              <input type="datetime-local" id="thoiGianKetThuc">
+            </div>
+
+            <div class="form-group">
+              <label for="hoaDonStatus">Trạng thái *</label>
+              <select id="hoaDonStatus" required>
+                <option value="Chưa thanh toán">Chưa thanh toán</option>
+                <option value="Đã thanh toán">Đã thanh toán</option>
+                <option value="Đã hủy">Đã hủy</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Danh sách dịch vụ -->
+          <div class="services-section">
+            <h3>Dịch vụ sử dụng</h3>
+            <div class="service-controls">
+              <select id="matHangSelect">
+                <option value="">Chọn mặt hàng</option>
+                {{#each mathangs}}
+                <option value="{{this.MaHang}}" data-dongia="{{this.DonGia}}" data-dvt="{{this.DonViTinh}}">
+                  {{this.TenHang}} - {{formatCurrency this.DonGia}}/{{this.DonViTinh}}
+                </option>
+                {{/each}}
+              </select>
+              <input type="number" id="soLuong" placeholder="Số lượng" min="1" value="1">
+              <button type="button" class="btn-secondary" onclick="addService()">
+                <i class="fas fa-plus"></i> Thêm
+              </button>
+            </div>
+
+            <div class="services-list" id="servicesList">
+              <!-- Danh sách dịch vụ sẽ được thêm vào đây -->
+            </div>
+          </div>
+
+          <!-- Tổng tiền -->
+          <div class="total-section">
+            <div class="total-row">
+              <span>Tiền phòng:</span>
+              <span id="tienPhong">0</span>
+            </div>
+            <div class="total-row">
+              <span>Tiền dịch vụ:</span>
+              <span id="tienDichVu">0</span>
+            </div>
+            <div class="total-row grand-total">
+              <span><strong>Tổng cộng:</strong></span>
+              <span id="tongTien"><strong>0</strong></span>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" type="button" onclick="closeHoaDonModal()">Hủy</button>
+        <button class="btn-primary" type="submit" form="hoaDonForm">Lưu hóa đơn</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chi tiết hóa đơn Modal -->
+  <div class="modal-overlay" id="detailModal" style="display: none;">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h2>Chi tiết hóa đơn</h2>
+        <button class="modal-close" onclick="closeDetailModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" id="detailContent">
+        <!-- Nội dung chi tiết sẽ được điền bằng JS -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+  // ===== CONFIGURATION & STATE =====
+  let allHoaDons = [];
+  let filteredHoaDons = [];
+  let selectedServices = [];
+  let currentRoomPrice = 0;
+
+  // ===== STATISTICS CALCULATION =====
+  function calculateStatistics() {
+    const hoaDons = allHoaDons;
+    
+    const totalHoaDons = hoaDons.length;
+    const today = new Date().toDateString();
+    const todayRevenue = hoaDons
+      .filter(hd => new Date(hd.getAttribute('data-date')).toDateString() === today && 
+                    hd.getAttribute('data-status') === 'Đã thanh toán')
+      .reduce((sum, hd) => sum + parseFloat(hd.getAttribute('data-tongtien')), 0);
+    
+    const countPending = hoaDons.filter(hd => hd.getAttribute('data-status') === 'Chưa thanh toán').length;
+    const countPaid = hoaDons.filter(hd => hd.getAttribute('data-status') === 'Đã thanh toán').length;
+    const countCancelled = hoaDons.filter(hd => hd.getAttribute('data-status') === 'Đã hủy').length;
+    const countToday = hoaDons.filter(hd => 
+      new Date(hd.getAttribute('data-date')).toDateString() === today
+    ).length;
+
+    updateStatCard('#statTotal', totalHoaDons);
+    updateStatCard('#statRevenue', formatCurrency(todayRevenue));
+    updateStatCard('#statPending', countPending);
+    updateStatCard('#statPaid', countPaid);
+    updateStatCard('#statCancelled', countCancelled);
+    updateStatCard('#statToday', countToday);
+    updateStatCard('#statWeek', Math.floor(countToday * 1.5)); // Giả lập
+    updateStatCard('#statMonth', Math.floor(countToday * 6)); // Giả lập
+  }
+
+  function updateStatCard(selector, value) {
+    const element = document.querySelector(selector);
+    if (element) {
+      element.textContent = value;
+    }
+  }
+
+  // ===== FORMAT FUNCTIONS =====
+  function formatCurrency(amount) {
+    if (typeof amount === 'string') {
+      amount = parseFloat(amount) || 0;
+    }
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(amount);
+  }
+
+  function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN');
+  }
+
+  function formatTime(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('vi-VN', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  }
+
+  // Helper function cho Handlebars
+  function eq(a, b) {
+    return a === b;
+  }
+
+  // ===== HOA DON MANAGEMENT =====
+  function openHoaDonModal(hoaDonData = null) {
+    document.getElementById('modalTitle').textContent = hoaDonData ? 'Chỉnh sửa hóa đơn' : 'Tạo hóa đơn mới';
+    document.getElementById('hoaDonModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    if (hoaDonData) {
+      // Điền thông tin hóa đơn
+      document.getElementById('hoaDonId').value = hoaDonData._id || '';
+      document.getElementById('hoaDonMaHD').value = hoaDonData.MaHoaDon || '';
+      document.getElementById('datPhongSelect').value = hoaDonData.MaDatPhong || '';
+      document.getElementById('hoaDonStatus').value = hoaDonData.TrangThai || 'Chưa thanh toán';
+      
+      // Load thông tin đặt phòng
+      loadDatPhongInfo();
+      
+      // Load dịch vụ
+      selectedServices = hoaDonData.ChiTiet || [];
+      renderServicesList();
+      calculateTotal();
+    } else {
+      resetHoaDonForm();
+    }
+  }
+
+  function closeHoaDonModal() {
+    document.getElementById('hoaDonModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+  }
+
+  function resetHoaDonForm() {
+    document.getElementById('hoaDonForm').reset();
+    document.getElementById('hoaDonId').value = '';
+    document.getElementById('hoaDonMaHD').value = '';
+    document.getElementById('hoaDonStatus').value = 'Chưa thanh toán';
+    selectedServices = [];
+    renderServicesList();
+    calculateTotal();
+  }
+
+  function loadDatPhongInfo() {
+    const selectedOption = document.querySelector('#datPhongSelect option:checked');
+    if (selectedOption && selectedOption.value) {
+      document.getElementById('maKH').value = selectedOption.getAttribute('data-makh') || '';
+      document.getElementById('maPhong').value = selectedOption.getAttribute('data-maphong') || '';
+      
+      // Load thông tin thời gian từ API
+      fetch(`/api/datphong/${selectedOption.value}`)
+        .then(response => response.json())
+        .then(datPhong => {
+          document.getElementById('thoiGianBatDau').value = formatDateTimeLocal(datPhong.ThoiGianBatDau);
+          document.getElementById('thoiGianKetThuc').value = formatDateTimeLocal(datPhong.ThoiGianKetThuc);
+          
+          // Tính tiền phòng
+          calculateRoomPrice();
+        })
+        .catch(error => {
+          console.error('Lỗi khi lấy thông tin đặt phòng:', error);
+        });
+    }
+  }
+
+  function formatDateTimeLocal(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toISOString().slice(0, 16);
+  }
+
+  function calculateRoomPrice() {
+    // Giả lập tính tiền phòng dựa trên thời gian
+    const start = new Date(document.getElementById('thoiGianBatDau').value);
+    const end = new Date(document.getElementById('thoiGianKetThuc').value);
+    
+    if (start && end) {
+      const hours = (end - start) / (1000 * 60 * 60);
+      currentRoomPrice = hours * 100000; // 100k/giờ
+      document.getElementById('tienPhong').textContent = formatCurrency(currentRoomPrice);
+      calculateTotal();
+    }
+  }
+
+  function addService() {
+    const matHangSelect = document.getElementById('matHangSelect');
+    const soLuong = document.getElementById('soLuong');
+    
+    if (!matHangSelect.value || !soLuong.value || soLuong.value < 1) {
+      showError('Vui lòng chọn mặt hàng và số lượng');
+      return;
+    }
+
+    const selectedOption = matHangSelect.options[matHangSelect.selectedIndex];
+    const service = {
+      MaHang: matHangSelect.value,
+      TenHang: selectedOption.text.split(' - ')[0],
+      SoLuong: parseInt(soLuong.value),
+      DonGia: parseFloat(selectedOption.getAttribute('data-dongia')),
+      DonViTinh: selectedOption.getAttribute('data-dvt'),
+      ThanhTien: parseInt(soLuong.value) * parseFloat(selectedOption.getAttribute('data-dongia'))
+    };
+
+    selectedServices.push(service);
+    renderServicesList();
+    calculateTotal();
+    
+    // Reset form
+    matHangSelect.value = '';
+    soLuong.value = 1;
+  }
+
+  function removeService(index) {
+    selectedServices.splice(index, 1);
+    renderServicesList();
+    calculateTotal();
+  }
+
+  function renderServicesList() {
+    const servicesList = document.getElementById('servicesList');
+    servicesList.innerHTML = '';
+
+    selectedServices.forEach((service, index) => {
+      const serviceElement = document.createElement('div');
+      serviceElement.className = 'service-item-row';
+      serviceElement.innerHTML = `
+        <div class="service-info">
+          <span class="service-name">${service.TenHang}</span>
+          <span class="service-details">${service.SoLuong} ${service.DonViTinh} x ${formatCurrency(service.DonGia)}</span>
+        </div>
+        <div class="service-actions">
+          <span class="service-total">${formatCurrency(service.ThanhTien)}</span>
+          <button type="button" class="btn-delete" onclick="removeService(${index})">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      `;
+      servicesList.appendChild(serviceElement);
+    });
+  }
+
+  function calculateTotal() {
+    const serviceTotal = selectedServices.reduce((sum, service) => sum + service.ThanhTien, 0);
+    const total = currentRoomPrice + serviceTotal;
+
+    document.getElementById('tienDichVu').textContent = formatCurrency(serviceTotal);
+    document.getElementById('tongTien').textContent = formatCurrency(total);
+  }
+
+  async function saveHoaDon(event) {
+    event.preventDefault();
+
+    const hoaDonId = document.getElementById('hoaDonId').value;
+    const isEdit = !!hoaDonId;
+
+    const formData = {
+      MaDatPhong: document.getElementById('datPhongSelect').value,
+      TrangThai: document.getElementById('hoaDonStatus').value,
+      TongTien: parseFloat(document.getElementById('tongTien').textContent.replace(/[^\d]/g, '')),
+      ChiTiet: selectedServices,
+      ThoiGianKetThuc: document.getElementById('thoiGianKetThuc').value || new Date().toISOString()
+    };
+
+    // Validation
+    if (!formData.MaDatPhong) {
+      showError('Vui lòng chọn đặt phòng');
+      return;
+    }
+
+    if (selectedServices.length === 0 && currentRoomPrice === 0) {
+      showError('Hóa đơn phải có ít nhất một dịch vụ hoặc tiền phòng');
+      return;
+    }
+
+    const url = isEdit ? `/api/hoadon/${document.getElementById('hoaDonMaHD').value}` : '/api/hoadon';
+    const method = isEdit ? 'PUT' : 'POST';
+
+    try {
+      Swal.fire({
+        title: 'Đang lưu hóa đơn...',
+        text: 'Vui lòng chờ trong giây lát',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      const response = await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Lỗi server');
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Thành công!',
+        text: result.message || `Hóa đơn đã được ${isEdit ? 'cập nhật' : 'tạo'} thành công!`,
+        timer: 1500,
+        showConfirmButton: false
+      });
+
+      setTimeout(() => {
+        location.reload();
+      }, 1500);
+
+    } catch (error) {
+      console.error('❌ Lỗi khi lưu hóa đơn:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi!',
+        text: error.message || 'Không thể lưu hóa đơn',
+        confirmButtonColor: '#667eea'
+      });
+    }
+  }
+
+  async function thanhToanHoaDon(maHoaDon) {
+    try {
+      const response = await fetch(`/api/hoadon/${maHoaDon}/thanhtoan`, {
+        method: 'PUT'
+      });
+
+      if (response.ok) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Thành công!',
+          text: 'Hóa đơn đã được thanh toán',
+          timer: 1500,
+          showConfirmButton: false
+        });
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        throw new Error('Lỗi khi thanh toán');
+      }
+    } catch (error) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi!',
+        text: 'Không thể thanh toán hóa đơn'
+      });
+    }
+  }
+
+  async function viewHoaDonDetail(maHoaDon) {
+    try {
+      const response = await fetch(`/api/hoadon/${maHoaDon}`);
+      const hoaDon = await response.json();
+
+      const detailContent = document.getElementById('detailContent');
+      detailContent.innerHTML = `
+        <div class="invoice-detail">
+          <div class="invoice-header">
+            <h3>Hóa đơn: ${hoaDon.MaHoaDon}</h3>
+            <span class="status-badge ${hoaDon.TrangThai}">${hoaDon.TrangThai}</span>
+          </div>
+          
+          <div class="invoice-info">
+            <div class="info-row">
+              <span>Khách hàng:</span>
+              <span>${hoaDon.MaKH}</span>
+            </div>
+            <div class="info-row">
+              <span>Phòng:</span>
+              <span>${hoaDon.MaPhong}</span>
+            </div>
+            <div class="info-row">
+              <span>Thời gian:</span>
+              <span>${formatDate(hoaDon.ThoiGianTao)} ${formatTime(hoaDon.ThoiGianTao)}</span>
+            </div>
+          </div>
+
+          <div class="invoice-items">
+            <h4>Chi tiết dịch vụ:</h4>
+            ${hoaDon.ChiTiet.map(item => `
+              <div class="item-row">
+                <span>${item.TenHang}</span>
+                <span>${item.SoLuong} x ${formatCurrency(item.DonGia)}</span>
+                <span>${formatCurrency(item.ThanhTien)}</span>
+              </div>
+            `).join('')}
+          </div>
+
+          <div class="invoice-total">
+            <div class="total-row">
+              <span>Tổng cộng:</span>
+              <span>${formatCurrency(hoaDon.TongTien)}</span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('detailModal').style.display = 'flex';
+    } catch (error) {
+      showError('Không thể tải chi tiết hóa đơn');
+    }
+  }
+
+  function closeDetailModal() {
+    document.getElementById('detailModal').style.display = 'none';
+  }
+
+  // ===== FILTER & SEARCH =====
+  function filterHoaDon() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value;
+    const dateFrom = document.getElementById('dateFromFilter').value;
+    const dateTo = document.getElementById('dateToFilter').value;
+    const sortFilter = document.getElementById('sortFilter').value;
+
+    filteredHoaDons = allHoaDons.filter(card => {
+      const maHD = card.getAttribute('data-mahd').toLowerCase();
+      const maDP = card.getAttribute('data-madp').toLowerCase();
+      const status = card.getAttribute('data-status');
+      const date = card.getAttribute('data-date');
+
+      const matchesSearch = !searchTerm || 
+        maHD.includes(searchTerm) || 
+        maDP.includes(searchTerm);
+      const matchesStatus = !statusFilter || status === statusFilter;
+      const matchesDate = (!dateFrom || date >= dateFrom) && 
+                         (!dateTo || date <= dateTo);
+
+      const shouldShow = matchesSearch && matchesStatus && matchesDate;
+      card.style.display = shouldShow ? 'block' : 'none';
+      return shouldShow;
+    });
+
+    // Sort
+    sortHoaDons(sortFilter);
+    calculateFilteredStatistics();
+    toggleEmptyState(filteredHoaDons.length === 0);
+  }
+
+  function sortHoaDons(sortType) {
+    const container = document.getElementById('hoaDonGrid');
+    const cards = Array.from(container.querySelectorAll('.employee-card'));
+
+    cards.sort((a, b) => {
+      switch (sortType) {
+        case 'newest':
+          return new Date(b.getAttribute('data-date')) - new Date(a.getAttribute('data-date'));
+        case 'oldest':
+          return new Date(a.getAttribute('data-date')) - new Date(b.getAttribute('data-date'));
+        case 'highest':
+          return parseFloat(b.getAttribute('data-tongtien')) - parseFloat(a.getAttribute('data-tongtien'));
+        case 'lowest':
+          return parseFloat(a.getAttribute('data-tongtien')) - parseFloat(b.getAttribute('data-tongtien'));
+        default:
+          return 0;
+      }
+    });
+
+    cards.forEach(card => container.appendChild(card));
+  }
+
+  function clearFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('dateFromFilter').value = '';
+    document.getElementById('dateToFilter').value = '';
+    document.getElementById('sortFilter').value = 'newest';
+
+    filterHoaDon();
+  }
+
+  function toggleEmptyState(show) {
+    const emptyState = document.getElementById('emptyState');
+    const grid = document.getElementById('hoaDonGrid');
+
+    if (!emptyState || !grid) return;
+
+    if (show) {
+      grid.style.display = 'none';
+      emptyState.style.display = 'block';
+    } else {
+      grid.style.display = 'grid';
+      emptyState.style.display = 'none';
+    }
+  }
+
+  // ===== UTILITY FUNCTIONS =====
+  function showError(message) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Thiếu thông tin',
+      text: message,
+      confirmButtonColor: '#667eea'
+    });
+  }
+
+  // ===== INITIALIZATION =====
+  document.addEventListener('DOMContentLoaded', function () {
+    allHoaDons = Array.from(document.querySelectorAll('.employee-card'));
+    filteredHoaDons = [...allHoaDons];
+    
+    calculateStatistics();
+    
+    // Event listeners
+    document.getElementById('thoiGianKetThuc').addEventListener('change', calculateRoomPrice);
+  });
+</script>
+
+<style>
+.employee-avatar-placeholder.bill {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.employee-avatar-placeholder.bill i {
+  font-size: 2rem;
+}
+
+.service-breakdown {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+}
+
+.service-item {
+  display: flex;
+  justify-content: between;
+  margin-bottom: 5px;
+  font-size: 0.9em;
+}
+
+.service-name {
+  flex: 1;
+}
+
+.service-quantity {
+  margin: 0 10px;
+  color: #666;
+}
+
+.service-price {
+  font-weight: bold;
+  color: #2d3748;
+}
+
+.modal-container.large {
+  max-width: 800px;
+}
+
+.services-section {
+  margin: 20px 0;
+  padding: 20px;
+  background: #f7fafc;
+  border-radius: 8px;
+}
+
+.service-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.service-controls select,
+.service-controls input {
+  flex: 1;
+}
+
+.services-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.service-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: white;
+  margin-bottom: 5px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+}
+
+.service-info {
+  flex: 1;
+}
+
+.service-details {
+  font-size: 0.8em;
+  color: #718096;
+  display: block;
+}
+
+.service-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.total-section {
+  margin-top: 20px;
+  padding: 15px;
+  background: #edf2f7;
+  border-radius: 8px;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.grand-total {
+  border-top: 2px solid #cbd5e0;
+  padding-top: 8px;
+  margin-top: 8px;
+  font-size: 1.1em;
+}
+
+.invoice-detail .invoice-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8em;
+  font-weight: bold;
+}
+
+.status-badge.Đã\ thanh\ toán {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+.status-badge.Chưa\ thanh\ toán {
+  background: #fed7d7;
+  color: #742a2a;
+}
+
+.status-badge.Đã\ hủy {
+  background: #e2e8f0;
+  color: #4a5568;
+}
+
+.invoice-info {
+  margin-bottom: 20px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding: 4px 0;
+}
+
+.invoice-items {
+  margin-bottom: 20px;
+}
+
+.item-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+</style>

@@ -316,6 +316,15 @@ app.get('/admin/loaiphong', async (req, res) => {
     }
 });
 
+app.get('/admin/thietbi', async (req, res) => {
+    try {
+        const thietbis = await DataModel.Data_ThietBi_Model.find({}).lean();
+        res.render('thietbi', { layout: 'AdminMain', title: 'Quản lý thiết bị', thietbis });
+    } catch (err) {
+        res.status(500).send('Lỗi server!');
+    }
+});
+
 app.get('/api/loaiphong/check-loai-phong/:loaiPhong', async (req, res) => {
     try {
         const { loaiPhong } = req.params;
@@ -405,6 +414,13 @@ app.get('/api/nhanvien/:maNV', async (req, res) => {
         res.status(500).json({ error: 'Lỗi server!' });
     }
 });
+
+app.get('/admin/hoadon', async (req, res) => {
+    
+});
+
+
+
 
 
 // Admin login page
