@@ -316,10 +316,76 @@ app.get('/admin/loaiphong', async (req, res) => {
     }
 });
 
+// app.get('/admin/thietbi', async (req, res) => {
+//     try {
+//         const [thietbis, phonghats] = await Promise.all([
+//             DataModel.Data_ThietBi_Model.find({}).lean().exec(),
+//             DataModel.Data_PhongHat_Model.distinct('MaPhong')
+//         ]);
+
+//         // Tạo map để tra cứu nhanh bảng giá theo LoaiPhong
+//         const phonghatsWithPrice = thietbis.map(tb => {
+//             const bangGiaCungLoai = bangGiaList.filter(banggia => 
+//                 banggia.LoaiPhong === phong.LoaiPhong
+//             );
+
+//             return {
+//                 ...phong,
+//                 BangGia: bangGiaCungLoai,
+//             };
+//         });
+        
+//         // Chuẩn bị dữ liệu cho phần chỉnh sửa
+//         const editBangGia = bangGiaList.map(gia => {
+//             const [startTime = '', endTime = ''] = gia.KhungGio.split('-');
+//             return {
+//                 ...gia,
+//                 startTime,
+//                 endTime
+//             };
+//         });
+
+//         // Tính toán thống kê
+//         const totalRooms = phonghats.length;
+//         const countAvailable = phonghats.filter(p => p.TrangThai === 'Trống').length;
+//         const countBusy = phonghats.filter(p => p.TrangThai === 'Đang sử dụng').length;
+//         const countReserved = phonghats.filter(p => p.TrangThai === 'Đã đặt trước').length;
+        
+//         res.render('phonghat', { 
+//             layout: 'AdminMain', 
+//             title: 'Quản lý thiết bị', 
+//             phonghats: phonghatsWithPrice,
+//             roomTypes: roomTypes,
+//             currentBangGia: bangGiaList, // Dữ liệu hiện tại
+//             editBangGia: editBangGia,    // Dữ liệu để chỉnh sửa
+//             totalRooms: totalRooms,
+//             countAvailable: countAvailable,
+//             countBusy: countBusy,
+//             countReserved: countReserved,
+//             phonghatPage: true,
+//         });
+
+//     } catch (err) {
+//         console.error('Error:', err);
+//         res.status(500).send('Lỗi server!');
+//     }
+// });
+
 app.get('/admin/thietbi', async (req, res) => {
     try {
         const thietbis = await DataModel.Data_ThietBi_Model.find({}).lean();
-        res.render('thietbi', { layout: 'AdminMain', title: 'Quản lý thiết bị', thietbis });
+        
+        // Lấy danh sách mã phòng duy nhất từ thiết bị
+        const uniqueMaPhongs = [...new Set(thietbis.map(item => item.MaPhong))];
+        const loaiThietBis = [...new Set(thietbis.map(item => item.LoaiThietBi))];
+        
+        res.render('thietbi', { 
+            layout: 'AdminMain', 
+            title: 'Quản lý thiết bị', 
+            thietbis,
+            uniqueMaPhongs, // Truyền danh sách mã phòng duy nhất vào template
+            loaiThietBis
+        });
     } catch (err) {
         res.status(500).send('Lỗi server!');
     }
@@ -644,8 +710,6 @@ app.post('/api/banggia/:loaiPhong', async (req, res) => {
     }
 });
 
-
-
 app.post('/api/loaiphong', async (req, res) => {
     try {
         console.log('=== 🚨 API /api/loaiphong ===');
@@ -801,6 +865,43 @@ app.post('/api/loaiphong', async (req, res) => {
     }
 });
 
+app.post('/api/thietbi', async (req, res) => {
+    try {
+        const { formData } = req.body;      
+        console.log('Data : ', formData);
+        
+        // Lấy mã cuối cùng một lần để tối ưu - GIỮ NGUYÊN LOGIC CŨ
+        const lastMaThietBi = await generateCode('TB', DataModel.Data_ThietBi_Model, 'MaThietBi');
+        const lastNumber = parseInt(lastMaThietBi.replace('TB', '')) || 0;
+        
+        console.log('🔢 Mã cuối cùng:', lastMaThietBi, 'Số:', lastNumber);
+        
+        // Lưu dữ liệu mới - GIỮ NGUYÊN LOGIC CŨ
+        // const result = await DataModel.Data_BangGiaPhong_Model.insertMany(newBangGia);
+        
+        // console.log('✅ Đã thêm thành công:', result.length, 'khung giờ');
+        // console.log('📋 Mã được tạo:', result.map(item => item.MaGia));
+        
+        // // Response - GIỮ NGUYÊN LOGIC CŨ + THÊM THÔNG TIN
+        // res.json({
+        //     success: true,
+        //     message: `Cập nhật thành công ${result.length} khung giờ cho loại phòng "${loaiPhong}"!`,
+        //     data: {
+        //         soKhungGio: result.length,
+        //         maGiaList: result.map(item => item.MaGia),
+        //         bangGia: result
+        //     }
+        // });
+
+    } catch (error) {
+        console.error('❌ Lỗi lưu thiết bị:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lưu thiết bị: ' + error.message,
+            error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+});
 
 ///////////////////////////////
 //         PUT ROUTES         //
@@ -1120,6 +1221,106 @@ app.put('/api/nhanvien/:maNV', async (req, res) => {
   }
 });
 
+app.put('/api/thietbi/:maTB', async (req, res) => {
+    try {
+        console.log('📥 NHẬN REQUEST TỪ CLIENT:', {
+            body: req.body,
+            headers: req.headers
+        });
+
+        const { bangGiaData } = req.body;
+        
+        if (!bangGiaData || !Array.isArray(bangGiaData)) {
+            console.log('❌ Dữ liệu không hợp lệ - bangGiaData không phải mảng:', bangGiaData);
+            return res.status(400).json({ 
+                error: 'Dữ liệu bảng giá không hợp lệ',
+                details: 'bangGiaData phải là mảng'
+            });
+        }
+
+        console.log(`✅ Nhận ${bangGiaData.length} mục dữ liệu`);
+
+        const results = [];
+        
+        // Nhóm dữ liệu theo loại phòng
+        const groupedByRoomType = {};
+        bangGiaData.forEach((item, index) => {
+            console.log(`📊 Item ${index}:`, item);
+            
+            if (!item.LoaiPhong) {
+                console.warn(`⚠️ Item ${index} thiếu LoaiPhong`);
+                return;
+            }
+            
+            if (!groupedByRoomType[item.LoaiPhong]) {
+                groupedByRoomType[item.LoaiPhong] = [];
+            }
+            groupedByRoomType[item.LoaiPhong].push({
+                KhungGio: item.KhungGio,
+                GiaTien: item.GiaTien
+            });
+        });
+
+        console.log('📦 Dữ liệu đã nhóm:', groupedByRoomType);
+
+        // Lưu từng loại phòng
+        for (const [loaiPhong, giaData] of Object.entries(groupedByRoomType)) {
+            try {
+                console.log(`🔄 Xử lý loại phòng: ${loaiPhong} với ${giaData.length} khung giờ`);
+                
+                // Xóa bảng giá cũ
+                const deleteResult = await BangGia.deleteMany({ LoaiPhong: loaiPhong });
+                console.log(`🗑️ Đã xóa ${deleteResult.deletedCount} bản ghi cũ của ${loaiPhong}`);
+                
+                // Thêm bảng giá mới
+                const newPrices = giaData.map(gia => ({
+                    LoaiPhong: loaiPhong,
+                    KhungGio: gia.KhungGio,
+                    GiaTien: gia.GiaTien
+                }));
+                
+                console.log(`💾 Đang lưu ${newPrices.length} bản ghi mới cho ${loaiPhong}`);
+                const insertResult = await BangGia.insertMany(newPrices);
+                
+                results.push({
+                    loaiPhong,
+                    success: true,
+                    count: newPrices.length
+                });
+                
+                console.log(`✅ Đã lưu thành công ${newPrices.length} khung giờ cho ${loaiPhong}`);
+                
+            } catch (error) {
+                console.error(`❌ Lỗi khi xử lý ${loaiPhong}:`, error);
+                results.push({
+                    loaiPhong,
+                    success: false,
+                    error: error.message
+                });
+            }
+        }
+
+        const successCount = results.filter(r => r.success).length;
+        const totalCount = results.length;
+        
+        console.log(`🎯 Kết quả tổng: ${successCount}/${totalCount} loại phòng thành công`);
+
+        res.json({
+            message: `Đã lưu bảng giá cho ${successCount}/${totalCount} loại phòng`,
+            results,
+            successCount,
+            totalCount
+        });
+
+    } catch (error) {
+        console.error('💥 Lỗi tổng khi lưu bảng giá:', error);
+        res.status(500).json({ 
+            error: 'Lỗi server khi lưu bảng giá',
+            details: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+});
 
 ///////////////////////////////
 //        DELETE ROUTES       //

@@ -149,8 +149,10 @@ const ThietBiSchema = new mongoose.Schema({
   MaThietBi: { type: String, required: true, unique: true },
   MaPhong: { type: String, required: true },
   TenThietBi: { type: String, required: true },
+  LoaiThietBi: {type: String, required: true},
   TinhTrang: { type: String, default: "Tốt" },
   LinkAnh: { type: String },
+  NgayNhap: {type: Date},
   createdAt: { type: Date, default: Date.now }
 });
 

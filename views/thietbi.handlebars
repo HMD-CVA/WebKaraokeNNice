@@ -40,12 +40,10 @@
         </select>
         <select class="filter-select" id="loaiFilter" onchange="filterThietBi()">
           <option value="">Tất cả loại</option>
-          <option value="Micro">Micro</option>
-          <option value="Loa">Loa</option>
-          <option value="Amply">Amply</option>
-          <option value="Màn hình">Màn hình</option>
-          <option value="Điều hòa">Điều hòa</option>
-          <option value="Bàn ghế">Bàn ghế</option>
+            {{#each loaiThietBis}}
+              <option value="{{this}}">{{this}}</option>
+            {{/each}}
+          <option value="Khác">Khác</option>
         </select>
         <button class="clear-filters" onclick="clearFilters()">
           <i class="fas fa-times"></i>
@@ -228,12 +226,9 @@
               <label for="thietBiMaPhong">Mã phòng *</label>
               <select id="thietBiMaPhong" required>
                 <option value="">Chọn phòng</option>
-                <option value="P101">P101</option>
-                <option value="P102">P102</option>
-                <option value="P103">P103</option>
-                <option value="P201">P201</option>
-                <option value="VIP01">VIP01</option>
-                <option value="VIP02">VIP02</option>
+                {{#each uniqueMaPhongs}}
+                  <option value="{{this}}">{{this}}</option>
+                {{/each}}
                 <option value="Khác">Khác</option>
               </select>
             </div>
@@ -242,12 +237,9 @@
               <label for="thietBiLoai">Loại thiết bị *</label>
               <select id="thietBiLoai" required>
                 <option value="">Chọn loại thiết bị</option>
-                <option value="Micro">Micro</option>
-                <option value="Loa">Loa</option>
-                <option value="Amply">Amply</option>
-                <option value="Màn hình">Màn hình</option>
-                <option value="Điều hòa">Điều hòa</option>
-                <option value="Bàn ghế">Bàn ghế</option>
+                {{#each loaiThietBis}}
+                  <option value="{{this}}">{{this}}</option>
+                {{/each}}
                 <option value="Khác">Khác</option>
               </select>
             </div>
@@ -263,34 +255,10 @@
             </div>
 
             <div class="form-group">
-              <label for="thietBiHangSX">Hãng sản xuất</label>
-              <input type="text" id="thietBiHangSX" placeholder="Nhập hãng sản xuất">
-            </div>
-
-            <div class="form-group">
-              <label for="thietBiModel">Model</label>
-              <input type="text" id="thietBiModel" placeholder="Nhập model">
-            </div>
-
-            <div class="form-group">
-              <label for="thietBiGiaTri">Giá trị (VND)</label>
-              <input type="number" id="thietBiGiaTri" placeholder="Nhập giá trị">
-            </div>
-
-            <div class="form-group">
               <label for="thietBiNgayNhap">Ngày nhập</label>
               <input type="date" id="thietBiNgayNhap">
             </div>
 
-            <div class="form-group">
-              <label for="thietBiBaoHanh">Thời gian bảo hành (tháng)</label>
-              <input type="number" id="thietBiBaoHanh" placeholder="Số tháng bảo hành">
-            </div>
-
-            <div class="form-group">
-              <label for="thietBiGhiChu">Ghi chú</label>
-              <textarea id="thietBiGhiChu" placeholder="Nhập ghi chú" rows="2"></textarea>
-            </div>
           </div>
 
           <div class="form-group full-width">
@@ -414,14 +382,65 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
   // ===== CONFIGURATION & STATE =====
   let allThietBis = [];
   let filteredThietBis = [];
   let currentThietBiHistory = [];
   let currentRoomFilter = 'all';
+
+  // ===== INITIALIZATION =====
+  document.addEventListener('DOMContentLoaded', function() {
+    initializeApp();
+  });
+
+  function initializeApp() {
+    // Khởi tạo dữ liệu và giao diện
+    allThietBis = Array.from(document.querySelectorAll('.room-card'));
+    filteredThietBis = [...allThietBis];
+    
+    calculateStatistics();
+    initRoomNavigation();
+    setupEventListeners();
+  }
+
+  function setupEventListeners() {
+    // Setup real-time search
+    const searchInput = document.getElementById('searchInput');
+    let searchTimeout;
+    
+    if (searchInput) {
+      searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+          filterThietBi();
+        }, 300);
+      });
+    }
+
+    // Close modals when clicking outside
+    document.addEventListener('click', function(event) {
+      const thietBiModal = document.getElementById('thietBiModal');
+      const baoTriModal = document.getElementById('baoTriModal');
+      const historyModal = document.getElementById('historyModal');
+      
+      if (event.target === thietBiModal) closeThietBiModal();
+      if (event.target === baoTriModal) closeBaoTriModal();
+      if (event.target === historyModal) closeHistoryModal();
+    });
+
+    // Close modals with Escape key
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        closeThietBiModal();
+        closeBaoTriModal();
+        closeHistoryModal();
+      }
+    });
+  }
 
   // ===== STATISTICS CALCULATION =====
   function calculateStatistics() {
@@ -449,50 +468,21 @@
   function updateStatCard(selector, value) {
     const element = document.querySelector(selector);
     if (element) {
-      element.textContent = value;
+      animateValue(element, 0, value, 1000);
     }
   }
 
-  // ===== FORMAT FUNCTIONS =====
-  function formatCurrency(amount) {
-    if (typeof amount === 'string') {
-      amount = parseFloat(amount) || 0;
-    }
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(amount);
-  }
-
-  function formatDate(dateString) {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN');
-  }
-
-  function formatDateTime(dateString) {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleString('vi-VN');
-  }
-
-  // Helper function cho Handlebars để lấy icon theo loại thiết bị
-  function getDeviceIcon(loaiThietBi) {
-    const iconMap = {
-      'Micro': 'fas fa-microphone',
-      'Loa': 'fas fa-volume-up',
-      'Amply': 'fas fa-sliders-h',
-      'Màn hình': 'fas fa-tv',
-      'Điều hòa': 'fas fa-snowflake',
-      'Bàn ghế': 'fas fa-chair',
-      'Khác': 'fas fa-cogs'
+  function animateValue(element, start, end, duration) {
+    let startTimestamp = null;
+    const step = (timestamp) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      element.textContent = Math.floor(progress * (end - start) + start);
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      }
     };
-    return iconMap[loaiThietBi] || 'fas fa-cog';
-  }
-
-  // Helper function cho Handlebars
-  function eq(a, b) {
-    return a === b;
+    window.requestAnimationFrame(step);
   }
 
   // ===== ROOM NAVIGATION =====
@@ -501,7 +491,7 @@
     if (!roomNavigation) return;
 
     // Lấy tất cả các phòng từ dữ liệu thiết bị
-    const rooms = [...new Set(allThietBis.map(card => card.getAttribute('data-maphong')))];
+    const rooms = [...new Set(allThietBis.map(card => card.getAttribute('data-maphong')))].filter(room => room);
     
     // Thêm nút "Tất cả"
     const allButton = document.createElement('button');
@@ -551,28 +541,34 @@
 
   // ===== THIET BI MANAGEMENT =====
   function openThietBiModal(thietBiData = null) {
-    document.getElementById('modalTitle').textContent = thietBiData ? 'Chỉnh sửa thiết bị' : 'Thêm thiết bị mới';
-    document.getElementById('thietBiModal').style.display = 'flex';
+    const modal = document.getElementById('thietBiModal');
+    modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
 
     if (thietBiData) {
-      document.getElementById('thietBiId').value = thietBiData._id || '';
-      document.getElementById('thietBiMaTB').value = thietBiData.MaThietBi || '';
-      document.getElementById('thietBiName').value = thietBiData.TenThietBi || '';
-      document.getElementById('thietBiMaPhong').value = thietBiData.MaPhong || '';
-      document.getElementById('thietBiLoai').value = thietBiData.LoaiThietBi || '';
-      document.getElementById('thietBiStatus').value = thietBiData.TinhTrang || 'Tốt';
-      document.getElementById('thietBiHangSX').value = thietBiData.HangSanXuat || '';
-      document.getElementById('thietBiModel').value = thietBiData.Model || '';
-      document.getElementById('thietBiGiaTri').value = thietBiData.GiaTri || '';
-      document.getElementById('thietBiNgayNhap').value = thietBiData.NgayNhap ? new Date(thietBiData.NgayNhap).toISOString().split('T')[0] : '';
-      document.getElementById('thietBiBaoHanh').value = thietBiData.ThoiGianBaoHanh || '';
-      document.getElementById('thietBiGhiChu').value = thietBiData.GhiChu || '';
-      document.getElementById('thietBiAvatar').value = thietBiData.LinkAnh || '';
-      updateThietBiPreview(thietBiData.LinkAnh || '');
+      document.getElementById('modalTitle').textContent = 'Chỉnh sửa thiết bị';
+      populateThietBiForm(thietBiData);
     } else {
+      document.getElementById('modalTitle').textContent = 'Thêm thiết bị mới';
       resetThietBiForm();
     }
+  }
+
+  function populateThietBiForm(data) {
+    document.getElementById('thietBiId').value = data._id || '';
+    document.getElementById('thietBiMaTB').value = data.MaThietBi || '';
+    document.getElementById('thietBiName').value = data.TenThietBi || '';
+    document.getElementById('thietBiMaPhong').value = data.MaPhong || '';
+    document.getElementById('thietBiLoai').value = data.LoaiThietBi || '';
+    document.getElementById('thietBiStatus').value = data.TinhTrang || 'Tốt';
+    document.getElementById('thietBiHangSX').value = data.HangSanXuat || '';
+    document.getElementById('thietBiModel').value = data.Model || '';
+    document.getElementById('thietBiGiaTri').value = data.GiaTri || '';
+    document.getElementById('thietBiNgayNhap').value = data.NgayNhap ? new Date(data.NgayNhap).toISOString().split('T')[0] : '';
+    document.getElementById('thietBiBaoHanh').value = data.ThoiGianBaoHanh || '';
+    document.getElementById('thietBiGhiChu').value = data.GhiChu || '';
+    document.getElementById('thietBiAvatar').value = data.LinkAnh || '';
+    updateThietBiPreview(data.LinkAnh || '');
   }
 
   function closeThietBiModal() {
@@ -592,86 +588,88 @@
   function updateThietBiPreview(avatarUrl) {
     const preview = document.getElementById('thietBiPreview');
     if (avatarUrl && avatarUrl.trim() !== '') {
-      preview.innerHTML = `<img src="${avatarUrl}" alt="Preview" onerror="this.style.display='none'">`;
+      preview.innerHTML = `<img src="${avatarUrl}" alt="Preview" onerror="handleImageError(this)">`;
     } else {
       preview.innerHTML = '<i class="fas fa-microphone"></i><p>Preview sẽ hiển thị ở đây</p>';
     }
   }
 
+  function handleImageError(img) {
+    img.style.display = 'none';
+    const preview = document.getElementById('thietBiPreview');
+    preview.innerHTML = '<i class="fas fa-microphone"></i><p>Không thể tải ảnh</p>';
+  }
+
   async function saveThietBi(event) {
     event.preventDefault();
 
-    const thietBiId = document.getElementById('thietBiId').value;
-    const isEdit = !!thietBiId;
-
-    const formData = {
-      TenThietBi: document.getElementById('thietBiName').value.trim(),
-      MaPhong: document.getElementById('thietBiMaPhong').value,
-      LoaiThietBi: document.getElementById('thietBiLoai').value,
-      TinhTrang: document.getElementById('thietBiStatus').value,
-      HangSanXuat: document.getElementById('thietBiHangSX').value.trim() || '',
-      Model: document.getElementById('thietBiModel').value.trim() || '',
-      GiaTri: document.getElementById('thietBiGiaTri').value ? parseInt(document.getElementById('thietBiGiaTri').value) : 0,
-      NgayNhap: document.getElementById('thietBiNgayNhap').value || new Date().toISOString(),
-      ThoiGianBaoHanh: document.getElementById('thietBiBaoHanh').value ? parseInt(document.getElementById('thietBiBaoHanh').value) : 0,
-      GhiChu: document.getElementById('thietBiGhiChu').value.trim() || '',
-      LinkAnh: document.getElementById('thietBiAvatar').value.trim()
-    };
-
-    // Validation
-    if (!formData.TenThietBi) {
-      showError('Vui lòng nhập tên thiết bị');
-      return;
-    }
-    if (!formData.MaPhong) {
-      showError('Vui lòng chọn phòng');
-      return;
-    }
-    if (!formData.LoaiThietBi) {
-      showError('Vui lòng chọn loại thiết bị');
+    const formData = getThietBiFormData();
+    const validation = validateThietBiForm(formData);
+    
+    if (!validation.isValid) {
+      showError(validation.message);
       return;
     }
 
+    const isEdit = !!document.getElementById('thietBiId').value;
     const url = isEdit ? `/api/thietbi/${document.getElementById('thietBiMaTB').value}` : '/api/thietbi';
     const method = isEdit ? 'PUT' : 'POST';
+    console.log(isEdit, url, method);
 
     try {
-      Swal.fire({
-        title: 'Đang lưu thông tin...',
-        text: 'Vui lòng chờ trong giây lát',
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading()
-      });
-
+      await showLoading('Đang lưu thông tin...');
+      
       const response = await fetch(url, {
         method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
 
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Lỗi server');
-
-      Swal.fire({
-        icon: 'success',
-        title: 'Thành công!',
-        text: result.message || `Thiết bị "${formData.TenThietBi}" đã được ${isEdit ? 'cập nhật' : 'thêm'} thành công!`,
-        timer: 1500,
-        showConfirmButton: false
-      });
+      const result = await handleResponse(response);
+      await showSuccess(result.message || `Thiết bị "${formData.TenThietBi}" đã được ${isEdit ? 'cập nhật' : 'thêm'} thành công!`);
 
       setTimeout(() => {
         location.reload();
       }, 1500);
 
     } catch (error) {
-      console.error('❌ Lỗi khi lưu thiết bị:', error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Lỗi!',
-        text: error.message || 'Không thể lưu thông tin thiết bị',
-        confirmButtonColor: '#667eea'
-      });
+      handleError('Lỗi khi lưu thiết bị:', error);
+    }
+  }
+
+  function getThietBiFormData() {
+    return {
+      TenThietBi: document.getElementById('thietBiName').value.trim(),
+      MaPhong: document.getElementById('thietBiMaPhong').value,
+      LoaiThietBi: document.getElementById('thietBiLoai').value,
+      TinhTrang: document.getElementById('thietBiStatus').value,
+      NgayNhap: document.getElementById('thietBiNgayNhap').value || new Date().toISOString(),
+      LinkAnh: document.getElementById('thietBiAvatar').value.trim()
+    };
+  }
+
+  function validateThietBiForm(data) {
+    if (!data.TenThietBi) {
+      return { isValid: false, message: 'Vui lòng nhập tên thiết bị' };
+    }
+    if (!data.MaPhong) {
+      return { isValid: false, message: 'Vui lòng chọn phòng' };
+    }
+    if (!data.LoaiThietBi) {
+      return { isValid: false, message: 'Vui lòng chọn loại thiết bị' };
+    }
+    return { isValid: true };
+  }
+
+  async function editThietBi(maThietBi) {
+    try {
+      const response = await fetch(`/api/thietbi/${maThietBi}`);
+      if (!response.ok) throw new Error('Không thể tải thông tin thiết bị');
+      
+      const thietBiData = await response.json();
+      openThietBiModal(thietBiData);
+    } catch (error) {
+      handleError('Lỗi khi tải thông tin thiết bị:', error);
     }
   }
 
@@ -690,23 +688,12 @@
     if (result.isConfirmed) {
       try {
         const response = await fetch(`/api/thietbi/${thietBiId}`, { method: 'DELETE' });
-        if (!response.ok) throw new Error('Lỗi khi xóa thiết bị');
-
-        await Swal.fire({
-          icon: 'success',
-          title: 'Đã xóa!',
-          text: 'Thiết bị đã được xóa thành công',
-          timer: 1500,
-          showConfirmButton: false
-        });
-
+        await handleResponse(response);
+        
+        await showSuccess('Thiết bị đã được xóa thành công');
         location.reload();
       } catch (error) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Lỗi!',
-          text: 'Không thể xóa thiết bị'
-        });
+        handleError('Lỗi khi xóa thiết bị:', error);
       }
     }
   }
@@ -717,15 +704,7 @@
     document.body.style.overflow = 'hidden';
 
     if (baoTriData) {
-      // Điền thông tin bảo trì nếu có
-      document.getElementById('baoTriId').value = baoTriData._id || '';
-      document.getElementById('baoTriMaThietBi').value = baoTriData.MaThietBi || '';
-      document.getElementById('baoTriChiPhi').value = baoTriData.ChiPhi || '';
-      document.getElementById('baoTriThoiGian').value = baoTriData.ThoiGian ? new Date(baoTriData.ThoiGian).toISOString().slice(0, 16) : '';
-      document.getElementById('baoTriMoTa').value = baoTriData.MoTa || '';
-      document.getElementById('baoTriNhanVien').value = baoTriData.NhanVien || '';
-      document.getElementById('baoTriKetQua').value = baoTriData.KetQua || '';
-      updateThietBiInfo();
+      populateBaoTriForm(baoTriData);
     } else {
       resetBaoTriForm();
     }
@@ -742,6 +721,17 @@
     document.getElementById('baoTriThoiGian').value = new Date().toISOString().slice(0, 16);
   }
 
+  function populateBaoTriForm(data) {
+    document.getElementById('baoTriId').value = data._id || '';
+    document.getElementById('baoTriMaThietBi').value = data.MaThietBi || '';
+    document.getElementById('baoTriChiPhi').value = data.ChiPhi || '';
+    document.getElementById('baoTriThoiGian').value = data.ThoiGian ? new Date(data.ThoiGian).toISOString().slice(0, 16) : '';
+    document.getElementById('baoTriMoTa').value = data.MoTa || '';
+    document.getElementById('baoTriNhanVien').value = data.NhanVien || '';
+    document.getElementById('baoTriKetQua').value = data.KetQua || '';
+    updateThietBiInfo();
+  }
+
   function updateThietBiInfo() {
     const selectedOption = document.querySelector('#baoTriMaThietBi option:checked');
     if (selectedOption && selectedOption.value) {
@@ -753,53 +743,25 @@
   async function saveBaoTri(event) {
     event.preventDefault();
 
-    const formData = {
-      MaThietBi: document.getElementById('baoTriMaThietBi').value,
-      ChiPhi: document.getElementById('baoTriChiPhi').value ? parseInt(document.getElementById('baoTriChiPhi').value) : 0,
-      ThoiGian: document.getElementById('baoTriThoiGian').value,
-      MoTa: document.getElementById('baoTriMoTa').value.trim(),
-      NhanVien: document.getElementById('baoTriNhanVien').value.trim() || '',
-      KetQua: document.getElementById('baoTriKetQua').value || ''
-    };
-
-    // Validation
-    if (!formData.MaThietBi) {
-      showError('Vui lòng chọn thiết bị');
-      return;
-    }
-    if (!formData.ChiPhi || formData.ChiPhi <= 0) {
-      showError('Vui lòng nhập chi phí bảo trì hợp lệ');
-      return;
-    }
-    if (!formData.MoTa) {
-      showError('Vui lòng nhập mô tả bảo trì');
+    const formData = getBaoTriFormData();
+    const validation = validateBaoTriForm(formData);
+    
+    if (!validation.isValid) {
+      showError(validation.message);
       return;
     }
 
     try {
-      Swal.fire({
-        title: 'Đang lưu thông tin...',
-        text: 'Vui lòng chờ trong giây lát',
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading()
-      });
-
+      await showLoading('Đang lưu thông tin bảo trì...');
+      
       const response = await fetch('/api/baotri', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
 
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Lỗi server');
-
-      Swal.fire({
-        icon: 'success',
-        title: 'Thành công!',
-        text: result.message || 'Thông tin bảo trì đã được lưu thành công!',
-        timer: 1500,
-        showConfirmButton: false
-      });
+      const result = await handleResponse(response);
+      await showSuccess(result.message || 'Thông tin bảo trì đã được lưu thành công!');
 
       setTimeout(() => {
         closeBaoTriModal();
@@ -807,35 +769,55 @@
       }, 1500);
 
     } catch (error) {
-      console.error('❌ Lỗi khi lưu bảo trì:', error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Lỗi!',
-        text: error.message || 'Không thể lưu thông tin bảo trì',
-        confirmButtonColor: '#667eea'
-      });
+      handleError('Lỗi khi lưu bảo trì:', error);
     }
+  }
+
+  function getBaoTriFormData() {
+    return {
+      MaThietBi: document.getElementById('baoTriMaThietBi').value,
+      ChiPhi: document.getElementById('baoTriChiPhi').value ? parseInt(document.getElementById('baoTriChiPhi').value) : 0,
+      ThoiGian: document.getElementById('baoTriThoiGian').value,
+      MoTa: document.getElementById('baoTriMoTa').value.trim(),
+      NhanVien: document.getElementById('baoTriNhanVien').value.trim() || '',
+      KetQua: document.getElementById('baoTriKetQua').value || ''
+    };
+  }
+
+  function validateBaoTriForm(data) {
+    if (!data.MaThietBi) {
+      return { isValid: false, message: 'Vui lòng chọn thiết bị' };
+    }
+    if (!data.ChiPhi || data.ChiPhi <= 0) {
+      return { isValid: false, message: 'Vui lòng nhập chi phí bảo trì hợp lệ' };
+    }
+    if (!data.MoTa) {
+      return { isValid: false, message: 'Vui lòng nhập mô tả bảo trì' };
+    }
+    return { isValid: true };
   }
 
   // ===== LICH SU BAO TRI =====
   async function viewBaoTriHistory(maThietBi) {
     try {
-      // Gọi API để lấy lịch sử bảo trì
       const response = await fetch(`/api/baotri/thietbi/${maThietBi}`);
       const history = await response.json();
 
+      if (!response.ok) throw new Error(history.error || 'Không thể tải lịch sử bảo trì');
+
       currentThietBiHistory = history;
-      
-      // Hiển thị modal lịch sử
-      document.getElementById('historyTitle').textContent = `Lịch sử bảo trì - ${maThietBi}`;
-      renderBaoTriHistory(history);
-      document.getElementById('historyModal').style.display = 'flex';
-      document.body.style.overflow = 'hidden';
+      showHistoryModal(maThietBi, history);
       
     } catch (error) {
-      console.error('Lỗi khi lấy lịch sử bảo trì:', error);
-      showError('Không thể tải lịch sử bảo trì');
+      handleError('Lỗi khi lấy lịch sử bảo trì:', error);
     }
+  }
+
+  function showHistoryModal(maThietBi, history) {
+    document.getElementById('historyTitle').textContent = `Lịch sử bảo trì - ${maThietBi}`;
+    renderBaoTriHistory(history);
+    document.getElementById('historyModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
   }
 
   function renderBaoTriHistory(history) {
@@ -873,50 +855,59 @@
     const loaiFilter = document.getElementById('loaiFilter').value;
 
     filteredThietBis = allThietBis.filter(card => {
-      const tenthietbi = card.getAttribute('data-tenthietbi').toLowerCase();
-      const matb = card.getAttribute('data-matb').toLowerCase();
-      const maphong = card.getAttribute('data-maphong');
-      const tinhtrang = card.getAttribute('data-tinhtrang');
-      const loai = card.getAttribute('data-loai');
-
-      const matchesSearch = !searchTerm || 
-        tenthietbi.includes(searchTerm) || 
-        matb.includes(searchTerm);
-      const matchesStatus = !statusFilter || tinhtrang === statusFilter;
-      const matchesLoai = !loaiFilter || loai === loaiFilter;
+      const matchesSearch = matchesSearchCriteria(card, searchTerm);
+      const matchesStatus = matchesFilterCriteria(card, 'data-tinhtrang', statusFilter);
+      const matchesLoai = matchesFilterCriteria(card, 'data-loai', loaiFilter);
+      const matchesRoom = matchesRoomCriteria(card);
       
-      // Lọc theo phòng
-      let matchesRoom = true;
-      if (currentRoomFilter === 'all') {
-        matchesRoom = true;
-      } else if (currentRoomFilter === 'other') {
-        matchesRoom = !maphong || maphong === '' || maphong === 'Khác';
-      } else {
-        matchesRoom = maphong === currentRoomFilter;
-      }
-
       const shouldShow = matchesSearch && matchesStatus && matchesLoai && matchesRoom;
       card.style.display = shouldShow ? 'block' : 'none';
       return shouldShow;
     });
 
+    updateDisplay();
+  }
+
+  function matchesSearchCriteria(card, searchTerm) {
+    if (!searchTerm) return true;
+    
+    const tenthietbi = card.getAttribute('data-tenthietbi').toLowerCase();
+    const matb = card.getAttribute('data-matb').toLowerCase();
+    
+    return tenthietbi.includes(searchTerm) || matb.includes(searchTerm);
+  }
+
+  function matchesFilterCriteria(card, attribute, filterValue) {
+    if (!filterValue) return true;
+    return card.getAttribute(attribute) === filterValue;
+  }
+
+  function matchesRoomCriteria(card) {
+    const maphong = card.getAttribute('data-maphong');
+    
+    if (currentRoomFilter === 'all') return true;
+    if (currentRoomFilter === 'other') {
+      return !maphong || maphong === '' || maphong === 'Khác';
+    }
+    return maphong === currentRoomFilter;
+  }
+
+  function updateDisplay() {
     calculateFilteredStatistics();
     toggleEmptyState(filteredThietBis.length === 0);
   }
 
   function calculateFilteredStatistics() {
-    const thietBis = filteredThietBis;
-    
-    const totalThietBis = thietBis.length;
-    const countGood = thietBis.filter(tb => 
+    const totalThietBis = filteredThietBis.length;
+    const countGood = filteredThietBis.filter(tb => 
       tb.getAttribute('data-tinhtrang') === 'Tốt'
     ).length;
     
-    const countMaintenance = thietBis.filter(tb => 
+    const countMaintenance = filteredThietBis.filter(tb => 
       tb.getAttribute('data-tinhtrang') === 'Đang bảo trì'
     ).length;
     
-    const countBroken = thietBis.filter(tb => 
+    const countBroken = filteredThietBis.filter(tb => 
       tb.getAttribute('data-tinhtrang') === 'Hỏng'
     ).length;
 
@@ -963,6 +954,65 @@
   }
 
   // ===== UTILITY FUNCTIONS =====
+  function formatCurrency(amount) {
+    if (typeof amount === 'string') {
+      amount = parseFloat(amount) || 0;
+    }
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(amount);
+  }
+
+  function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN');
+  }
+
+  function formatDateTime(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleString('vi-VN');
+  }
+
+  async function showLoading(message) {
+    await Swal.fire({
+      title: message,
+      text: 'Vui lòng chờ trong giây lát',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
+  }
+
+  async function showSuccess(message) {
+    await Swal.fire({
+      icon: 'success',
+      title: 'Thành công!',
+      text: message,
+      timer: 1500,
+      showConfirmButton: false
+    });
+  }
+
+  async function handleResponse(response) {
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.error || 'Lỗi server');
+    }
+    return result;
+  }
+
+  function handleError(context, error) {
+    console.error(`❌ ${context}`, error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Lỗi!',
+      text: error.message || 'Đã xảy ra lỗi không mong muốn',
+      confirmButtonColor: '#667eea'
+    });
+  }
+
   function showError(message) {
     Swal.fire({
       icon: 'warning',
@@ -972,28 +1022,35 @@
     });
   }
 
-  // ===== INITIALIZATION =====
-  document.addEventListener('DOMContentLoaded', function () {
-    allThietBis = Array.from(document.querySelectorAll('.room-card'));
-    filteredThietBis = [...allThietBis];
-    
-    calculateStatistics();
-    initRoomNavigation();
-    
-    // Setup real-time search
-    const searchInput = document.getElementById('searchInput');
-    let searchTimeout;
-    
-    if (searchInput) {
-      searchInput.addEventListener('input', function () {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-          filterThietBi();
-        }, 300);
+  // ===== STATUS MANAGEMENT =====
+  async function toggleStatus(thietBiId, currentStatus) {
+    const statusOrder = ['Tốt', 'Đang bảo trì', 'Cần sửa chữa', 'Hỏng'];
+    const currentIndex = statusOrder.indexOf(currentStatus);
+    const nextStatus = statusOrder[(currentIndex + 1) % statusOrder.length];
+
+    try {
+      const response = await fetch(`/api/thietbi/${thietBiId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ TinhTrang: nextStatus })
       });
+
+      if (response.ok) {
+        await showSuccess(`Đã chuyển trạng thái thành: ${nextStatus}`);
+        location.reload();
+      } else {
+        throw new Error('Không thể cập nhật trạng thái');
+      }
+    } catch (error) {
+      handleError('Lỗi khi cập nhật trạng thái:', error);
     }
-  });
+  }
 </script>
+
+
+
+
+
 
 <style>
   /* ===== MAIN CONTENT STYLES ===== */
@@ -1773,7 +1830,7 @@
   }
 
   .form-group label {
-    margin-bottom: 10px;
+    margin-bottom: 5px;
     color: #374151;
     font-weight: 600;
     font-size: 1rem;
@@ -1810,7 +1867,6 @@
     padding: 50px 30px;
     text-align: center;
     color: #94a3b8;
-    margin-top: 10px;
     transition: all 0.3s ease;
     background: #f8fafc;
   }
