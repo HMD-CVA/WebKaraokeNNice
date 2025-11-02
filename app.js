@@ -1530,6 +1530,82 @@ app.put('/api/thietbi/:maTB/status', async (req, res) => {
   }
 });
 
+// PUT /api/datphong/:maDatPhong/checkin - Cập nhật
+app.put('/api/datphong/:maDatPhong/checkin', async (req, res) => {
+    try {
+        const { maDatPhong } = req.params;
+        
+        // 1. Lấy thông tin đặt phòng
+        const datPhong = await DataModel.Data_DatPhong_Model.findOne({ MaDatPhong: maDatPhong });
+        if (!datPhong) {
+            return res.status(404).json({ error: 'Không tìm thấy đặt phòng' });
+        }
+        
+        // 2. Kiểm tra trạng thái và thời gian
+        const now = new Date();
+        const thoiGianBatDau = new Date(datPhong.ThoiGianBatDau);
+        const thoiGianQuaHan = new Date(thoiGianBatDau.getTime() + 15 * 60000);
+        
+        // if (now > thoiGianQuaHan) {
+        //     return res.status(400).json({ error: 'Đã quá thời gian cho phép check-in' });
+        // }
+        
+        if (datPhong.TrangThai !== 'Đã đặt') {
+            return res.status(400).json({ error: 'Chỉ có thể check-in đặt phòng đã đặt' });
+        }
+
+        // Tạo mã hoá đơn tự động
+        const maHD = await generateCode('HD', DataModel.Data_HoaDon_Model, 'MaHoaDon');
+        console.log('🔢 Mã hoá đơn mới:', maHD);
+
+        // Lấy thông tin phòng để lấy giá
+        // const phong = await DataModel.Data_BangGiaPhong_Model.findOne({ MaPhong: datPhong.MaPhong });
+        const giaPhong = 10000; //phong ? phong.GiaPhong : 0;
+        
+        // 3. Tạo hóa đơn mới với trạng thái "Chưa thanh toán" (theo schema mặc định)
+        const hoaDon = new DataModel.Data_HoaDon_Model({
+            MaHoaDon: maHD,
+            MaDatPhong: maDatPhong,
+            MaKH: datPhong.MaKH, // Lưu ý: không cần ._id vì MaKH là String trong schema
+            MaPhong: datPhong.MaPhong, // Tương tự
+            ThoiGianBatDau: new Date(), // Bắt đầu từ thời điểm check-in
+            ThoiGianKetThuc: datPhong.ThoiGianKetThuc,
+            TrangThai: "Chưa thanh toán", // Theo schema mặc định
+            TongTien: 0, // Sẽ tính toán khi check-out
+        });
+        
+        await hoaDon.save();
+
+        // 4. Tạo chi tiết hóa đơn cho dịch vụ thuê phòng
+        const maCTHD = await generateCode('CTHD', DataModel.Data_ChiTietHD_Model, 'MaCTHD');
+        
+        const chiTietThuePhong = new DataModel.Data_ChiTietHD_Model({
+            MaCTHD: maCTHD,
+            MaHoaDon: maHD,
+            MaHang: datPhong.MaPhong, // Dịch vụ thuê phòng không có mã hàng
+            SoLuong: 1, // 1 đơn vị là thuê phòng
+            DonGia: giaPhong,
+            ThanhTien: 0, // Sẽ tính khi check-out
+            LoaiDichVu: "Thuê phòng"
+        });
+
+        await chiTietThuePhong.save();
+        
+        // 4. Cập nhật trạng thái đặt phòng thành "Đang sử dụng" (theo nghiệp vụ)
+        await DataModel.Data_DatPhong_Model.findByIdAndUpdate(datPhong._id, { 
+            TrangThai: 'Đang sử dụng',
+            GhiChu: `Đã chuyển thành hóa đơn ${hoaDon.MaHoaDon}`
+        });
+        
+        res.json({ 
+            message: 'Check-in thành công và đã tạo hóa đơn',
+            hoaDon: hoaDon 
+        });
+        
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 
 ///////////////////////////////

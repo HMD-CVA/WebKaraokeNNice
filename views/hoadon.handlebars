@@ -931,7 +931,7 @@
               <div class="col-total">Thành tiền</div>
             </div>
             
-            ${tienPhong > 0 ? `
+            ${tienPhong >= 0 ? `
             <div class="table-row">
               <div class="col-service">
                 <span class="service-name">Thuê phòng ${hoaDon.MaPhong}</span>
@@ -944,17 +944,19 @@
             ` : ''}
             
             ${Array.isArray(chiTietHoaDon) && chiTietHoaDon.length > 0 
-              ? chiTietHoaDon.map(item => `
-                <div class="table-row">
-                  <div class="col-service">
-                    <span class="service-name">${item.TenHang || item.MaHang || 'N/A'}</span>
-                    <span class="service-desc">${item.LoaiDichVu || 'Dịch vụ'}</span>
-                  </div>
-                  <div class="col-quantity">${item.SoLuong}</div>
-                  <div class="col-price">${formatCurrency(item.DonGia)}</div>
-                  <div class="col-total">${formatCurrency(item.ThanhTien)}</div>
-                </div>
-              `).join('')
+              ? chiTietHoaDon
+                  .filter(item => item.LoaiDichVu !== "Thuê phòng")
+                  .map(item => `
+                    <div class="table-row">
+                      <div class="col-service">
+                        <span class="service-name">${item.TenHang || item.MaHang || 'N/A'}</span>
+                        ${item.LoaiDichVu ? `<span class="service-desc">${item.LoaiDichVu}</span>` : ''}
+                      </div>
+                      <div class="col-quantity">${item.SoLuong}</div>
+                      <div class="col-price">${formatCurrency(item.DonGia)}</div>
+                      <div class="col-total">${formatCurrency(item.ThanhTien)}</div>
+                    </div>
+                  `).join('')
               : '<div class="table-row no-services"><div class="col-service">Không có dịch vụ nào</div></div>'
             }
           </div>

@@ -208,7 +208,7 @@
                             <i class="fas fa-eye"></i>
                             Xem chi tiết
                         </button>
-                        {{#if (eq this.TrangThai "Sắp tới")}}
+                        {{#if (eq this.TrangThai "Đã đặt")}}
                         <button class="btn-checkin" onclick="checkInDatPhong('{{this.MaDatPhong}}')">
                             <i class="fas fa-sign-in-alt"></i>
                             Check-in
@@ -605,29 +605,88 @@
         }
     }
 
+    // ===== CHECK-IN VÀ CHUYỂN THÀNH HÓA ĐƠN =====
     async function checkInDatPhong(maDatPhong) {
         try {
-            const response = await fetch(`/api/datphong/${maDatPhong}/checkin`, {
-                method: 'PUT'
-            });
-
-            if (response.ok) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Thành công!',
-                    text: 'Đã check-in khách hàng',
-                    timer: 1500,
-                    showConfirmButton: false
-                });
-                setTimeout(() => location.reload(), 1500);
-            } else {
-                throw new Error('Lỗi khi check-in');
+            // Kiểm tra xem đã quá giờ chưa
+            const datPhongResponse = await fetch(`/api/datphong/${maDatPhong}`);
+            if (!datPhongResponse.ok) {
+                throw new Error('Không tìm thấy đặt phòng');
             }
+            
+            const datPhong = await datPhongResponse.json();
+            const now = new Date();
+            const thoiGianBatDau = new Date(datPhong.ThoiGianBatDau);
+            
+            // Kiểm tra nếu quá thời gian bắt đầu 15 phút
+            const thoiGianQuaHan = new Date(thoiGianBatDau.getTime() + 15000 * 60000); // +15 phút
+            
+            if (now > thoiGianQuaHan) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Không thể check-in',
+                    text: 'Đã quá thời gian cho phép check-in (15 phút sau giờ đặt)',
+                    confirmButtonColor: '#667eea'
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: 'Check-in khách hàng?',
+                text: 'Đặt phòng sẽ được chuyển thành hóa đơn "Chờ thanh toán" và bắt đầu tính giờ',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#48bb78',
+                cancelButtonColor: '#a0aec0',
+                confirmButtonText: 'Xác nhận check-in',
+                cancelButtonText: 'Hủy'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        // Gọi API check-in (cần cập nhật API để tạo hóa đơn)
+                        const response = await fetch(`/api/datphong/${maDatPhong}/checkin`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+
+                        if (!response.ok) {
+                            const errorResult = await response.json();
+                            throw new Error(errorResult.error || 'Lỗi server');
+                        }
+
+                        const result = await response.json();
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Thành công!',
+                            text: result.message || 'Đã check-in và tạo hóa đơn thành công',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+
+                        setTimeout(() => {
+                            location.reload();
+                        }, 2000);
+                        
+                    } catch (error) {
+                        console.error('❌ Lỗi khi check-in:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Lỗi!',
+                            text: error.message || 'Không thể check-in',
+                            confirmButtonColor: '#667eea'
+                        });
+                    }
+                }
+            });
+            
         } catch (error) {
+            console.error('❌ Lỗi khi kiểm tra đặt phòng:', error);
             Swal.fire({
                 icon: 'error',
                 title: 'Lỗi!',
-                text: 'Không thể check-in'
+                text: 'Không thể kiểm tra thông tin đặt phòng',
+                confirmButtonColor: '#667eea'
             });
         }
     }
