@@ -878,21 +878,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 500);
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class ProductPagination {
     constructor(products) {
         this.productsContainer = document.getElementById('productsGrid');
@@ -1264,3 +1249,524 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+
+
+// ===== MODAL ĐẶT PHÒNG =====
+class BookingModal {
+    constructor() {
+        this.modal = document.getElementById('bookingModal');
+        this.closeBtn = this.modal?.querySelector('.close-btn');
+        this.cancelBtn = this.modal?.querySelector('.btn-secondary');
+        this.form = document.getElementById('bookingForm');
+        this.currentRoom = null;
+        this.hourlyPrice = 0;
+        this._originalSubmitState = null;
+        
+        if (!this.modal) {
+            console.error('Không tìm thấy modal booking');
+            return;
+        }
+        
+        this.init();
+    }
+    
+    init() {
+        // Đóng modal khi click X
+        if (this.closeBtn) {
+            this.closeBtn.addEventListener('click', () => this.close());
+        }
+        
+        // Đóng modal khi click nút Hủy
+        if (this.cancelBtn) {
+            this.cancelBtn.addEventListener('click', () => this.close());
+        }
+        
+        // Đóng modal khi click bên ngoài
+        window.addEventListener('click', (e) => {
+            if (e.target === this.modal) {
+                this.close();
+            }
+        });
+        
+        // Xử lý submit form
+        if (this.form) {
+            this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+        }
+        
+        // Set min datetime cho input thời gian
+        this.setMinDateTime();
+        
+        // Khởi tạo tính toán
+        this.initCalculation();
+        
+        // Khởi tạo dịch vụ
+        this.initServices();
+        
+        // Khởi tạo character counter
+        this.initCharCounter();
+    }
+    
+    setMinDateTime() {
+        const now = new Date();
+        const startTime = document.getElementById('startTime');
+        const endTime = document.getElementById('endTime');
+        
+        if (startTime && endTime) {
+            const minDateTime = now.toISOString().slice(0, 16);
+            startTime.min = minDateTime;
+            endTime.min = minDateTime;
+        }
+    }
+    
+    extractPrice(priceString) {
+        if (!priceString) return 0;
+        const numericString = priceString.replace(/[^\d,]/g, '').replace(',', '');
+        return parseInt(numericString) || 0;
+    }
+    
+    open(roomData = {}) {
+        console.log('Opening modal with data:', roomData);
+        this.currentRoom = roomData;
+        this.fillRoomInfo(roomData);
+        this.modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        
+        // Reset form
+        if (this.form) {
+            this.form.reset();
+            this.setMinDateTime();
+            this.calculateCost();
+        }
+    }
+    
+    close() {
+        this.modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        this.currentRoom = null;
+        this.hourlyPrice = 0;
+        this._originalSubmitState = null;
+    }
+    
+    fillRoomInfo(roomData) {
+        const roomImage = document.getElementById('modalRoomImage');
+        const roomName = document.getElementById('modalRoomName');
+        const roomType = document.getElementById('modalRoomType');
+        const roomPrice = document.getElementById('modalRoomPrice');
+        const roomCapacity = document.getElementById('modalRoomCapacity');
+        const hourlyRate = document.getElementById('hourlyRate');
+        const roomID = document.getElementById('modalRoomID');
+        
+        if (roomImage) roomImage.src = roomData.image || '/image/default-room.jpg';
+        if (roomName) roomName.textContent = roomData.name || 'Phòng Karaoke';
+        if (roomType) roomType.textContent = roomData.type || 'VIP';
+
+        if (roomID) {
+            const maPhong = roomData.roomID || roomData.MaPhong || roomData.id || '001';
+            console.log('🎯 Setting room ID to:', maPhong); // DEBUG
+            roomID.textContent = `Mã: ${maPhong}`;
+        }
+        
+        const priceText = roomData.price || '500,000 VNĐ/giờ';
+        if (roomPrice) roomPrice.textContent = priceText;
+        
+        this.hourlyPrice = this.extractPrice(priceText);
+        
+        if (hourlyRate) {
+            hourlyRate.textContent = `${this.hourlyPrice.toLocaleString('vi-VN')} VNĐ`;
+        }
+        
+        if (roomCapacity) roomCapacity.textContent = `${roomData.capacity || '6-8'} người`;
+    }
+    
+    initCalculation() {
+        const startTime = document.getElementById('startTime');
+        const endTime = document.getElementById('endTime');
+        
+        if (startTime && endTime) {
+            startTime.addEventListener('change', () => this.calculateCost());
+            endTime.addEventListener('change', () => this.calculateCost());
+        }
+    }
+    
+    initServices() {
+        document.querySelectorAll('.service-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                if (!e.target.closest('.service-toggle')) {
+                    const checkbox = card.querySelector('input[type="checkbox"]');
+                    checkbox.checked = !checkbox.checked;
+                    checkbox.dispatchEvent(new Event('change'));
+                }
+            });
+        });
+        
+        document.querySelectorAll('input[name="services"]').forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                this.calculateCost();
+                const serviceCard = checkbox.closest('.service-card');
+                if (serviceCard) {
+                    serviceCard.classList.toggle('active', checkbox.checked);
+                }
+            });
+        });
+    }
+    
+    initCharCounter() {
+        const bookingNote = document.getElementById('bookingNote');
+        const charCount = document.getElementById('charCount');
+        
+        if (bookingNote && charCount) {
+            bookingNote.addEventListener('input', function() {
+                charCount.textContent = this.value.length;
+            });
+        }
+    }
+    
+    calculateCost() {
+        const startTime = document.getElementById('startTime');
+        const endTime = document.getElementById('endTime');
+        const totalDuration = document.getElementById('totalDuration');
+        const totalCost = document.getElementById('totalCost');
+        const roomSubtotal = document.getElementById('roomSubtotal');
+        const finalTotal = document.getElementById('finalTotal');
+        
+        if (startTime.value && endTime.value) {
+            const start = new Date(startTime.value);
+            const end = new Date(endTime.value);
+            const diffMs = end - start;
+            const diffHours = diffMs / (1000 * 60 * 60);
+            
+            if (diffHours > 0) {
+                const roomTotal = diffHours * this.hourlyPrice;
+                const serviceTotal = this.calculateServiceTotal();
+                const finalTotalAmount = roomTotal + serviceTotal;
+                
+                if (totalDuration) totalDuration.textContent = `${diffHours.toFixed(1)} giờ`;
+                if (totalCost) totalCost.textContent = `${roomTotal.toLocaleString('vi-VN')} VNĐ`;
+                if (roomSubtotal) roomSubtotal.textContent = `${roomTotal.toLocaleString('vi-VN')} VNĐ`;
+                if (finalTotal) finalTotal.textContent = `${finalTotalAmount.toLocaleString('vi-VN')} VNĐ`;
+            } else {
+                this.resetCalculation();
+            }
+        } else {
+            this.resetCalculation();
+        }
+    }
+    
+    calculateServiceTotal() {
+        let total = 0;
+        document.querySelectorAll('input[name="services"]:checked').forEach(checkbox => {
+            switch(checkbox.value) {
+                case 'food': total += 200000; break;
+                case 'drink': total += 150000; break;
+                case 'decor': total += 300000; break;
+                case 'photo': total += 100000; break;
+            }
+        });
+        
+        const serviceSubtotal = document.getElementById('serviceSubtotal');
+        if (serviceSubtotal) {
+            serviceSubtotal.textContent = `${total.toLocaleString('vi-VN')} VNĐ`;
+        }
+        
+        return total;
+    }
+    
+    resetCalculation() {
+        const elements = {
+            totalDuration: '0 giờ',
+            totalCost: '0 VNĐ',
+            roomSubtotal: '0 VNĐ',
+            serviceSubtotal: '0 VNĐ',
+            finalTotal: '0 VNĐ'
+        };
+        
+        Object.keys(elements).forEach(id => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = elements[id];
+        });
+    }
+    
+    handleSubmit(e) {
+        e.preventDefault();
+        console.log('Form submitted - Gửi dữ liệu đặt phòng');
+
+        if (!this.validateForm()) {
+            return;
+        }
+
+        const formData = this.collectFormData();
+        this.showLoading();
+
+        this.sendBookingData(formData)
+            .then(result => {
+                this.hideLoading();
+                this.showSuccess(
+                    'Đặt phòng thành công!', 
+                    'Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.',
+                    result.data
+                );
+                this.close();
+            })
+            .catch(error => {
+                this.hideLoading();
+                console.error('Booking error:', error);
+                this.showError(
+                    'Đặt phòng thất bại', 
+                    'Có lỗi xảy ra khi đặt phòng. Vui lòng thử lại sau.'
+                );
+            });
+    }
+
+    validateForm() {
+        const requiredFields = [
+            { id: 'customerName', name: 'Họ và tên' },
+            { id: 'customerPhone', name: 'Số điện thoại' },
+            { id: 'startTime', name: 'Thời gian bắt đầu' },
+            { id: 'endTime', name: 'Thời gian kết thúc' }
+        ];
+
+        for (let field of requiredFields) {
+            const element = document.getElementById(field.id);
+            if (!element || !element.value.trim()) {
+                this.showError('Thiếu thông tin', `Vui lòng nhập ${field.name.toLowerCase()}`);
+                element?.focus();
+                return false;
+            }
+        }
+
+        const phone = document.getElementById('customerPhone').value;
+        const phoneRegex = /(0[3|5|7|8|9])+([0-9]{8})\b/;
+        if (!phoneRegex.test(phone)) {
+            this.showError('Số điện thoại không hợp lệ', 'Vui lòng nhập số điện thoại hợp lệ');
+            return false;
+        }
+
+        const startTime = new Date(document.getElementById('startTime').value);
+        const endTime = new Date(document.getElementById('endTime').value);
+        
+        if (endTime <= startTime) {
+            this.showError('Thời gian không hợp lệ', 'Thời gian kết thúc phải sau thời gian bắt đầu');
+            return false;
+        }
+
+        const minBookingHours = 1;
+        const bookingHours = (endTime - startTime) / (1000 * 60 * 60);
+        if (bookingHours < minBookingHours) {
+            this.showError(
+                'Thời gian đặt tối thiểu', 
+                `Thời gian đặt phòng tối thiểu là ${minBookingHours} giờ`
+            );
+            return false;
+        }
+
+        return true;
+    }
+
+    collectFormData() {
+        const formData = new FormData(this.form);
+        const startTime = new Date(formData.get('startTime'));
+        const endTime = new Date(formData.get('endTime'));
+        const duration = (endTime - startTime) / (1000 * 60 * 60);
+
+        const maDatPhong = `DP${Date.now()}${Math.random().toString(36).substr(2, 5)}`.toUpperCase();
+        const maKH = `KH${Date.now()}${Math.random().toString(36).substr(2, 5)}`.toUpperCase();
+
+        return {
+            maKH: maKH,
+            tenKH: formData.get('customerName'),
+            sdt: formData.get('customerPhone'),
+            email: formData.get('customerEmail') || '',
+
+            maDatPhong: maDatPhong,
+            maPhong: this.currentRoom?.roomID || this.currentRoom?.MaPhong || this.currentRoom?.id || '001',
+            tenPhong: this.currentRoom?.name || 'Phòng Karaoke',
+            giaTien: this.hourlyPrice,
+            loaiPhong: this.currentRoom?.type || 'VIP',
+
+            thoiGianBatDau: formData.get('startTime'),
+            thoiGianKetThuc: formData.get('endTime'),
+
+            ghiChu: this.generateNote(formData),
+            trangThai: 'Đã đặt'
+        };
+    }
+
+    generateNote(formData) {
+        let note = formData.get('bookingNote') || '';
+        const services = formData.getAll('services');
+        
+        if (services.length > 0) {
+            const serviceNames = {
+                'food': 'Set đồ ăn VIP',
+                'drink': 'Combo nước giải khát', 
+                'decor': 'Trang trí đặc biệt',
+                'photo': 'Chụp ảnh kỷ niệm'
+            };
+            
+            const selectedServices = services.map(service => serviceNames[service]).join(', ');
+            note += (note ? '\n' : '') + `Dịch vụ thêm: ${selectedServices}`;
+        }
+        
+        return note;
+    }
+
+    async sendBookingData(bookingData) {
+        const API_URL = '/api/datphong';
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(bookingData)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            
+            if (!result.success) {
+                throw new Error(result.message || 'Đặt phòng thất bại');
+            }
+
+            return result;
+        } catch (error) {
+            console.error('API call failed:', error);
+            throw error;
+        }
+    }
+
+    showLoading() {
+        const submitBtn = document.getElementById('submitBookingBtn');
+        
+        if (!submitBtn) {
+            console.error('Không tìm thấy nút submit với ID submitBookingBtn');
+            return;
+        }
+        
+        const originalText = submitBtn.innerHTML;
+        
+        submitBtn.innerHTML = `
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Đang xử lý...</span>
+        `;
+        submitBtn.disabled = true;
+
+        this._originalSubmitState = { btn: submitBtn, html: originalText };
+    }
+
+    hideLoading() {
+        if (this._originalSubmitState && this._originalSubmitState.btn) {
+            this._originalSubmitState.btn.innerHTML = this._originalSubmitState.html;
+            this._originalSubmitState.btn.disabled = false;
+            this._originalSubmitState = null;
+        }
+    }
+
+    showSuccess(title, message, bookingData = null) {
+        let html = `
+            <div class="text-center">
+                <div class="mb-4">
+                    <i class="fas fa-check-circle text-success" style="font-size: 3rem;"></i>
+                </div>
+                <h4 class="mb-3">${title}</h4>
+                <p class="mb-4">${message}</p>
+        `;
+
+        if (bookingData) {
+            html += `
+                <div class="booking-summary p-3 bg-light rounded text-start">
+                    <h6 class="mb-3">Thông tin đặt phòng:</h6>
+                    <p><strong>Mã đặt phòng:</strong> ${bookingData.maDatPhong}</p>
+                    <p><strong>Tên khách hàng:</strong> ${bookingData.tenKH}</p>
+                    <p><strong>Số điện thoại:</strong> ${bookingData.sdt}</p>
+                    <p><strong>Phòng:</strong> ${bookingData.tenPhong}</p>
+                    <p><strong>Thời gian:</strong> ${new Date(bookingData.thoiGianBatDau).toLocaleString('vi-VN')} - ${new Date(bookingData.thoiGianKetThuc).toLocaleString('vi-VN')}</p>
+                    <p><strong>Trạng thái:</strong> <span class="text-warning">Đã đặt thành công</span></p>
+                </div>
+            `;
+        }
+
+        html += `</div>`;
+
+        Swal.fire({
+            title: '',
+            html: html,
+            icon: 'success',
+            confirmButtonText: 'Đóng',
+            confirmButtonColor: '#3085d6',
+            width: '500px',
+            customClass: {
+                popup: 'booking-success-popup'
+            }
+        });
+    }
+
+    showError(title, message) {
+        Swal.fire({
+            title: title,
+            text: message,
+            icon: 'error',
+            confirmButtonText: 'Đóng',
+            confirmButtonColor: '#d33',
+            width: '400px'
+        });
+    }
+}
+
+// Khởi tạo modal khi DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded - initializing booking modal');
+    
+    // Khởi tạo modal
+    window.bookingModal = new BookingModal();
+    
+    // Xử lý click nút "ĐẶT NGAY"
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-book')) {
+            const button = e.target.closest('.btn-book');
+            const card = button.closest('.cyberpunk-card');
+            
+            if (card) {
+                // Lấy thông tin phòng từ card
+                const roomData = {
+                    roomID: card.dataset.phongId || '001',
+                    id: card.dataset.phongId || '001',
+                    name: card.querySelector('.room-name')?.textContent || 'Phòng Karaoke',
+                    type: card.querySelector('.badge-text')?.textContent || 'Phòng VIP',
+                    price: card.querySelector('.room-info .info-item:nth-child(2) span')?.textContent || '500,000 VNĐ/giờ',
+                    capacity: card.querySelector('.room-info .info-item:nth-child(1) span')?.textContent || '6-8 người',
+                    image: card.querySelector('.image-container img')?.src || '/image/default-room.jpg'
+                };
+                
+                console.log('Room data:', roomData);
+                
+                // Mở modal
+                if (window.bookingModal) {
+                    window.bookingModal.open(roomData);
+                } else {
+                    console.error('Booking modal not initialized');
+                    // Fallback: hiển thị thông báo
+                    alert('Hệ thống đặt phòng đang tải. Vui lòng thử lại sau.');
+                }
+            }
+        }
+    });
+    
+    // TEST: Log để kiểm tra
+    console.log('Booking modal handlers initialized');
+});
+
+// Hàm để mở modal từ bất kỳ đâu
+function showBookingModal(roomData = {}) {
+    if (window.bookingModal) {
+        window.bookingModal.open(roomData);
+    } else {
+        console.error('Booking modal chưa được khởi tạo');
+    }
+}

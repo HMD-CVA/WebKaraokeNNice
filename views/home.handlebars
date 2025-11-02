@@ -50,10 +50,9 @@
       <div class="filterRoom">
         <select>
           <option selected>Tất cả phòng</option>
-          <option>Phòng nhỏ</option>
-          <option>Phòng vừa</option>
-          <option>Phòng trung</option>
-          <option>Phòng VIP</option>
+          {{#each roomTypes}}
+          <option value="{{this}}">{{this}}</option>
+          {{/each}}
         </select>
       </div>
 
@@ -128,9 +127,316 @@
         <i class="fa-solid fa-music"></i>
         <i class="fas fa-star sparkle-right"></i>
       </h1>
+    </div>
+  </div>
+</div>
 
+<!-- MODAL ĐẶT PHÒNG -->
+<div id="bookingModal" class="modal">
+  <div class="modal-container">
+    <!-- Header -->
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <i class="fas fa-calendar-alt"></i>
+        </div>
+        <div class="header-text">
+          <h2>ĐẶT PHÒNG KARAOKE</h2>
+          <p>Hoàn tất thông tin đặt phòng của bạn</p>
+        </div>
+      </div>
+      <button class="close-btn">
+        <i class="fas fa-times"></i>
+      </button>
     </div>
 
-  </div>
+    <!-- Body với scroll -->
+    <div class="modal-body">
+      <div class="body-content">
+        <!-- Thông tin phòng -->
+        <div class="room-card">
+          <div class="room-image">
+            <img id="modalRoomImage" src="" alt="Room Image">
+            <div class="room-overlay">
+              <span class="room-badge" id="modalRoomType">VIP</span>
+            </div>
+          </div>
+          <div class="room-info">
+            <h3 id="modalRoomName">Phòng Karaoke VIP</h3>
+            <div class="room-code">
+              <i class="fas fa-key"></i>
+              <span id="modalRoomID">Mã: P001</span>
+            </div>
+            <div class="room-details">
+              <div class="detail-item">
+                <i class="fas fa-users"></i>
+                <span id="modalRoomCapacity">6-8 người</span>
+              </div>
+              <div class="detail-item">
+                <i class="fas fa-clock"></i>
+                <span id="modalRoomPrice">500,000 VNĐ/giờ</span>
+              </div>
+              <div class="detail-item">
+                <i class="fas fa-star"></i>
+                <span>Đánh giá: 4.8/5</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
+        <!-- Form đặt phòng được tối ưu -->
+        <form id="bookingForm" class="booking-form">
+          <!-- Bước 1: Thông tin cá nhân -->
+          <div class="form-section active" data-step="1">
+            <div class="section-header">
+              <div class="section-icon">
+                <i class="fas fa-user-circle"></i>
+              </div>
+              <div class="section-title">
+                <h4>Thông tin cá nhân</h4>
+                <p>Nhập thông tin liên hệ của bạn</p>
+              </div>
+            </div>
+            
+            <div class="form-grid">
+              <div class="input-field">
+                <div class="input-container">
+                  <i class="fas fa-user input-icon"></i>
+                  <input type="text" id="customerName" name="customerName" required placeholder="Họ và tên *">
+                </div>
+                <div class="input-hint">Ví dụ: Nguyễn Văn A</div>
+              </div>
+              
+              <div class="input-field">
+                <div class="input-container">
+                  <i class="fas fa-phone input-icon"></i>
+                  <input type="tel" id="customerPhone" name="customerPhone" required placeholder="Số điện thoại *">
+                </div>
+                <div class="input-hint">Ví dụ: 0912345678</div>
+              </div>
+              
+              <div class="input-field">
+                <div class="input-container">
+                  <i class="fas fa-envelope input-icon"></i>
+                  <input type="email" id="customerEmail" name="customerEmail" placeholder="Email (tùy chọn)">
+                </div>
+                <div class="input-hint">Để nhận thông báo xác nhận</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bước 2: Thời gian đặt -->
+          <div class="form-section" data-step="2">
+            <div class="section-header">
+              <div class="section-icon">
+                <i class="fas fa-clock"></i>
+              </div>
+              <div class="section-title">
+                <h4>Thời gian đặt phòng</h4>
+                <p>Chọn thời gian bắt đầu và kết thúc</p>
+              </div>
+            </div>
+            
+            <div class="form-grid">
+              <div class="input-field">
+                <label class="input-label">
+                  <i class="fas fa-play-circle"></i>
+                  Thời gian bắt đầu *
+                </label>
+                <div class="input-container">
+                  <input type="datetime-local" id="startTime" name="startTime" required>
+                </div>
+              </div>
+              
+              <div class="input-field">
+                <label class="input-label">
+                  <i class="fas fa-stop-circle"></i>
+                  Thời gian kết thúc *
+                </label>
+                <div class="input-container">
+                  <input type="datetime-local" id="endTime" name="endTime" required>
+                </div>
+              </div>
+              
+              <!-- Hiển thị thời gian và chi phí -->
+              <div class="calculation-card">
+                <div class="calc-item">
+                  <span class="calc-label">Tổng thời gian:</span>
+                  <span class="calc-value" id="totalDuration">0 giờ</span>
+                </div>
+                <div class="calc-item">
+                  <span class="calc-label">Giá theo giờ:</span>
+                  <span class="calc-value" id="hourlyRate">500,000 VNĐ</span>
+                </div>
+                <div class="calc-divider"></div>
+                <div class="calc-item total">
+                  <span class="calc-label">Tổng chi phí:</span>
+                  <span class="calc-value" id="totalCost">0 VNĐ</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bước 3: Dịch vụ thêm -->
+          <div class="form-section" data-step="3">
+            <div class="section-header">
+              <div class="section-icon">
+                <i class="fas fa-concierge-bell"></i>
+              </div>
+              <div class="section-title">
+                <h4>Dịch vụ thêm</h4>
+                <p>Chọn các dịch vụ bổ sung (tùy chọn)</p>
+              </div>
+            </div>
+            
+            <div class="services-grid">
+              <div class="service-card" data-service="food">
+                <div class="service-header">
+                  <i class="fas fa-utensils"></i>
+                  <h5>Set đồ ăn VIP</h5>
+                  <span class="service-price">+200,000 VNĐ</span>
+                </div>
+                <p class="service-desc">Bao gồm snack, trái cây và các món nhẹ</p>
+                <label class="service-toggle">
+                  <input type="checkbox" name="services" value="food">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div class="service-card" data-service="drink">
+                <div class="service-header">
+                  <i class="fas fa-cocktail"></i>
+                  <h5>Combo nước giải khát</h5>
+                  <span class="service-price">+150,000 VNĐ</span>
+                </div>
+                <p class="service-desc">Nước ngọt, trà, cà phê và nước suối</p>
+                <label class="service-toggle">
+                  <input type="checkbox" name="services" value="drink">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div class="service-card" data-service="decor">
+                <div class="service-header">
+                  <i class="fas fa-gem"></i>
+                  <h5>Trang trí đặc biệt</h5>
+                  <span class="service-price">+300,000 VNĐ</span>
+                </div>
+                <p class="service-desc">Trang trí không gian theo chủ đề</p>
+                <label class="service-toggle">
+                  <input type="checkbox" name="services" value="decor">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              
+              <div class="service-card" data-service="photo">
+                <div class="service-header">
+                  <i class="fas fa-camera"></i>
+                  <h5>Chụp ảnh kỷ niệm</h5>
+                  <span class="service-price">+100,000 VNĐ</span>
+                </div>
+                <p class="service-desc">Chụp ảnh và in ngay tại chỗ</p>
+                <label class="service-toggle">
+                  <input type="checkbox" name="services" value="photo">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bước 4: Ghi chú -->
+          <div class="form-section" data-step="4">
+            <div class="section-header">
+              <div class="section-icon">
+                <i class="fas fa-sticky-note"></i>
+              </div>
+              <div class="section-title">
+                <h4>Yêu cầu đặc biệt</h4>
+                <p>Thêm ghi chú cho đơn đặt phòng của bạn</p>
+              </div>
+            </div>
+            
+            <div class="input-field full-width">
+              <div class="input-container textarea-container">
+                <textarea id="bookingNote" name="bookingNote" placeholder="Nhập yêu cầu đặc biệt, dịch vụ thêm, hoặc ghi chú khác... (tối đa 500 ký tự)"></textarea>
+                <div class="textarea-footer">
+                  <div class="char-count">
+                    <span id="charCount">0</span>/500 ký tự
+                  </div>
+                  <div class="text-hint">
+                    <i class="fas fa-lightbulb"></i>
+                    Ghi chú sẽ giúp chúng tôi phục vụ bạn tốt hơn
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="modal-footer">
+      <div class="footer-content">
+        <div class="booking-summary">
+          <div class="summary-header">
+            <i class="fas fa-receipt"></i>
+            <span>Tổng thanh toán</span>
+          </div>
+          <div class="summary-details">
+            <div class="summary-item">
+              <span class="summary-label">Phòng:</span>
+              <span class="summary-value" id="roomSubtotal">0 VNĐ</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Dịch vụ:</span>
+              <span class="summary-value" id="serviceSubtotal">0 VNĐ</span>
+            </div>
+            <div class="summary-divider"></div>
+            <div class="summary-item total">
+              <span class="summary-label">Tổng cộng:</span>
+              <span class="summary-value" id="finalTotal">0 VNĐ</span>
+            </div>
+            <div class="summary-note">
+              <i class="fas fa-info-circle"></i>
+              Đã bao gồm VAT và phí dịch vụ
+            </div>
+          </div>
+        </div>
+        
+        <div class="footer-actions">
+          <div class="form-navigation">
+            <button type="button" class="btn-nav btn-prev" disabled>
+              <i class="fas fa-arrow-left"></i>
+              Quay lại
+            </button>
+            <div class="step-indicator">
+              Bước <span id="currentStep">1</span>/4
+            </div>
+            <button type="button" class="btn-nav btn-next">
+              Tiếp theo
+              <i class="fas fa-arrow-right"></i>
+            </button>
+          </div>
+          
+          <div class="submit-section">
+            <button type="button" class="btn btn-secondary">
+              <i class="fas fa-times"></i>
+              Hủy
+            </button>
+            <button type="submit" form="bookingForm" id="submitBookingBtn" class="btn btn-primary">
+              <i class="fas fa-check-double"></i>
+              Xác nhận đặt phòng
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+
+<!-- Trong head -->
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+
+<!-- Trước thẻ đóng body -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>

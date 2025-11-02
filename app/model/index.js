@@ -71,15 +71,20 @@ const DatPhongSchema = new mongoose.Schema({
   ThoiGianBatDau: { type: Date, required: true },
   ThoiGianKetThuc: { type: Date },
   TrangThai: { type: String, default: "Đã đặt" },
+  GhiChu: {type: String},
   createdAt: { type: Date, default: Date.now }
 });
 
 // 5. HoaDon Schema
 const HoaDonSchema = new mongoose.Schema({
   MaHoaDon: { type: String, required: true, unique: true },
-  MaDatPhong: { type: String, required: true },
+  MaDatPhong: { type: String },
+  MaKH: {type: String, require: true},
+  MaPhong: {type: String, require: true},
   TongTien: { type: Number, required: true },
   ThoiGianTao: { type: Date, default: Date.now },
+  ThoiGianBatDau: {type: Date},
+  ThoiGianKetThuc: {type: Date},
   TrangThai: { type: String, default: "Chưa thanh toán" },
   createdAt: { type: Date, default: Date.now }
 });
