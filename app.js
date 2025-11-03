@@ -40,6 +40,57 @@ app.engine('handlebars', engine({
             return `${new Intl.NumberFormat('vi-VN').format(num)} ${currency}`;
         },
 
+        // === PRODUCT & STOCK HELPERS ===
+        getStockStatus: (quantity) => {
+            if (quantity === 0) return 'outOfStock';
+            if (quantity <= 10) return 'lowStock';
+            return 'inStock';
+        },
+
+        getStockStatusText: (quantity) => {
+            if (quantity === 0) return '🔴 Hết hàng';
+            if (quantity <= 10) return '🟡 Sắp hết';
+            return '🟢 Còn hàng';
+        },
+
+        getStockStatusIcon: (quantity) => {
+            if (quantity === 0) return 'fa-times-circle';
+            if (quantity <= 10) return 'fa-exclamation-triangle';
+            return 'fa-check-circle';
+        },
+
+        isLowStock: (quantity, threshold = 10) => {
+            return quantity > 0 && quantity <= threshold;
+        },
+
+        isOutOfStock: (quantity) => {
+            return quantity === 0;
+        },
+
+        isInStock: (quantity, threshold = 10) => {
+            return quantity > threshold;
+        },
+
+        // === PRODUCT SPECIFIC HELPERS ===
+        getProductStatus: (product) => {
+            if (!product || product.SoLuongTon === undefined) return 'unknown';
+            if (product.SoLuongTon === 0) return 'outOfStock';
+            if (product.SoLuongTon <= 10) return 'lowStock';
+            return 'inStock';
+        },
+
+        formatProductPrice: (price, unit) => {
+            if (price === null || price === undefined || isNaN(price)) return 'Liên hệ';
+            const formattedPrice = new Intl.NumberFormat('vi-VN').format(price);
+            return unit ? `${formattedPrice} VNĐ/${unit}` : `${formattedPrice} VNĐ`;
+        },
+
+        getProductBadgeClass: (quantity) => {
+            if (quantity === 0) return 'badge-danger';
+            if (quantity <= 10) return 'badge-warning';
+            return 'badge-success';
+        },
+
         // === PRICE SPECIFIC HELPERS ===
         getGiaTheoGio: (bangGia, khungGio) => {
             if (!bangGia || !Array.isArray(bangGia)) return 0;
@@ -84,7 +135,10 @@ app.engine('handlebars', engine({
                 'available': 'CÒN TRỐNG',
                 'busy': 'ĐANG SỬ DỤNG',
                 'maintenance': 'BẢO TRÌ',
-                'reserved': 'ĐÃ ĐẶT'
+                'reserved': 'ĐÃ ĐẶT',
+                'inStock': 'CÒN HÀNG',
+                'lowStock': 'SẮP HẾT',
+                'outOfStock': 'HẾT HÀNG'
             };
             return statusMap[status] || status;
         },
@@ -94,7 +148,10 @@ app.engine('handlebars', engine({
                 'Trống': 'status-available',
                 'Đang sử dụng': 'status-busy',
                 'Đang bảo trì': 'status-maintenance',
-                'Đã đặt trước': 'status-reserved'
+                'Đã đặt trước': 'status-reserved',
+                'inStock': 'status-in-stock',
+                'lowStock': 'status-low-stock',
+                'outOfStock': 'status-out-of-stock'
             };
             return classMap[status] || 'status-unknown';
         },
@@ -104,7 +161,10 @@ app.engine('handlebars', engine({
                 'Trống': 'fa-door-open',
                 'Đang sử dụng': 'fa-microphone-alt',
                 'Đang bảo trì': 'fa-tools',
-                'Đã đặt trước': 'fa-calendar-check'
+                'Đã đặt trước': 'fa-calendar-check',
+                'inStock': 'fa-check-circle',
+                'lowStock': 'fa-exclamation-triangle',
+                'outOfStock': 'fa-times-circle'
             };
             return iconMap[status] || 'fa-question-circle';
         },
@@ -132,18 +192,34 @@ app.engine('handlebars', engine({
             if (!dateString) return 'N/A';
             const date = new Date(dateString);
             return date.toLocaleTimeString('vi-VN', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
+                hour: '2-digit', 
+                minute: '2-digit' 
             });
         },
 
         // === UTILITY HELPERS ===
         json: (obj) => {
             try {
-                return JSON.stringify(obj, null, 2);
+                return JSON.stringify(obj);
             } catch {
-                return '';
+                return '{}';
             }
+        },
+
+        // === ARRAY & OBJECT HELPERS ===
+        contains: (array, value) => {
+            if (!Array.isArray(array)) return false;
+            return array.includes(value);
+        },
+
+        first: (array) => {
+            if (!Array.isArray(array) || array.length === 0) return null;
+            return array[0];
+        },
+
+        last: (array) => {
+            if (!Array.isArray(array) || array.length === 0) return null;
+            return array[array.length - 1];
         },
 
         // === CONDITIONAL HELPERS ===
@@ -173,6 +249,79 @@ app.engine('handlebars', engine({
                     return options.inverse(this);
             }
         },
+
+        // === MATH HELPERS ===
+        add: (a, b) => {
+            a = parseFloat(a) || 0;
+            b = parseFloat(b) || 0;
+            return a + b;
+        },
+
+        subtract: (a, b) => {
+            a = parseFloat(a) || 0;
+            b = parseFloat(b) || 0;
+            return a - b;
+        },
+
+        multiply: (a, b) => {
+            a = parseFloat(a) || 0;
+            b = parseFloat(b) || 0;
+            return a * b;
+        },
+
+        divide: (a, b) => {
+            a = parseFloat(a) || 0;
+            b = parseFloat(b) || 1;
+            return a / b;
+        },
+
+        // === LOGICAL HELPERS ===
+        and: function () {
+            const args = Array.prototype.slice.call(arguments, 0, -1);
+            return args.every(arg => !!arg);
+        },
+
+        or: function () {
+            const args = Array.prototype.slice.call(arguments, 0, -1);
+            return args.some(arg => !!arg);
+        },
+
+        not: (value) => !value,
+
+        // === STRING MANIPULATION ===
+        truncate: (str, length) => {
+            if (typeof str !== 'string') return str;
+            if (str.length <= length) return str;
+            return str.substring(0, length) + '...';
+        },
+
+        capitalize: (str) => {
+            if (typeof str !== 'string') return str;
+            return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+        },
+
+        // === PRODUCT CATEGORY HELPERS ===
+        getCategoryIcon: (category) => {
+            const iconMap = {
+                'Đồ uống': 'fa-wine-bottle',
+                'Thức ăn': 'fa-utensils',
+                'Đồ ăn nhẹ': 'fa-cookie',
+                'Tráng miệng': 'fa-ice-cream',
+                'Khác': 'fa-box'
+            };
+            return iconMap[category] || 'fa-box';
+        },
+
+        getCategoryColor: (category) => {
+            const colorMap = {
+                'Đồ uống': 'primary',
+                'Thức ăn': 'success',
+                'Đồ ăn nhẹ': 'warning',
+                'Tráng miệng': 'info',
+                'Khác': 'secondary'
+            };
+            return colorMap[category] || 'secondary';
+        }
     }
 }));
 
@@ -461,32 +610,66 @@ app.get('/api/nhanvien/:maNV', async (req, res) => {
 
 app.get('/admin/hoadon', async (req, res) => {
     try {
-        const [hoadons, chitiethoadons] = await Promise.all([
+        const [hoadons, chitiethoadons, khachhangs] = await Promise.all([
             DataModel.Data_HoaDon_Model.find({}).lean().exec(),
-            DataModel.Data_ChiTietHD_Model.find({}).lean().exec()
+            DataModel.Data_ChiTietHD_Model.find({}).lean().exec(),
+            DataModel.Data_KhachHang_Model.find({}).lean().exec()
         ]);
         
-        // Tạo map để tra cứu nhanh chi tiết theo MaHD
+        // Tạo map để tra cứu nhanh
+        const khachhangMap = {};
+        khachhangs.forEach(kh => {
+            khachhangMap[kh.MaKH] = kh;
+        });
+
         const hoadonsWithDetails = hoadons.map(hoadon => {
             const chitietCuaHoadon = chitiethoadons.filter(ct => 
                 ct.MaHoaDon.toString() === hoadon.MaHoaDon.toString()
             );
-
+            
+            // Lấy thông tin khách hàng
+            const khachhang = khachhangMap[hoadon.MaKH];
+            
             return {
                 ...hoadon,
                 ChiTiet: chitietCuaHoadon,
+                KH: khachhang || {} // Đảm bảo KH luôn là object
             };
         });
+
         console.log(hoadonsWithDetails);
 
         res.render('hoadon', { 
-            layout: 'AdminMain', title: 'Quản lý hoá đơn', 
-            hoadons
+            layout: 'AdminMain', 
+            title: 'Quản lý hoá đơn', 
+            hoadons: hoadonsWithDetails
         });
     } catch (err) {
+        console.error('Lỗi server:', err);
         res.status(500).send('Lỗi server!');
     }
 });
+
+app.get('/admin/mathang', async (req, res) => {
+    try {
+        const mathangs = await DataModel.Data_MatHang_Model.find({}).lean();
+        
+        // Lấy danh sách loại hàng duy nhất
+        const uniqueCategories = [...new Set(mathangs.map(item => item.LoaiHang))].filter(Boolean);
+        console.log(uniqueCategories);
+        
+        res.render('mathang', { 
+            layout: 'AdminMain', 
+            title: 'Quản lý mặt hàng', 
+            mathangs,
+            uniqueCategories 
+        });
+    } catch (err) {
+        console.error('Lỗi khi lấy dữ liệu mặt hàng:', err);
+        res.status(500).send('Lỗi server!');
+    }
+});
+
 
 app.get('/admin/datphong', async (req, res) => {
   try {
@@ -613,6 +796,51 @@ app.get('/api/chitiethoadon/:maHoaDon', async (req, res) => {
     }
 });
 
+// GET /api/phong/:maPhong/banggia - Lấy bảng giá và khung giờ hoạt động của phòng
+app.get('/api/phong/:maPhong/banggia', async (req, res) => {
+    try {
+        const { maPhong } = req.params;
+        
+        // Lấy thông tin phòng
+        const phong = await DataModel.Data_PhongHat_Model.findOne({ MaPhong: maPhong });
+        if (!phong) {
+            return res.status(404).json({ error: 'Không tìm thấy phòng' });
+        }
+        
+        // Lấy bảng giá cho loại phòng này
+        const bangGia = await DataModel.Data_BangGiaPhong_Model.find({
+            LoaiPhong: phong.LoaiPhong
+        });
+        
+        // Xác định khung giờ hoạt động từ bảng giá
+        let khungGioHoatDong = { start: '10:00', end: '22:00' }; // Mặc định
+        
+        if (bangGia.length > 0) {
+            // Giả sử bảng giá có trường GioBatDau và GioKetThuc
+            const gioBatDau = bangGia.map(g => g.GioBatDau).sort()[0];
+            const gioKetThuc = bangGia.map(g => g.GioKetThuc).sort().reverse()[0];
+            
+            khungGioHoatDong = {
+                start: gioBatDau || '10:00',
+                end: gioKetThuc || '22:00'
+            };
+        }
+        
+        res.json({
+            bangGia: bangGia,
+            khungGioHoatDong: khungGioHoatDong,
+            phong: {
+                MaPhong: phong.MaPhong,
+                TenPhong: phong.TenPhong,
+                LoaiPhong: phong.LoaiPhong
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Lỗi API bảng giá phòng:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // Admin login page
 app.get('/admin-login', (req, res) => res.redirect('/'));
@@ -1049,7 +1277,7 @@ app.post('/api/datphong', async (req, res) => {
     const { 
       maKH, tenKH, sdt, email, 
       maDatPhong, maPhong, tenPhong, giaTien, loaiPhong,
-      thoiGianBatDau, thoiGianKetThuc, ghiChu, trangThai 
+      thoiGianBatDau, thoiGianKetThuc, songuoi, ghiChu, trangThai 
     } = req.body;
 
     // 1. Kiểm tra xem khách hàng đã tồn tại chưa (dựa vào SDT)
@@ -1077,12 +1305,29 @@ app.post('/api/datphong', async (req, res) => {
       MaPhong: maPhong,
       ThoiGianBatDau: new Date(thoiGianBatDau),
       ThoiGianKetThuc: new Date(thoiGianKetThuc),
+      SoNguoi: songuoi,
       TrangThai: trangThai,
       GhiChu: ghiChu || '',
       createdAt: new Date()
     });
 
     await datPhong.save();
+
+    const phongCapNhat = await DataModel.Data_PhongHat_Model.findOneAndUpdate(
+      { MaPhong: maPhong },
+      { 
+        TrangThai: 'Đã đặt trước',
+        updatedAt: new Date()
+      },
+      { new: true } // Trả về document đã được cập nhật
+    );
+
+    if (!phongCapNhat) {
+      console.warn(`⚠️ Không tìm thấy phòng với mã: ${maPhong}`);
+      // Không throw error ở đây vì đơn đặt phòng đã được tạo thành công
+    } else {
+      console.log(`✅ Đã cập nhật trạng thái phòng ${maPhong} thành "Đã đặt"`);
+    }
 
     res.status(201).json({
       success: true,
@@ -1097,7 +1342,9 @@ app.post('/api/datphong', async (req, res) => {
         giaTien: giaTien,
         thoiGianBatDau: datPhong.ThoiGianBatDau,
         thoiGianKetThuc: datPhong.ThoiGianKetThuc,
-        trangThai: datPhong.TrangThai
+        songuoi: datPhong.SoNguoi,
+        trangThai: datPhong.TrangThai,
+        phongDaCapNhat: !!phongCapNhat
       }
     });
 
@@ -1106,6 +1353,93 @@ app.post('/api/datphong', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Lỗi khi đặt phòng',
+      error: error.message
+    });
+  }
+});
+
+// API hủy đặt phòng
+app.put('/api/datphong/:maDatPhong/huy', async (req, res) => {
+  try {
+    const { maDatPhong } = req.params;
+
+    // 1. Tìm đơn đặt phòng
+    const datPhong = await DataModel.Data_DatPhong_Model.findOne({ MaDatPhong: maDatPhong });
+    
+    if (!datPhong) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy đơn đặt phòng'
+      });
+    }
+
+    // 2. Cập nhật trạng thái đơn đặt phòng thành "Đã hủy"
+    datPhong.TrangThai = 'Đã hủy';
+    datPhong.updatedAt = new Date();
+    await datPhong.save();
+
+    // 3. Cập nhật trạng thái phòng về "Trống"
+    const phongCapNhat = await DataModel.Data_PhongHat_Model.findOneAndUpdate(
+      { MaPhong: datPhong.MaPhong },
+      { 
+        TrangThai: 'Còn Trống',
+        updatedAt: new Date()
+      },
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Hủy đặt phòng thành công',
+      data: {
+        maDatPhong: datPhong.MaDatPhong,
+        maPhong: datPhong.MaPhong,
+        trangThaiPhong: phongCapNhat ? 'Trống' : 'Không thể cập nhật'
+      }
+    });
+
+  } catch (error) {
+    console.error('Lỗi hủy đặt phòng:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi hủy đặt phòng',
+      error: error.message
+    });
+  }
+});
+
+app.post('/api/mathang', async (req, res) => {
+    try {
+    const { 
+      TenHang, LoaiHang, DonGia, DonViTinh, SoLuongTon, LinkAnh
+    } = req.body;
+
+    const maMH = await generateCode('MH', DataModel.Data_MatHang_Model, 'MaHang');
+
+    // 2. Tạo đơn đặt phòng
+    const matHang = new DataModel.Data_MatHang_Model({
+      MaHang: maMH,
+      TenHang: TenHang,
+      LoaiHang: LoaiHang,
+      DonGia: DonGia,
+      DonViTinh: DonViTinh,
+      SoLuongTon: SoLuongTon,
+      LinkAnh: LinkAnh,
+      createdAt: new Date()
+    });
+
+    await matHang.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Thêm mặt hàng thành công',
+    });
+
+  } catch (error) {
+    console.error('Lỗi thêm mặt hàng:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi thêm mặt hàng',
       error: error.message
     });
   }
@@ -1569,7 +1903,7 @@ app.put('/api/datphong/:maDatPhong/checkin', async (req, res) => {
             MaKH: datPhong.MaKH, // Lưu ý: không cần ._id vì MaKH là String trong schema
             MaPhong: datPhong.MaPhong, // Tương tự
             ThoiGianBatDau: new Date(), // Bắt đầu từ thời điểm check-in
-            ThoiGianKetThuc: datPhong.ThoiGianKetThuc,
+            ThoiGianKetThuc: null,
             TrangThai: "Chưa thanh toán", // Theo schema mặc định
             TongTien: 0, // Sẽ tính toán khi check-out
         });
@@ -1606,6 +1940,53 @@ app.put('/api/datphong/:maDatPhong/checkin', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+app.put('/api/mathang/:maMH', async (req, res) => {
+  try {
+    const { maMH } = req.params;
+    const { 
+      TenHang, LoaiHang, DonGia, DonViTinh, SoLuongTon, LinkAnh
+    } = req.body;
+
+    console.log('Nhận: ', maMH, TenHang, LoaiHang, DonGia, DonViTinh, SoLuongTon, LinkAnh);
+
+    const mh = await DataModel.Data_MatHang_Model.findOneAndUpdate(
+        { MaHang: maMH },
+        { 
+            TenHang, 
+            LoaiHang, 
+            DonGia, 
+            DonViTinh, 
+            SoLuongTon, 
+            LinkAnh,
+            createdAt: new Date()
+        },
+        { new: true, runValidators: true }
+    );
+    
+    if (!mh) {
+        return res.status(404).json({ 
+            success: false,
+            error: 'Không tìm thấy mặt hàng' 
+        });
+    }
+    
+
+    res.status(201).json({
+      success: true,
+      message: 'Cập nhật mặt hàng thành công',
+    });
+
+  } catch (error) {
+    console.error('Lỗi thêm mặt hàng:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi thêm mặt hàng',
+      error: error.message
+    });
+  }
+});
+
 
 
 ///////////////////////////////
@@ -1789,7 +2170,30 @@ app.delete('/api/thietbi/:maTB', async (req, res) => {
   }
 });
 
+app.delete('/api/mathang/:mhID', async (req, res) => {
+  try {
+    const { mhID } = req.params;
 
+    const mh = await DataModel.Data_MatHang_Model.findByIdAndDelete(
+      mhID, // Điều kiện tìm kiếm
+      { 
+        message: true,    // Trả về document sau khi cập nhật
+        runValidators: true // Chạy validation
+      }
+    );
+    if (!mh) {
+      return res.status(404).json({ error: 'Không tìm thấy mặt hàng' });
+    }
+    
+    res.json({ 
+      message: 'Xoá mặt hàng thành công', 
+      data: mh 
+    });
+  } catch (error) {
+    console.error('Lỗi xoá mặt hàng:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
 
 
 

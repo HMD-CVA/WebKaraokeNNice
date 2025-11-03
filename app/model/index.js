@@ -70,6 +70,7 @@ const DatPhongSchema = new mongoose.Schema({
   MaPhong: { type: String, required: true },
   ThoiGianBatDau: { type: Date, required: true },
   ThoiGianKetThuc: { type: Date },
+  SoNguoi: {type: Number},
   TrangThai: { type: String, default: "Đã đặt" },
   GhiChu: {type: String},
   createdAt: { type: Date, default: Date.now }
@@ -93,6 +94,7 @@ const HoaDonSchema = new mongoose.Schema({
 const MatHangSchema = new mongoose.Schema({
   MaHang: { type: String, required: true, unique: true },
   TenHang: { type: String, required: true },
+  LoaiHang: {type: String, required: true},
   DonGia: { type: Number, required: true },
   DonViTinh: { type: String, required: true },
   SoLuongTon: { type: Number, default: 0 },

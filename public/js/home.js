@@ -987,37 +987,10 @@ class ProductPagination {
         
         // AUTO SCROLL ĐẾN SẢN PHẨM ĐẦU TIÊN CỦA TRANG MỚI
         if (animate) {
-            setTimeout(() => {
-                this.smoothScrollToFirstProduct();
-            }, 400);
+            this.smoothScrollToFilter();
         }
         
         this.isAnimating = false;
-    }
-    
-    // PHƯƠNG THỨC SCROLL ĐẾN SẢN PHẨM ĐẦU TIÊN
-    smoothScrollToFirstProduct() {
-        const firstProductIndex = (this.currentPage - 1) * this.itemsPerPage;
-        const firstProduct = this.allProducts[firstProductIndex];
-        
-        if (firstProduct) {
-            // Sử dụng getBoundingClientRect để lấy vị trí chính xác
-            const productRect = firstProduct.getBoundingClientRect();
-            const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
-            const productTop = productRect.top + currentScroll;
-            const offset = 120; // Offset để không bị che bởi header
-            
-            const scrollTarget = Math.max(0, productTop - offset);
-            
-            console.log(`🎯 Đang scroll đến sản phẩm đầu tiên (index ${firstProductIndex + 1}), vị trí: ${scrollTarget}px`);
-            
-            window.scrollTo({
-                top: scrollTarget,
-                behavior: 'auto'
-            });
-        } else {
-            console.warn('⚠️ Không tìm thấy sản phẩm đầu tiên để scroll');
-        }
     }
     
     async smoothPageTransition(oldPage, newPage) {
@@ -1106,35 +1079,12 @@ class ProductPagination {
             nextBtn.style.cursor = isDisabled ? 'not-allowed' : 'pointer';
         }
     }
-    // PHƯƠNG THỨC SCROLL ĐÃ SỬA - CHẮC CHẮN HOẠT ĐỘNG
-smoothScrollToFirstProduct() {
-    const firstProductIndex = (this.currentPage - 1) * this.itemsPerPage;
-    const firstProduct = this.allProducts[firstProductIndex];
     
-    if (firstProduct) {
-        console.log('🎯 Tìm thấy sản phẩm đầu tiên, đang scroll...');
-        
-        // Phương pháp 1: scrollIntoView - đơn giản và hiệu quả nhất
-        firstProduct.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start',
-            inline: 'nearest'
-        });
-        
-        console.log('✅ Đã kích hoạt scrollIntoView');
-        
-    } else {
-        console.warn('⚠️ Không tìm thấy sản phẩm đầu tiên');
-        
-        // Fallback: Scroll đến filter
-        this.smoothScrollToFilter();
-    }
-}
-
-// PHƯƠNG THỨC SCROLL ĐẾN FILTER - DỰ PHÒNG
     smoothScrollToFilter() {
         const filterRoom = document.querySelector('.filterRoom');
         if (filterRoom) {
+            filterRoom.style.scrollMarginTop = '150px';
+
             filterRoom.scrollIntoView({ 
                 behavior: 'smooth', 
                 block: 'start'
@@ -1160,6 +1110,7 @@ smoothScrollToFirstProduct() {
             console.log('🔄 Scroll về đầu trang');
         }
     }
+    
     nextPage() {
         console.log('➡️ Next page called, current:', this.currentPage, 'total:', this.totalPages);
         if (this.currentPage < this.totalPages) {
@@ -1295,16 +1246,16 @@ class BookingModal {
         }
         
         // Set min datetime cho input thời gian
-        this.setMinDateTime();
+        // this.setMinDateTime();
         
         // Khởi tạo tính toán
-        this.initCalculation();
+        // this.initCalculation();
         
         // Khởi tạo dịch vụ
         this.initServices();
         
         // Khởi tạo character counter
-        this.initCharCounter();
+        // this.initCharCounter();
     }
     
     setMinDateTime() {
@@ -1336,7 +1287,6 @@ class BookingModal {
         if (this.form) {
             this.form.reset();
             this.setMinDateTime();
-            this.calculateCost();
         }
     }
     
@@ -1348,6 +1298,34 @@ class BookingModal {
         this._originalSubmitState = null;
     }
     
+    // THÊM PHƯƠNG THỨC MỚI ĐỂ XỬ LÝ CAPACITY - CHỈ LẤY SỐ
+    extractMaxCapacity(capacityText) {
+        if (!capacityText) return 0;
+        
+        // Xử lý các định dạng khác nhau của capacity
+        const text = capacityText.toString().trim();
+        
+        console.log(`🔍 Original capacity text: "${text}"`);
+        
+        // Loại bỏ tất cả chữ cái và khoảng trắng, chỉ giữ lại số và dấu -
+        const cleanedText = text.replace(/[^\d\-]/g, '');
+        console.log(`🔍 After removing non-numeric: "${cleanedText}"`);
+        
+        // Tách các số
+        const numbers = cleanedText.match(/\d+/g);
+        console.log(`🔍 Extracted numbers:`, numbers);
+        
+        if (numbers && numbers.length > 0) {
+            // Lấy số lớn nhất (ví dụ: "6-8" -> lấy 8, "10" -> lấy 10)
+            const maxCapacity = Math.max(...numbers.map(Number));
+            console.log(`🔍 Max capacity: ${maxCapacity}`);
+            return maxCapacity;
+        }
+        
+        console.log(`🔍 Using default capacity: 8`);
+        return 0; // Mặc định
+    }
+
     fillRoomInfo(roomData) {
         const roomImage = document.getElementById('modalRoomImage');
         const roomName = document.getElementById('modalRoomName');
@@ -1356,18 +1334,19 @@ class BookingModal {
         const roomCapacity = document.getElementById('modalRoomCapacity');
         const hourlyRate = document.getElementById('hourlyRate');
         const roomID = document.getElementById('modalRoomID');
-        
+        const maxCapacityHint = document.getElementById('maxCapacityHint');
+
         if (roomImage) roomImage.src = roomData.image || '/image/default-room.jpg';
         if (roomName) roomName.textContent = roomData.name || 'Phòng Karaoke';
         if (roomType) roomType.textContent = roomData.type || 'VIP';
 
         if (roomID) {
-            const maPhong = roomData.roomID || roomData.MaPhong || roomData.id || '001';
+            const maPhong = roomData.roomID;
             console.log('🎯 Setting room ID to:', maPhong); // DEBUG
             roomID.textContent = `Mã: ${maPhong}`;
         }
         
-        const priceText = roomData.price || '500,000 VNĐ/giờ';
+        const priceText = roomData.price || '500,000 VNĐ/H';
         if (roomPrice) roomPrice.textContent = priceText;
         
         this.hourlyPrice = this.extractPrice(priceText);
@@ -1375,8 +1354,11 @@ class BookingModal {
         if (hourlyRate) {
             hourlyRate.textContent = `${this.hourlyPrice.toLocaleString('vi-VN')} VNĐ`;
         }
+
+        const capacityText = this.extractMaxCapacity(roomData.capacity);
         
-        if (roomCapacity) roomCapacity.textContent = `${roomData.capacity || '6-8'} người`;
+        if (roomCapacity) roomCapacity.textContent = capacityText;
+        if (maxCapacityHint) maxCapacityHint.textContent = capacityText;
     }
     
     initCalculation() {
@@ -1422,72 +1404,7 @@ class BookingModal {
         }
     }
     
-    calculateCost() {
-        const startTime = document.getElementById('startTime');
-        const endTime = document.getElementById('endTime');
-        const totalDuration = document.getElementById('totalDuration');
-        const totalCost = document.getElementById('totalCost');
-        const roomSubtotal = document.getElementById('roomSubtotal');
-        const finalTotal = document.getElementById('finalTotal');
-        
-        if (startTime.value && endTime.value) {
-            const start = new Date(startTime.value);
-            const end = new Date(endTime.value);
-            const diffMs = end - start;
-            const diffHours = diffMs / (1000 * 60 * 60);
-            
-            if (diffHours > 0) {
-                const roomTotal = diffHours * this.hourlyPrice;
-                const serviceTotal = this.calculateServiceTotal();
-                const finalTotalAmount = roomTotal + serviceTotal;
-                
-                if (totalDuration) totalDuration.textContent = `${diffHours.toFixed(1)} giờ`;
-                if (totalCost) totalCost.textContent = `${roomTotal.toLocaleString('vi-VN')} VNĐ`;
-                if (roomSubtotal) roomSubtotal.textContent = `${roomTotal.toLocaleString('vi-VN')} VNĐ`;
-                if (finalTotal) finalTotal.textContent = `${finalTotalAmount.toLocaleString('vi-VN')} VNĐ`;
-            } else {
-                this.resetCalculation();
-            }
-        } else {
-            this.resetCalculation();
-        }
-    }
-    
-    calculateServiceTotal() {
-        let total = 0;
-        document.querySelectorAll('input[name="services"]:checked').forEach(checkbox => {
-            switch(checkbox.value) {
-                case 'food': total += 200000; break;
-                case 'drink': total += 150000; break;
-                case 'decor': total += 300000; break;
-                case 'photo': total += 100000; break;
-            }
-        });
-        
-        const serviceSubtotal = document.getElementById('serviceSubtotal');
-        if (serviceSubtotal) {
-            serviceSubtotal.textContent = `${total.toLocaleString('vi-VN')} VNĐ`;
-        }
-        
-        return total;
-    }
-    
-    resetCalculation() {
-        const elements = {
-            totalDuration: '0 giờ',
-            totalCost: '0 VNĐ',
-            roomSubtotal: '0 VNĐ',
-            serviceSubtotal: '0 VNĐ',
-            finalTotal: '0 VNĐ'
-        };
-        
-        Object.keys(elements).forEach(id => {
-            const element = document.getElementById(id);
-            if (element) element.textContent = elements[id];
-        });
-    }
-    
-    handleSubmit(e) {
+    async handleSubmit(e) {
         e.preventDefault();
         console.log('Form submitted - Gửi dữ liệu đặt phòng');
 
@@ -1495,35 +1412,57 @@ class BookingModal {
             return;
         }
 
-        const formData = this.collectFormData();
-        this.showLoading();
-
-        this.sendBookingData(formData)
-            .then(result => {
-                this.hideLoading();
-                this.showSuccess(
-                    'Đặt phòng thành công!', 
-                    'Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.',
-                    result.data
-                );
-                this.close();
-            })
-            .catch(error => {
-                this.hideLoading();
-                console.error('Booking error:', error);
-                this.showError(
-                    'Đặt phòng thất bại', 
-                    'Có lỗi xảy ra khi đặt phòng. Vui lòng thử lại sau.'
-                );
+        // THÊM CONFIRMATION - ĐÂY LÀ PHẦN QUAN TRỌNG
+        try {
+            const result = await Swal.fire({
+                title: 'Xác nhận đặt phòng?',
+                html: `Bạn có chắc chắn muốn đặt phòng <strong>${this.currentRoom?.name || 'karaoke'}</strong>?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Đặt ngay',
+                cancelButtonText: 'Hủy bỏ',
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                reverseButtons: true,
+                width: '500px'
             });
+
+            // Nếu người dùng không xác nhận, dừng lại
+            if (!result.isConfirmed) {
+                console.log('User cancelled booking');
+                return;
+            }
+
+            // Tiếp tục xử lý đặt phòng
+            const formData = this.collectFormData();
+            this.showLoading();
+
+            const bookingResult = await this.sendBookingData(formData);
+            
+            this.hideLoading();
+            this.showSuccess(
+                'Đặt phòng thành công!', 
+                'Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.',
+                bookingResult.data
+            );
+            this.close();
+            
+        } catch (error) {
+            this.hideLoading();
+            console.error('Booking error:', error);
+            this.showError(
+                'Đặt phòng thất bại', 
+                'Có lỗi xảy ra khi đặt phòng. Vui lòng thử lại sau.'
+            );
+        }
     }
 
     validateForm() {
         const requiredFields = [
             { id: 'customerName', name: 'Họ và tên' },
             { id: 'customerPhone', name: 'Số điện thoại' },
-            { id: 'startTime', name: 'Thời gian bắt đầu' },
-            { id: 'endTime', name: 'Thời gian kết thúc' }
+            { id: 'bookingDate', name: 'Ngày đặt' },
+            { id: 'bookingTime', name: 'Thời gian đặt' }
         ];
 
         for (let field of requiredFields) {
@@ -1542,21 +1481,18 @@ class BookingModal {
             return false;
         }
 
-        const startTime = new Date(document.getElementById('startTime').value);
-        const endTime = new Date(document.getElementById('endTime').value);
+        // Kiểm tra số người
+        const numberOfPeople = parseInt(document.getElementById('numberOfPeople').value);
+        const maxCapacityHint = document.getElementById('maxCapacityHint');
+        const maxCapacity = maxCapacityHint ? parseInt(maxCapacityHint.textContent) : 8;
         
-        if (endTime <= startTime) {
-            this.showError('Thời gian không hợp lệ', 'Thời gian kết thúc phải sau thời gian bắt đầu');
+        if (numberOfPeople < 1) {
+            this.showError('Số người không hợp lệ', 'Số người phải lớn hơn 0');
             return false;
         }
-
-        const minBookingHours = 1;
-        const bookingHours = (endTime - startTime) / (1000 * 60 * 60);
-        if (bookingHours < minBookingHours) {
-            this.showError(
-                'Thời gian đặt tối thiểu', 
-                `Thời gian đặt phòng tối thiểu là ${minBookingHours} giờ`
-            );
+        
+        if (numberOfPeople > maxCapacity) {
+            this.showError('Số người vượt quá giới hạn', `Phòng này chỉ cho phép tối đa ${maxCapacity} người`);
             return false;
         }
 
@@ -1565,9 +1501,13 @@ class BookingModal {
 
     collectFormData() {
         const formData = new FormData(this.form);
-        const startTime = new Date(formData.get('startTime'));
-        const endTime = new Date(formData.get('endTime'));
-        const duration = (endTime - startTime) / (1000 * 60 * 60);
+
+        const bookingDate = formData.get('bookingDate');
+        const bookingTime = formData.get('bookingTime');
+        const bookingPeople = formData.get('numberOfPeople');
+
+        const startTime = new Date(`${bookingDate}T${bookingTime}`);
+        const endTime = null;
 
         const maDatPhong = `DP${Date.now()}${Math.random().toString(36).substr(2, 5)}`.toUpperCase();
         const maKH = `KH${Date.now()}${Math.random().toString(36).substr(2, 5)}`.toUpperCase();
@@ -1584,8 +1524,9 @@ class BookingModal {
             giaTien: this.hourlyPrice,
             loaiPhong: this.currentRoom?.type || 'VIP',
 
-            thoiGianBatDau: formData.get('startTime'),
-            thoiGianKetThuc: formData.get('endTime'),
+            thoiGianBatDau: startTime,
+            thoiGianKetThuc: endTime,
+            songuoi: bookingPeople,
 
             ghiChu: this.generateNote(formData),
             trangThai: 'Đã đặt'
@@ -1686,7 +1627,8 @@ class BookingModal {
                     <p><strong>Tên khách hàng:</strong> ${bookingData.tenKH}</p>
                     <p><strong>Số điện thoại:</strong> ${bookingData.sdt}</p>
                     <p><strong>Phòng:</strong> ${bookingData.tenPhong}</p>
-                    <p><strong>Thời gian:</strong> ${new Date(bookingData.thoiGianBatDau).toLocaleString('vi-VN')} - ${new Date(bookingData.thoiGianKetThuc).toLocaleString('vi-VN')}</p>
+                    <p><strong>Thời gian:</strong> ${new Date(bookingData.thoiGianBatDau).toLocaleString('vi-VN')}</p>
+                    <p><strong>Số người:</strong> ${bookingData.songuoi}</p>
                     <p><strong>Trạng thái:</strong> <span class="text-warning">Đã đặt thành công</span></p>
                 </div>
             `;
@@ -1770,3 +1712,5 @@ function showBookingModal(roomData = {}) {
         console.error('Booking modal chưa được khởi tạo');
     }
 }
+
+

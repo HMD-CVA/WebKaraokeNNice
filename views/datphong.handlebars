@@ -357,8 +357,8 @@
                         </div>
                         <div class="company-info">
                             <h1>KARAOKE NNICE</h1>
-                            <p>113 Phan Xích Long, Phường 2, Quận Phú Nhuận, TP.Hồ Chí Minh, Việt Nam • (028) 35 170 046
-                            </p>
+                            <p>113 Phan Xích Long, Phường 2, Quận Phú Nhuận, TP. Hồ Chí Minh, Việt Nam</p>
+                            <p>(028) 35 170 046</p>
                         </div>
                     </div>
                     <div class="header-actions" id="headerActions">
@@ -880,11 +880,11 @@
             <div class="info-grid">
               <div class="info-item">
                 <span class="label">Phòng:</span>
-                <span class="value">${datPhong.MaPhong || 'N/A'}</span>
+                <span class="value">${datPhong.MaPhong || 'N/A'} (${datPhong.SoNguoi || 'N/A'} người) </span>
               </div>
               <div class="info-item">
                 <span class="label">Thời gian:</span>
-                <span class="value">${formatTime(datPhong.ThoiGianBatDau)} - ${formatTime(datPhong.ThoiGianKetThuc)}</span>
+                <span class="value">${formatTime(datPhong.ThoiGianBatDau)}</span>
               </div>
               <div class="info-item">
                 <span class="label">Ngày:</span>
@@ -906,18 +906,10 @@
             
             <div class="table-row">
               <div class="col-service">
-                <span class="service-name">Bắt đầu</span>
+                <span class="service-name">Check In</span>
               </div>
               <div class="col-date">${formatDate(datPhong.ThoiGianBatDau)}</div>
               <div class="col-time">${formatTime(datPhong.ThoiGianBatDau)}</div>
-            </div>
-            
-            <div class="table-row">
-              <div class="col-service">
-                <span class="service-name">Kết thúc</span>
-              </div>
-              <div class="col-date">${formatDate(datPhong.ThoiGianKetThuc)}</div>
-              <div class="col-time">${formatTime(datPhong.ThoiGianKetThuc)}</div>
             </div>
           </div>
         </div>
@@ -957,8 +949,8 @@
             <p>Chữ ký nhân viên</p>
           </div>
           <div class="footer-thanks">
-            <p><strong>KARAOKE NICE</strong></p>
-            <p>Hotline: 0123 456 789</p>
+            <p><strong>KARAOKE NNICE</strong></p>
+            <p>Hotline: (028)3 5170046</p>
           </div>
         </div>
       </div>

@@ -45,7 +45,7 @@
         </div>
         <div class="info-item">
           <i class="fas fa-clock"></i>
-          <span>{{formatNumber this.GiaTien}}VNĐ/H</span>
+          <span>{{formatNumber this.GiaTien}} VNĐ/H</span>
         </div>
       </div>
 
@@ -1262,19 +1262,6 @@
         }
       }
     });
-  });
-
-  // Xử lý đặt phòng
-  document.addEventListener('click', function (e) {
-    if (e.target.closest('.btn-book')) {
-      const roomId = e.target.closest('.btn-book').dataset.roomId;
-      bookRoom(roomId);
-    }
-
-    if (e.target.closest('.btn-detail')) {
-      const roomId = e.target.closest('.btn-detail').dataset.roomId;
-      showRoomDetail(roomId);
-    }
   });
 
 

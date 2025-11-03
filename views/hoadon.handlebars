@@ -152,7 +152,7 @@
             {{this.TrangThai}}
           </div>
           <div class="employee-status {{#if (eq this.TrangThai 'Đã thanh toán')}}active{{else if (eq this.TrangThai 'Chưa thanh toán')}}onleave{{else}}inactive{{/if}}">
-            {{formatCurrency this.TongTien}}
+            {{formatNumber this.TongTien}} VND
           </div>
         </div>
 
@@ -167,11 +167,11 @@
             </div>
             <div class="detail-item">
               <i class="fas fa-money-bill-wave"></i>
-              <span>{{formatCurrency this.TongTien}}</span>
+              <span>{{formatNumber this.TongTien}} VND</span>
             </div>
             <div class="detail-item">
               <i class="fas fa-user"></i>
-              <span>KH: {{this.MaKH}}</span>
+              <span>KH: {{this.KH.TenKH}}</span>
             </div>
             <div class="detail-item">
               <i class="fas fa-door-open"></i>
@@ -188,6 +188,11 @@
               <i class="fas fa-stop-circle"></i>
               <span>Kết thúc: {{formatTime this.ThoiGianKetThuc}}</span>
             </div>
+            {{else}}
+            <div class="detail-item">
+              <i class="fas fa-stop-circle"></i>
+              <span class="highlight">Kết thúc: Đang sử dụng</span>
+            </div>
             {{/if}}
           </div>
 
@@ -198,7 +203,7 @@
             <div class="service-item">
               <span class="service-name">{{this.TenHang}}</span>
               <span class="service-quantity">x{{this.SoLuong}}</span>
-              <span class="service-price">{{formatCurrency this.ThanhTien}}</span>
+              <span class="service-price">{{formatNumber this.ThanhTien}} VND</span>
             </div>
             {{/each}}
           </div>
@@ -253,85 +258,109 @@
           <input type="hidden" id="hoaDonId">
           <input type="hidden" id="hoaDonMaHD">
 
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="datPhongSelect">Đặt phòng *</label>
-              <select id="datPhongSelect" required onchange="loadDatPhongInfo()">
-                <option value="">Chọn đặt phòng</option>
-                {{#each datphongs}}
-                <option value="{{this.MaDatPhong}}" data-makh="{{this.MaKH}}" data-maphong="{{this.MaPhong}}">
-                  {{this.MaDatPhong}} - Phòng {{this.MaPhong}}
-                </option>
-                {{/each}}
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="maKH">Mã khách hàng</label>
-              <input type="text" id="maKH" readonly>
-            </div>
-
-            <div class="form-group">
-              <label for="maPhong">Mã phòng</label>
-              <input type="text" id="maPhong" readonly>
-            </div>
-
-            <div class="form-group">
-              <label for="thoiGianBatDau">Thời gian bắt đầu</label>
-              <input type="datetime-local" id="thoiGianBatDau" readonly>
-            </div>
-
-            <div class="form-group">
-              <label for="thoiGianKetThuc">Thời gian kết thúc</label>
-              <input type="datetime-local" id="thoiGianKetThuc">
-            </div>
-
-            <div class="form-group">
-              <label for="hoaDonStatus">Trạng thái *</label>
-              <select id="hoaDonStatus" required>
-                <option value="Chưa thanh toán">Chưa thanh toán</option>
-                <option value="Đã thanh toán">Đã thanh toán</option>
-                <option value="Đã hủy">Đã hủy</option>
-              </select>
+          <!-- Phần 1: Thông tin khách hàng -->
+          <div class="form-section">
+            <h3>Thông tin khách hàng</h3>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="tenKH">Họ tên *</label>
+                <input type="text" id="tenKH" required placeholder="Nhập họ tên khách hàng">
+              </div>
+              <div class="form-group">
+                <label for="sdtKH">Số điện thoại *</label>
+                <input type="text" id="sdtKH" required placeholder="Nhập số điện thoại">
+              </div>
+              <div class="form-group full-width">
+                <label for="emailKH">Email</label>
+                <input type="email" id="emailKH" placeholder="Nhập email (không bắt buộc)">
+              </div>
             </div>
           </div>
 
-          <!-- Danh sách dịch vụ -->
-          <div class="services-section">
-            <h3>Dịch vụ sử dụng</h3>
+          <!-- Phần 2: Thông tin phòng -->
+          <div class="form-section">
+            <h3>Thông tin phòng</h3>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="phongSelect">Chọn phòng *</label>
+                <select id="phongSelect" required onchange="updateRoomPrice()">
+                  <option value="">Chọn phòng</option>
+                  {{#each phongs}}
+                  {{#if (eq this.TrangThai "Trống")}}
+                  <option value="{{this.MaPhong}}" data-gia="{{this.GiaPhong}}">
+                    {{this.TenPhong}}
+                  </option>
+                  {{/if}}
+                  {{/each}}
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="thoiGianBatDau">Thời gian bắt đầu *</label>
+                <input type="datetime-local" id="thoiGianBatDau" required>
+              </div>
+            </div>
+
+            <!-- Hiển thị giá phòng -->
+            <div class="price-section">
+              <div class="price-row">
+                <span>Tiền phòng:</span>
+                <span id="giaPhongDisplay">0 VND</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Phần 3: Dịch vụ đi kèm -->
+          <div class="form-section">
+            <h3>Dịch vụ đi kèm</h3>
             <div class="service-controls">
+              <div class="service-search">
+                <input type="text" id="serviceSearch" placeholder="Tìm kiếm dịch vụ" onkeyup="filterServices()">
+                <i class="fas fa-search"></i>
+              </div>
               <select id="matHangSelect">
                 <option value="">Chọn mặt hàng</option>
                 {{#each mathangs}}
-                <option value="{{this.MaHang}}" data-dongia="{{this.DonGia}}" data-dvt="{{this.DonViTinh}}" data-tenhang="{{this.TenHang}}" data-loaidichvu="{{this.LoaiDichVu}}">
-                  {{this.TenHang}} - {{formatCurrency this.DonGia}}/{{this.DonViTinh}}
+                {{#if (gt this.SoLuongTon 0)}}
+                <option value="{{this.MaHang}}" 
+                        data-dongia="{{this.DonGia}}"
+                        data-tenhang="{{this.TenHang}}"
+                        data-dvt="{{this.DonViTinh}}"
+                        data-slt="{{this.SoLuongTon}}"
+                        data-loaihang="{{this.LoaiHang}}">
+                  {{this.TenHang}} - {{formatNumber this.DonGia}}/{{this.DonViTinh}} (Tồn: {{this.SoLuongTon}})
                 </option>
+                {{/if}}
                 {{/each}}
               </select>
-              <input type="number" id="soLuong" placeholder="Số lượng" min="1" value="1">
+              <input type="number" id="soLuong" placeholder="Số lượng" min="1" value="" max="100">
               <button type="button" class="btn-secondary" onclick="addService()">
                 <i class="fas fa-plus"></i> Thêm
               </button>
             </div>
 
-            <div class="services-list" id="servicesList">
-              <!-- Danh sách dịch vụ sẽ được thêm vào đây -->
+            <!-- Danh sách dịch vụ đã thêm -->
+            <div class="services-list-container">
+              <h4>Dịch vụ đã thêm:</h4>
+              <div class="services-list" id="servicesList">
+                <div class="no-services">Chưa có dịch vụ nào được thêm</div>
+              </div>
+            </div>
+
+            <!-- Tổng tiền dịch vụ -->
+            <div class="price-section">
+              <div class="price-row">
+                <span>Tiền dịch vụ:</span>
+                <span id="tienDichVuDisplay">0 VND</span>
+              </div>
             </div>
           </div>
 
           <!-- Tổng tiền -->
           <div class="total-section">
-            <div class="total-row">
-              <span>Tiền phòng:</span>
-              <span id="tienPhong">0</span>
-            </div>
-            <div class="total-row">
-              <span>Tiền dịch vụ:</span>
-              <span id="tienDichVu">0</span>
-            </div>
             <div class="total-row grand-total">
               <span><strong>Tổng cộng:</strong></span>
-              <span id="tongTien"><strong>0</strong></span>
+              <span id="tongTienDisplay"><strong>0 VND</strong></span>
             </div>
           </div>
         </form>
@@ -356,8 +385,8 @@
             <i class="fas fa-microphone-alt"></i>
           </div>
           <div class="company-info">
-            <h1>KARAOKE NICE</h1>
-            <p>123 Đường ABC, Quận 1, TP.HCM • 0123 456 789</p>
+            <h1>KARAOKE NNICE</h1>
+            <p>113 Phan Xích Long, Phường 2, Quận Phú Nhuận,<br> TP. Hồ Chí Minh, Việt Nam • (028) 35 170 046</p>
           </div>
         </div>
         <div class="header-actions" id="headerActions">
@@ -404,6 +433,9 @@
   let selectedServices = [];
   let currentRoomPrice = 0;
   let nextCTHDId = 1;
+  let allPhongs = [];
+  let allMatHangs = [];
+  let filteredMatHangs = [];
 
   // ===== STATISTICS CALCULATION =====
   function calculateStatistics() {
@@ -424,7 +456,7 @@
     ).length;
 
     updateStatCard('#statTotal', totalHoaDons);
-    updateStatCard('#statRevenue', formatCurrency(todayRevenue));
+    updateStatCard('#statRevenue', formatNumber(todayRevenue));
     updateStatCard('#statPending', countPending);
     updateStatCard('#statPaid', countPaid);
     updateStatCard('#statCancelled', countCancelled);
@@ -441,15 +473,6 @@
   }
 
   // ===== FORMAT FUNCTIONS =====
-  function formatCurrency(amount) {
-    if (typeof amount === 'string') {
-      amount = parseFloat(amount) || 0;
-    }
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(amount);
-  }
 
   function formatDate(dateString) {
     if (!dateString) return 'N/A';
@@ -539,7 +562,7 @@
     if (start && end) {
       const hours = (end - start) / (1000 * 60 * 60);
       currentRoomPrice = hours * 100000; // 100k/giờ
-      document.getElementById('tienPhong').textContent = formatCurrency(currentRoomPrice);
+      document.getElementById('tienPhong').textContent = formatNumber(currentRoomPrice);
       calculateTotal();
     }
   }
@@ -589,10 +612,10 @@
       serviceElement.innerHTML = `
         <div class="service-info">
           <span class="service-name">${service.TenHang}</span>
-          <span class="service-details">${service.SoLuong} x ${formatCurrency(service.DonGia)} (${service.LoaiDichVu})</span>
+          <span class="service-details">${service.SoLuong} x ${formatNumber(service.DonGia)} (${service.LoaiDichVu})</span>
         </div>
         <div class="service-actions">
-          <span class="service-total">${formatCurrency(service.ThanhTien)}</span>
+          <span class="service-total">${formatNumber(service.ThanhTien)} VND</span>
           <button type="button" class="btn-delete" onclick="removeService(${index})">
             <i class="fas fa-times"></i>
           </button>
@@ -606,8 +629,8 @@
     const serviceTotal = selectedServices.reduce((sum, service) => sum + service.ThanhTien, 0);
     const total = currentRoomPrice + serviceTotal;
 
-    document.getElementById('tienDichVu').textContent = formatCurrency(serviceTotal);
-    document.getElementById('tongTien').textContent = formatCurrency(total);
+    document.getElementById('tienDichVu').textContent = formatNumber(serviceTotal);
+    document.getElementById('tongTien').textContent = formatNumber(total);
   }
 
   async function saveHoaDon(event) {
@@ -710,69 +733,6 @@
     window.open(`/api/hoadon/${maHoaDon}/print`, '_blank');
   }
 
-  async function viewHoaDonDetail(maHoaDon) {
-    try {
-      // Hiển thị loading
-      const detailContent = document.getElementById('detailContent');
-      detailContent.innerHTML = `
-        <div class="loading-invoice">
-          <div class="loading-spinner"></div>
-          <p>Đang tải thông tin hóa đơn...</p>
-        </div>
-      `;
-      
-      // Cập nhật thông tin header trước
-      document.getElementById('modal-invoice-number').textContent = `HD${maHoaDon}`;
-      
-      document.getElementById('detailModal').style.display = 'flex';
-
-      // Lấy thông tin hóa đơn và chi tiết song song
-      const [chiTietResponse, hoaDonResponse] = await Promise.all([
-        fetch(`/api/chitiethoadon/${maHoaDon}`),
-        fetch(`/api/hoadon/${maHoaDon}`)
-      ]);
-
-      if (!chiTietResponse.ok || !hoaDonResponse.ok) {
-        throw new Error('Không tìm thấy dữ liệu hóa đơn');
-      }
-
-      const chiTietHoaDon = await chiTietResponse.json();
-      const hoaDon = await hoaDonResponse.json();
-
-      console.log('Chi tiết hóa đơn:', chiTietHoaDon);
-      console.log('Thông tin hóa đơn:', hoaDon);
-
-      // CẬP NHẬT HEADER VỚI THÔNG TIN THỰC TẾ
-      document.getElementById('modal-invoice-date').textContent = 
-        `${formatDate(hoaDon.createdAt)} ${formatTime(hoaDon.createdAt)}`;
-      
-      const statusElement = document.getElementById('modal-invoice-status');
-      statusElement.className = `invoice-status ${hoaDon.TrangThai === 'Đã thanh toán' ? 'paid' : 'pending'}`;
-      statusElement.querySelector('.value').textContent = hoaDon.TrangThai;
-
-      // Tính tổng tiền dịch vụ
-      const tongTienDichVu = Array.isArray(chiTietHoaDon) 
-        ? chiTietHoaDon.reduce((sum, item) => sum + (item.ThanhTien || 0), 0)
-        : 0;
-
-      // Render phần body của hóa đơn (không bao gồm header nữa)
-      renderInvoiceBody(hoaDon, chiTietHoaDon, tongTienDichVu);
-
-    } catch (error) {
-      console.error('Lỗi khi tải chi tiết hóa đơn:', error);
-      detailContent.innerHTML = `
-        <div class="error-state">
-          <div class="error-icon">❌</div>
-          <h3>Không thể tải hóa đơn</h3>
-          <p>${error.message || 'Vui lòng thử lại sau'}</p>
-          <button class="btn-primary" onclick="viewHoaDonDetail('${maHoaDon}')">
-            <i class="fas fa-redo"></i>
-            Thử lại
-          </button>
-        </div>
-      `;
-    }
-  }
 
   // ===== RENDER PHẦN BODY CỦA HÓA ĐƠN (KHÔNG BAO GỒM HEADER) =====
   async function viewHoaDonDetail(maHoaDon) {
@@ -935,11 +895,11 @@
             <div class="table-row">
               <div class="col-service">
                 <span class="service-name">Thuê phòng ${hoaDon.MaPhong}</span>
-                <span class="service-desc">${formatTime(hoaDon.ThoiGianBatDau)} - ${formatTime(hoaDon.ThoiGianKetThuc)}</span>
+                <span class="service-desc">${formatTime(hoaDon.ThoiGianBatDau)}</span>
               </div>
               <div class="col-quantity">1</div>
-              <div class="col-price">${formatCurrency(tienPhong)}</div>
-              <div class="col-total">${formatCurrency(tienPhong)}</div>
+              <div class="col-price">${formatNumber(tienPhong)}</div>
+              <div class="col-total">${formatNumber(tienPhong)}</div>
             </div>
             ` : ''}
             
@@ -953,8 +913,8 @@
                         ${item.LoaiDichVu ? `<span class="service-desc">${item.LoaiDichVu}</span>` : ''}
                       </div>
                       <div class="col-quantity">${item.SoLuong}</div>
-                      <div class="col-price">${formatCurrency(item.DonGia)}</div>
-                      <div class="col-total">${formatCurrency(item.ThanhTien)}</div>
+                      <div class="col-price">${formatNumber(item.DonGia)}</div>
+                      <div class="col-total">${formatNumber(item.ThanhTien)}</div>
                     </div>
                   `).join('')
               : '<div class="table-row no-services"><div class="col-service">Không có dịch vụ nào</div></div>'
@@ -966,15 +926,15 @@
         <div class="invoice-summary">
           <div class="summary-row">
             <span class="label">Tổng tiền dịch vụ:</span>
-            <span class="value">${formatCurrency(hoaDon.TongTien || 0)}</span>
+            <span class="value">${formatNumber(hoaDon.TongTien || 0)}</span>
           </div>
           <div class="summary-row">
             <span class="label">VAT (10%):</span>
-            <span class="value">${formatCurrency(vat)}</span>
+            <span class="value">${formatNumber(vat)}</span>
           </div>
           <div class="summary-row total">
             <span class="label">TỔNG CỘNG:</span>
-            <span class="value">${formatCurrency(tongThanhToan)}</span>
+            <span class="value">${formatNumber(tongThanhToan)}</span>
           </div>
         </div>
 
@@ -1001,8 +961,8 @@
             <p>Chữ ký nhân viên</p>
           </div>
           <div class="footer-thanks">
-            <p><strong>KARAOKE NICE</strong></p>
-            <p>Hotline: 0123 456 789</p>
+            <p><strong>KARAOKE NNICE</strong></p>
+            <p>Hotline: (028) 35 170 046</p>
           </div>
         </div>
       </div>
@@ -1089,7 +1049,7 @@
     return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
   }
 
-  function formatCurrency(amount) {
+  function formatNumber(amount) {
     if (typeof amount === 'string') {
       amount = parseFloat(amount) || 0;
     }
@@ -1200,7 +1160,7 @@
 </script>
 
 <style>
-/* ===== RESET & VARIABLES ===== */
+  /* ===== RESET & VARIABLES ===== */
 :root {
   --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   --success-gradient: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
@@ -1318,6 +1278,31 @@
 .btn-secondary:hover {
   background: #e2e8f0;
   color: #475569;
+}
+
+.btn-edit,
+.btn-delete {
+  width: 56px;
+  height: 56px;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn-edit {
+  background: var(--success-gradient);
+  color: white;
+}
+
+.btn-delete {
+  background: var(--danger-gradient);
+  color: white;
 }
 
 /* ===== THANH TÌM KIẾM & BỘ LỌC ===== */
@@ -1550,31 +1535,6 @@
 .employee-actions {
   display: flex;
   gap: 16px;
-}
-
-.btn-edit,
-.btn-delete {
-  width: 56px;
-  height: 56px;
-  border: none;
-  border-radius: 14px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-
-.btn-edit {
-  background: var(--success-gradient);
-  color: white;
-}
-
-.btn-delete {
-  background: var(--danger-gradient);
-  color: white;
 }
 
 .employee-badge {
@@ -1877,6 +1837,23 @@
 }
 
 /* ===== FORM TRONG MODAL ===== */
+.form-section {
+  margin-bottom: 30px;
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.form-section h3 {
+  margin: 0 0 20px 0;
+  color: #1e293b;
+  font-size: 1.3rem;
+  font-weight: 600;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1921,75 +1898,235 @@
 }
 
 /* ===== PHẦN DỊCH VỤ TRONG MODAL ===== */
-.services-section {
-  margin: 20px 0;
-  padding: 20px;
-  background: #f7fafc;
-  border-radius: 8px;
-}
-
 .service-controls {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
+  display: grid;
+  grid-template-columns: 1fr 0.85fr 90px auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 20px;
 }
 
 .service-controls select,
 .service-controls input {
-  flex: 1;
+  padding: 8px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: white;
+  height: 46px;
+}
+
+.service-controls select:focus,
+.service-controls input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+#matHangSelect {
+  width: 100%;
+  min-height: 46px;
+}
+
+#soLuong {
+  width: 100%;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+#soLuong::-webkit-outer-spin-button,
+#soLuong::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.service-controls button {
+  height: 46px;
+  padding: 12px 20px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.service-controls button:hover {
+  background: #e2e8f0;
+  color: #475569;
+  border-color: #cbd5e1;
+}
+
+.service-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.service-search input {
+  width: 100%;
+  padding: 12px 40px 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  height: 46px;
+  transition: all 0.3s ease;
+}
+
+.service-search input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.service-search i {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+  pointer-events: none;
+}
+
+/* Services List */
+.services-list-container {
+  margin: 20px 0;
+}
+
+.services-list-container h4 {
+  margin: 0 0 12px 0;
+  color: #374151;
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 
 .services-list {
-  max-height: 200px;
+  max-height: 300px;
   overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
 }
 
 .service-item-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px;
-  background: white;
-  margin-bottom: 5px;
-  border-radius: 4px;
-  border: 1px solid #e2e8f0;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  transition: all 0.3s ease;
+}
+
+.service-item-row:hover {
+  background: #f8fafc;
+}
+
+.service-item-row:last-child {
+  border-bottom: none;
 }
 
 .service-info {
   flex: 1;
 }
 
-.service-details {
-  font-size: 0.8em;
-  color: #718096;
+.service-name {
   display: block;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.service-details {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.service-quantity-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 20px;
+}
+
+.qty-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.qty-btn:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.service-quantity-controls input {
+  width: 60px;
+  text-align: center;
+  padding: 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
 }
 
 .service-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 16px;
+}
+
+.service-total {
+  font-weight: 600;
+  color: #1e293b;
+  min-width: 120px;
+  text-align: right;
+}
+
+.no-services {
+  text-align: center;
+  padding: 40px 20px;
+  color: #64748b;
+  font-style: italic;
 }
 
 /* ===== TỔNG TIỀN TRONG MODAL ===== */
-.total-section {
-  margin-top: 20px;
-  padding: 15px;
-  background: #edf2f7;
+.price-section {
+  background: white;
+  padding: 16px 20px;
   border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  margin-top: 15px;
 }
 
-.total-row {
+.price-row {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 8px;
+  align-items: center;
+  font-size: 1.1rem;
 }
 
-.grand-total {
-  border-top: 2px solid #cbd5e0;
-  padding-top: 8px;
-  margin-top: 8px;
-  font-size: 1.1em;
+.total-section {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  margin-top: 20px;
+}
+
+.total-section .grand-total {
+  font-size: 1.3rem;
 }
 
 /* ===== HEADER MODAL HÓA ĐƠN HIỆN ĐẠI ===== */
@@ -2001,7 +2138,6 @@
   display: block;
 }
 
-/* Hàng 1: Logo và nút hành động */
 .header-top-row {
   display: flex;
   justify-content: space-between;
@@ -2096,7 +2232,6 @@
   transform: rotate(90deg);
 }
 
-/* Hàng 2: Tiêu đề */
 .header-title-row {
   text-align: center;
   margin: 40px 0px 15px 0px;
@@ -2111,7 +2246,6 @@
   letter-spacing: 1px;
 }
 
-/* Hàng 3: Thông tin hóa đơn */
 .header-meta-row {
   display: flex;
   justify-content: center;
@@ -2403,6 +2537,12 @@
   color: #718096;
 }
 
+.highlight {
+  color: #ff6b6b;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(255, 107, 107, 0.5);
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .main-content {
@@ -2496,7 +2636,6 @@
     text-align: center;
   }
 
-  /* Responsive cho header modal hóa đơn */
   .modal-header.invoice-company-header {
     padding: 20px 15px 15px;
   }
@@ -2548,6 +2687,43 @@
     padding: 8px 12px;
     font-size: 12px;
   }
+
+  .service-controls {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .service-controls select,
+  .service-controls input,
+  .service-controls button {
+    width: 100%;
+  }
+  
+  .service-item-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .service-quantity-controls {
+    justify-content: center;
+    margin: 0;
+  }
+  
+  .service-actions {
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 1024px) {
+  .service-controls {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  
+  .service-search {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 480px) {
@@ -2564,6 +2740,18 @@
   
   .meta-item .label {
     margin-bottom: 0;
+  }
+
+  .service-controls {
+    gap: 8px;
+  }
+  
+  .service-controls select,
+  .service-controls input,
+  .service-controls button {
+    height: 44px;
+    padding: 10px 14px;
+    font-size: 0.95rem;
   }
 }
 
