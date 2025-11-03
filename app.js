@@ -670,6 +670,64 @@ app.get('/admin/mathang', async (req, res) => {
     }
 });
 
+app.get('/api/hoadon/mathang', async (req, res) => {
+  try {
+        const mathangs = await DataModel.Data_MatHang_Model.find({}).lean();
+        
+        // Lấy danh sách loại hàng duy nhất
+        const uniqueCategories = [...new Set(mathangs.map(item => item.LoaiHang))].filter(Boolean);
+        console.log(uniqueCategories);
+
+        console.log(mathangs);
+
+        res.json({
+            success: true,
+            data: mathangs,
+            categories: uniqueCategories,
+            count: mathangs.length
+        });
+        
+    } catch (err) {
+        console.error('Lỗi khi lấy dữ liệu mặt hàng:', err);
+        res.status(500).send('Lỗi server!');
+    }
+});
+
+app.get('/api/mathang/tonkho', async (req, res) => {
+  try {
+    const { search, loaiHang } = req.query;
+    
+    let filter = { SoLuongTon: { $gt: 0 } };
+    
+    // Tìm kiếm theo tên hàng
+    if (search) {
+      filter.TenHang = { $regex: search, $options: 'i' };
+    }
+    
+    // Lọc theo loại hàng
+    if (loaiHang) {
+      filter.LoaiHang = loaiHang;
+    }
+    
+    const mathangs = await MatHang.find(filter)
+      .select('MaHang TenHang LoaiHang DonGia DonViTinh SoLuongTon LinkAnh')
+      .sort({ TenHang: 1 });
+    
+    res.json({
+      success: true,
+      data: mathangs,
+      count: mathangs.length
+    });
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách mặt hàng:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi lấy danh sách mặt hàng',
+      error: error.message
+    });
+  }
+});
+
 
 app.get('/admin/datphong', async (req, res) => {
   try {
@@ -742,6 +800,62 @@ app.get('/api/datphong/:maDatPhong', async (req, res) => {
     }
 });
 
+// Lấy danh sách phòng trống
+app.get('/api/hoadon/phongtrong', async (req, res) => {
+  try {
+    const phongsWithPrice = await DataModel.Data_PhongHat_Model.aggregate([
+      // 🔥 BƯỚC 1: Lọc chỉ lấy các phòng có TrangThai: "Trống"
+      {
+        $match: {
+          TrangThai: "Trống"
+        }
+      },
+      
+      // 🔥 BƯỚC 2: Nối (JOIN) với Collection Bảng Giá Phòng
+      {
+        $lookup: {
+          from: 'banggiaphongs', // Tên collection trong MongoDB (phải là số nhiều, chữ thường)
+          localField: 'LoaiPhong', // Trường để nối trên model PhongHat (LoaiPhong)
+          foreignField: 'LoaiPhong', // Trường để nối trên model BangGiaPhong (LoaiPhong)
+          as: 'BangGiaChiTiet' // Đặt tên trường mới chứa kết quả nối
+        }
+      },
+      
+      // 🔥 BƯỚC 3: Dự chiếu (Project) và sắp xếp kết quả
+      {
+        $project: {
+          // Chỉ chọn các trường cần thiết
+          MaPhong: 1,
+          TenPhong: 1,
+          LoaiPhong: 1,
+          SucChua: 1,
+          TrangThai: 1,
+          BangGia: '$BangGiaChiTiet', // Đổi tên BangGiaChiTiet thành BangGia
+        }
+      },
+      
+      // Sắp xếp theo TenPhong
+      {
+        $sort: {
+          TenPhong: 1
+        }
+      }
+    ]);
+    console.log(phongsWithPrice);
+    res.json({
+      success: true,
+      data: phongsWithPrice,
+      count: phongsWithPrice.length
+    });
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách phòng:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi lấy danh sách phòng',
+      error: error.message
+    });
+  }
+});
 
 app.get('/api/hoadon/:maHoaDon', async (req, res) => {
     try {
@@ -759,6 +873,67 @@ app.get('/api/hoadon/:maHoaDon', async (req, res) => {
     } catch (err) {
         console.error('Error:', err);
         res.status(500).send('Lỗi server!');
+    }
+});
+
+app.get('/api/hoadon/edit/:maHoaDon', async (req, res) => {
+    try {
+        const { maHoaDon } = req.params;
+        console.log('🔍 Tìm hóa đơn với mã:', maHoaDon);
+
+        // Tìm hóa đơn
+        const hoaDon = await DataModel.Data_HoaDon_Model.findOne({ MaHoaDon: maHoaDon }).lean();
+        if (!hoaDon) {
+            console.log('❌ Không tìm thấy hóa đơn');
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy hóa đơn'
+            });
+        }
+
+        // Tìm khách hàng
+        const khachHang = await DataModel.Data_KhachHang_Model.findOne({ MaKH: hoaDon.MaKH }).lean();
+        // Tìm chi tiết hóa đơn
+        const chiTietHoaDon = await DataModel.Data_ChiTietHD_Model.find({ MaHoaDon: maHoaDon }).lean();
+
+        // Lấy thông tin mặt hàng cho từng chi tiết
+        const chiTietWithMatHang = await Promise.all(
+            chiTietHoaDon.map(async (ct) => {
+                const matHang = await DataModel.Data_MatHang_Model.findOne({ MaHang: ct.MaHang }).lean();
+                return {
+                    ...ct,
+                    MatHang: matHang ? {
+                        TenHang: matHang.TenHang,
+                        DonGia: matHang.DonGia,
+                        DonViTinh: matHang.DonViTinh,
+                        SoLuongTon: matHang.SoLuongTon
+                    } : null
+                };
+            })
+        );
+
+        // Kết hợp kết quả
+        const result = {
+            ...hoaDon,
+            MaKH: khachHang ? {
+                TenKH: khachHang.TenKH,
+                SDT: khachHang.SDT,
+                Email: khachHang.Email
+            } : null,
+            ChiTietHoaDon: chiTietWithMatHang
+        };
+
+        console.log(`✅ Tìm thấy hóa đơn:`, result.MaHoaDon);
+        console.log(`📊 Chi tiết dịch vụ:`, result.ChiTietHoaDon ? result.ChiTietHoaDon.length : 0);
+
+        res.json(result);
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi server!',
+            error: err.message
+        });
     }
 });
 
@@ -841,6 +1016,8 @@ app.get('/api/phong/:maPhong/banggia', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+
 
 // Admin login page
 app.get('/admin-login', (req, res) => res.redirect('/'));
@@ -1358,56 +1535,6 @@ app.post('/api/datphong', async (req, res) => {
   }
 });
 
-// API hủy đặt phòng
-app.put('/api/datphong/:maDatPhong/huy', async (req, res) => {
-  try {
-    const { maDatPhong } = req.params;
-
-    // 1. Tìm đơn đặt phòng
-    const datPhong = await DataModel.Data_DatPhong_Model.findOne({ MaDatPhong: maDatPhong });
-    
-    if (!datPhong) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy đơn đặt phòng'
-      });
-    }
-
-    // 2. Cập nhật trạng thái đơn đặt phòng thành "Đã hủy"
-    datPhong.TrangThai = 'Đã hủy';
-    datPhong.updatedAt = new Date();
-    await datPhong.save();
-
-    // 3. Cập nhật trạng thái phòng về "Trống"
-    const phongCapNhat = await DataModel.Data_PhongHat_Model.findOneAndUpdate(
-      { MaPhong: datPhong.MaPhong },
-      { 
-        TrangThai: 'Còn Trống',
-        updatedAt: new Date()
-      },
-      { new: true }
-    );
-
-    res.status(200).json({
-      success: true,
-      message: 'Hủy đặt phòng thành công',
-      data: {
-        maDatPhong: datPhong.MaDatPhong,
-        maPhong: datPhong.MaPhong,
-        trangThaiPhong: phongCapNhat ? 'Trống' : 'Không thể cập nhật'
-      }
-    });
-
-  } catch (error) {
-    console.error('Lỗi hủy đặt phòng:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi khi hủy đặt phòng',
-      error: error.message
-    });
-  }
-});
-
 app.post('/api/mathang', async (req, res) => {
     try {
     const { 
@@ -1443,6 +1570,106 @@ app.post('/api/mathang', async (req, res) => {
       error: error.message
     });
   }
+});
+
+app.post('/api/hoadon', async (req, res) => {
+    try {
+        const { tenKH, sdtKH, emailKH, maPhong,  thoiGianBatDau, tienPhong, dichVu, tongTien } = req.body;       
+        
+        console.log('📥 Nhận dữ liệu hóa đơn:', { 
+            tenKH, sdtKH, emailKH, maPhong, thoiGianBatDau, 
+            tienPhong, tongTien, soDichVu: dichVu.length 
+        });
+
+        let khachHang = await DataModel.Data_KhachHang_Model.findOne({ SDT: sdtKH });
+        if (!khachHang) {
+            const maKH = await generateCode('KH', DataModel.Data_KhachHang_Model, 'MaKH');
+            khachHang = new DataModel.Data_KhachHang_Model({
+                MaKH: maKH,
+                TenKH: tenKH,
+                SDT: sdtKH,
+                Email: emailKH || '',
+                createdAt: new Date()
+            });
+            await khachHang.save();
+            console.log('✅ Đã tạo khách hàng mới:', khachHang.TenKH);
+        } else {
+            console.log('✅ Đã tìm thấy khách hàng:', khachHang.TenKH);
+        }
+
+        // Tạo mã phòng tự động sử dụng hàm generateCode
+        const maHD = await generateCode('HD', DataModel.Data_HoaDon_Model, 'MaHoaDon');
+        const hoaDon = new DataModel.Data_HoaDon_Model({
+            MaHoaDon: maHD,
+            MaDatPhong: null,
+            MaKH: khachHang.MaKH,
+            MaPhong: maPhong,
+            TongTien: tongTien,
+            ThoiGianBatDau: new Date(thoiGianBatDau),
+            ThoiGianKetThuc: null,
+            TrangThai: 'Chưa thanh toán',
+            createdAt: new Date()
+        });
+        await hoaDon.save();
+        console.log('✅ Đã tạo hóa đơn:', maHD);
+
+        let chiTietHoaDons = [];
+        for (const [index, dv] of dichVu.entries()) {
+            // Kiểm tra tồn kho
+            const matHang = await DataModel.Data_MatHang_Model.findOne({MaHang : dv.MaHang});
+            if (!matHang) {
+                throw new Error(`Mặt hàng ${dv.TenHang} không tồn tại`);
+            }
+
+            if (matHang.SoLuongTon < dv.SoLuong) {
+                throw new Error(`Số lượng tồn kho không đủ cho ${dv.TenHang}. Chỉ còn ${matHang.SoLuongTon} ${matHang.DonViTinh}`);
+            }
+
+            // Tạo chi tiết hóa đơn
+            const maCTHD = await generateCode('CTHD', DataModel.Data_ChiTietHD_Model, 'MaCTHD');
+            const chiTiet = new DataModel.Data_ChiTietHD_Model({
+                MaCTHD: maCTHD,
+                MaHoaDon: hoaDon.MaHoaDon,
+                MaHang: dv.MaHang,
+                SoLuong: dv.SoLuong,
+                DonGia: dv.DonGia,
+                ThanhTien: dv.ThanhTien,
+                LoaiDichVu: matHang.LoaiHang,
+                createdAt: new Date()
+            });
+            await chiTiet.save();
+            chiTietHoaDons.push(chiTiet.MaCTHD);
+
+            // Cập nhật số lượng tồn kho
+            await DataModel.Data_MatHang_Model.findOneAndUpdate(
+                {MaHang : dv.MaHang},
+                { $inc: { SoLuongTon: -dv.SoLuong } }
+            );
+
+            console.log(`✅ Đã thêm dịch vụ ${index + 1}: ${dv.TenHang} x${dv.SoLuong}`);
+        }
+        
+        await DataModel.Data_PhongHat_Model.findOneAndUpdate(
+            {MaPhong : maPhong},
+            { 
+                TrangThai: 'Đang sử dụng',
+                updatedAt: new Date()
+            }
+        );
+        console.log('✅ Đã cập nhật trạng thái phòng thành "Đang sử dụng"');
+        
+        res.status(200).json({
+            success: true,
+            message: `Thêm phòng "${maHD}" thành công với mã ${maHD}!`,
+        });
+        
+    } catch (err) {
+        console.error('❌ Lỗi thêm phòng:', err);
+        res.status(400).json({ 
+            success: false,
+            error: err.message 
+        });
+    }
 });
 
 
@@ -1941,6 +2168,56 @@ app.put('/api/datphong/:maDatPhong/checkin', async (req, res) => {
     }
 });
 
+// API hủy đặt phòng
+app.put('/api/datphong/:maDatPhong/huy', async (req, res) => {
+  try {
+    const { maDatPhong } = req.params;
+
+    // 1. Tìm đơn đặt phòng
+    const datPhong = await DataModel.Data_DatPhong_Model.findOne({ MaDatPhong: maDatPhong });
+    
+    if (!datPhong) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy đơn đặt phòng'
+      });
+    }
+
+    // 2. Cập nhật trạng thái đơn đặt phòng thành "Đã hủy"
+    datPhong.TrangThai = 'Đã hủy';
+    datPhong.updatedAt = new Date();
+    await datPhong.save();
+
+    // 3. Cập nhật trạng thái phòng về "Trống"
+    const phongCapNhat = await DataModel.Data_PhongHat_Model.findOneAndUpdate(
+      { MaPhong: datPhong.MaPhong },
+      { 
+        TrangThai: 'Còn Trống',
+        updatedAt: new Date()
+      },
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Hủy đặt phòng thành công',
+      data: {
+        maDatPhong: datPhong.MaDatPhong,
+        maPhong: datPhong.MaPhong,
+        trangThaiPhong: phongCapNhat ? 'Trống' : 'Không thể cập nhật'
+      }
+    });
+
+  } catch (error) {
+    console.error('Lỗi hủy đặt phòng:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi hủy đặt phòng',
+      error: error.message
+    });
+  }
+});
+
 app.put('/api/mathang/:maMH', async (req, res) => {
   try {
     const { maMH } = req.params;
@@ -1987,6 +2264,84 @@ app.put('/api/mathang/:maMH', async (req, res) => {
   }
 });
 
+// Cập nhật số lượng tồn kho
+app.put('/api/mathang/:maHang/tonkho', async (req, res) => {
+  try {
+    const { soLuong } = req.body;
+    
+    const mathang = await DataModel.Data_MatHang_Model.findOneAndUpdate(
+      { MaHang: req.params.maHang },
+      { SoLuongTon: soLuong },
+      { new: true }
+    );
+    
+    if (!mathang) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy mặt hàng'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: mathang,
+      message: 'Cập nhật tồn kho thành công'
+    });
+  } catch (error) {
+    console.error('Lỗi khi cập nhật tồn kho:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi cập nhật tồn kho',
+      error: error.message
+    });
+  }
+});
+
+app.put('/api/hoadon/:maHoaDon', async (req, res) => {
+  try {
+    const { maHoaDon } = req.params;
+    const { 
+      TenHang, LoaiHang, DonGia, DonViTinh, SoLuongTon, LinkAnh
+    } = req.body;
+
+    console.log('Nhận: ', maMH, TenHang, LoaiHang, DonGia, DonViTinh, SoLuongTon, LinkAnh);
+
+    const mh = await DataModel.Data_MatHang_Model.findOneAndUpdate(
+        { MaHang: maMH },
+        { 
+            TenHang, 
+            LoaiHang, 
+            DonGia, 
+            DonViTinh, 
+            SoLuongTon, 
+            LinkAnh,
+            createdAt: new Date()
+        },
+        { new: true, runValidators: true }
+    );
+    
+    if (!mh) {
+        return res.status(404).json({ 
+            success: false,
+            error: 'Không tìm thấy mặt hàng' 
+        });
+    }
+    
+
+    res.status(201).json({
+      success: true,
+      message: 'Cập nhật mặt hàng thành công',
+    });
+
+  } catch (error) {
+    console.error('Lỗi thêm mặt hàng:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi thêm mặt hàng',
+      error: error.message
+    });
+  }
+});
 
 
 ///////////////////////////////

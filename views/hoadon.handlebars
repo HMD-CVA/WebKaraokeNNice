@@ -11,7 +11,7 @@
           </div>
         </div>
         <div class="header-actions">
-          <button class="btn-primary" onclick="openHoaDonModal()">
+          <button class="btn-primary" id="createHoaDonBtn">
             <i class="fas fa-plus"></i>
             <span>Tạo hóa đơn</span>
           </button>
@@ -23,25 +23,25 @@
     <div class="search-filter-bar">
       <div class="search-box">
         <i class="fas fa-search"></i>
-        <input type="text" id="searchInput" placeholder="Tìm kiếm hóa đơn..." onkeyup="filterHoaDon()">
-        <button class="search-btn" onclick="filterHoaDon()">Tìm kiếm</button>
+        <input type="text" id="searchInput" placeholder="Tìm kiếm hóa đơn...">
+        <button class="search-btn" id="searchBtn">Tìm kiếm</button>
       </div>
       <div class="filter-controls">
-        <select class="filter-select" id="statusFilter" onchange="filterHoaDon()">
+        <select class="filter-select" id="statusFilter">
           <option value="">Tất cả trạng thái</option>
           <option value="Chưa thanh toán">Chưa thanh toán</option>
           <option value="Đã thanh toán">Đã thanh toán</option>
           <option value="Đã hủy">Đã hủy</option>
         </select>
-        <input type="date" class="filter-select" id="dateFromFilter" onchange="filterHoaDon()" placeholder="Từ ngày">
-        <input type="date" class="filter-select" id="dateToFilter" onchange="filterHoaDon()" placeholder="Đến ngày">
-        <select class="filter-select" id="sortFilter" onchange="filterHoaDon()">
+        <input type="date" class="filter-select" id="dateFromFilter" placeholder="Từ ngày">
+        <input type="date" class="filter-select" id="dateToFilter" placeholder="Đến ngày">
+        <select class="filter-select" id="sortFilter">
           <option value="newest">Mới nhất</option>
           <option value="oldest">Cũ nhất</option>
           <option value="highest">Cao nhất</option>
           <option value="lowest">Thấp nhất</option>
         </select>
-        <button class="clear-filters" onclick="clearFilters()">
+        <button class="clear-filters" id="clearFiltersBtn">
           <i class="fas fa-times"></i>
           Xóa lọc
         </button>
@@ -140,10 +140,10 @@
           </div>
           <div class="employee-overlay">
             <div class="employee-actions">
-              <button class="btn-edit" onclick="editHoaDon('{{this.MaHoaDon}}')">
+              <button class="btn-edit" data-mahd="{{this.MaHoaDon}}">
                 <i class="fas fa-edit"></i>
               </button>
-              <button class="btn-delete" onclick="deleteHoaDon('{{this._id}}', '{{this.MaHoaDon}}')">
+              <button class="btn-delete" data-id="{{this._id}}" data-mahd="{{this.MaHoaDon}}">
                 <i class="fas fa-trash"></i>
               </button>
             </div>
@@ -210,17 +210,17 @@
 
           <!-- FOOTER VỚI 2 NÚT -->
           <div class="employee-footer">
-            <button class="btn-detail" onclick="viewHoaDonDetail('{{this.MaHoaDon}}')">
+            <button class="btn-detail" data-mahd="{{this.MaHoaDon}}">
               <i class="fas fa-eye"></i>
               Xem chi tiết
             </button>
             {{#if (eq this.TrangThai "Chưa thanh toán")}}
-            <button class="btn-pay" onclick="thanhToanHoaDon('{{this.MaHoaDon}}')">
+            <button class="btn-pay" data-mahd="{{this.MaHoaDon}}">
               <i class="fas fa-credit-card"></i>
               Thanh toán
             </button>
             {{else}}
-            <button class="btn-print" onclick="printHoaDon('{{this.MaHoaDon}}')">
+            <button class="btn-print" data-mahd="{{this.MaHoaDon}}">
               <i class="fas fa-print"></i>
               In hóa đơn
             </button>
@@ -236,7 +236,7 @@
       <div class="empty-icon">🧾</div>
       <h3>Không tìm thấy hóa đơn</h3>
       <p>Thử thay đổi bộ lọc hoặc tạo hóa đơn mới</p>
-      <button class="btn-primary" onclick="openHoaDonModal()">
+      <button class="btn-primary" id="createEmptyBtn">
         <i class="fas fa-plus"></i>
         Tạo hóa đơn đầu tiên
       </button>
@@ -248,13 +248,13 @@
     <div class="modal-container large">
       <div class="modal-header">
         <h2 id="modalTitle">Tạo hóa đơn mới</h2>
-        <button class="modal-close" onclick="closeHoaDonModal()">
+        <button class="modal-close" id="closeHoaDonModal">
           <i class="fas fa-times"></i>
         </button>
       </div>
 
       <div class="modal-body">
-        <form id="hoaDonForm" onsubmit="saveHoaDon(event)">
+        <form id="hoaDonForm">
           <input type="hidden" id="hoaDonId">
           <input type="hidden" id="hoaDonMaHD">
 
@@ -283,15 +283,9 @@
             <div class="form-grid">
               <div class="form-group">
                 <label for="phongSelect">Chọn phòng *</label>
-                <select id="phongSelect" required onchange="updateRoomPrice()">
+                <select id="phongSelect" required>
                   <option value="">Chọn phòng</option>
-                  {{#each phongs}}
-                  {{#if (eq this.TrangThai "Trống")}}
-                  <option value="{{this.MaPhong}}" data-gia="{{this.GiaPhong}}">
-                    {{this.TenPhong}}
-                  </option>
-                  {{/if}}
-                  {{/each}}
+                  <!-- Sẽ được điền bằng JavaScript -->
                 </select>
               </div>
 
@@ -315,26 +309,15 @@
             <h3>Dịch vụ đi kèm</h3>
             <div class="service-controls">
               <div class="service-search">
-                <input type="text" id="serviceSearch" placeholder="Tìm kiếm dịch vụ" onkeyup="filterServices()">
+                <input type="text" id="serviceSearch" placeholder="Tìm kiếm dịch vụ">
                 <i class="fas fa-search"></i>
               </div>
               <select id="matHangSelect">
                 <option value="">Chọn mặt hàng</option>
-                {{#each mathangs}}
-                {{#if (gt this.SoLuongTon 0)}}
-                <option value="{{this.MaHang}}" 
-                        data-dongia="{{this.DonGia}}"
-                        data-tenhang="{{this.TenHang}}"
-                        data-dvt="{{this.DonViTinh}}"
-                        data-slt="{{this.SoLuongTon}}"
-                        data-loaihang="{{this.LoaiHang}}">
-                  {{this.TenHang}} - {{formatNumber this.DonGia}}/{{this.DonViTinh}} (Tồn: {{this.SoLuongTon}})
-                </option>
-                {{/if}}
-                {{/each}}
+                <!-- Sẽ được điền bằng JavaScript -->
               </select>
-              <input type="number" id="soLuong" placeholder="Số lượng" min="1" value="" max="100">
-              <button type="button" class="btn-secondary" onclick="addService()">
+              <input type="number" id="soLuong" placeholder="Số lượng" min="1" value="1" max="100">
+              <button type="button" class="btn-secondary" id="addServiceBtn">
                 <i class="fas fa-plus"></i> Thêm
               </button>
             </div>
@@ -367,92 +350,188 @@
       </div>
 
       <div class="modal-footer">
-        <button class="btn-secondary" type="button" onclick="closeHoaDonModal()">Hủy</button>
-        <button class="btn-primary" type="submit" form="hoaDonForm">Lưu hóa đơn</button>
+        <button class="btn-secondary" type="button" id="cancelHoaDonBtn">Hủy</button>
+        <button class="btn-primary" type="button" id="saveHoaDonBtn">Lưu hóa đơn</button>
       </div>
     </div>
   </div>
 
   <!-- Chi tiết hóa đơn Modal -->
   <div class="modal-overlay" id="detailModal" style="display: none;">
-  <div class="modal-container invoice-modal">
-    <!-- HEADER MỚI - ĐÃ ĐƯỢC SẮP XẾP LẠI -->
-    <div class="modal-header invoice-company-header">
-      <!-- Hàng 1: Logo công ty và nút hành động -->
-      <div class="header-top-row">
-        <div class="company-logo">
-          <div class="logo-placeholder">
-            <i class="fas fa-microphone-alt"></i>
+    <div class="modal-container invoice-modal">
+      <div class="modal-header invoice-company-header">
+        <div class="header-top-row">
+          <div class="company-logo">
+            <div class="logo-placeholder">
+              <i class="fas fa-microphone-alt"></i>
+            </div>
+            <div class="company-info">
+              <h1>KARAOKE NNICE</h1>
+              <p>113 Phan Xích Long, Phường 2, Quận Phú Nhuận,<br> TP. Hồ Chí Minh, Việt Nam • (028) 35 170 046</p>
+            </div>
           </div>
-          <div class="company-info">
-            <h1>KARAOKE NNICE</h1>
-            <p>113 Phan Xích Long, Phường 2, Quận Phú Nhuận,<br> TP. Hồ Chí Minh, Việt Nam • (028) 35 170 046</p>
+          <div class="header-actions" id="headerActions">
+            <!-- Nút hành động sẽ được cập nhật bằng JS -->
           </div>
         </div>
-        <div class="header-actions" id="headerActions">
-          <!-- Nút hành động sẽ được cập nhật bằng JS -->
+        
+        <div class="header-title-row">
+          <h2>CHI TIẾT HÓA ĐƠN</h2>
+        </div>
+        
+        <div class="header-meta-row">
+          <div class="meta-item">
+            <span class="label">Ngày xuất:</span>
+            <span class="value" id="modal-invoice-date"></span>
+          </div>
+          <div class="meta-item">
+            <span class="label">Mã hóa đơn:</span>
+            <span class="value" id="modal-invoice-number"></span>
+          </div>
+          <div class="meta-item">
+            <span class="label">Trạng thái:</span>
+            <span class="value status-badge" id="modal-invoice-status"></span>
+          </div>
         </div>
       </div>
       
-      <!-- Hàng 2: Tiêu đề -->
-      <div class="header-title-row">
-        <h2>CHI TIẾT HÓA ĐƠN</h2>
-      </div>
-      
-      <!-- Hàng 3: Thông tin hóa đơn -->
-      <div class="header-meta-row">
-        <div class="meta-item">
-          <span class="label">Ngày xuất:</span>
-          <span class="value" id="modal-invoice-date"></span>
-        </div>
-        <div class="meta-item">
-          <span class="label">Mã hóa đơn:</span>
-          <span class="value" id="modal-invoice-number"></span>
-        </div>
-        <div class="meta-item">
-          <span class="label">Trạng thái:</span>
-          <span class="value status-badge" id="modal-invoice-status"></span>
-        </div>
+      <div class="modal-body" id="detailContent">
+        <!-- Nội dung chi tiết sẽ được điền bằng JS -->
       </div>
     </div>
-    
-    <div class="modal-body" id="detailContent">
-      <!-- Nội dung chi tiết sẽ được điền bằng JS -->
-    </div>
   </div>
-  </div>
-
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-  // ===== CONFIGURATION & STATE =====
-  let allHoaDons = [];
-  let filteredHoaDons = [];
-  let selectedServices = [];
-  let currentRoomPrice = 0;
-  let nextCTHDId = 1;
-  let allPhongs = [];
-  let allMatHangs = [];
-  let filteredMatHangs = [];
+// ===== BIẾN TOÀN CỤC =====
+let allHoaDons = [];
+let filteredHoaDons = [];
+let allPhongs = [];
+let allMatHangs = [];
+let filteredMatHangs = [];
+let selectedServices = [];
+let currentRoomPrice = 0;
 
-  // ===== STATISTICS CALCULATION =====
-  function calculateStatistics() {
+// ===== KHỞI TẠO KHI DOM READY =====
+document.addEventListener('DOMContentLoaded', function() {
+    initializeApp();
+});
+
+function initializeApp() {
+    initializeEventListeners();
+    loadInitialData();
+    calculateStatistics();
+}
+
+// ===== GET HOA DON DATA FROM API =====
+async function getHoaDonData(maHoaDon) {
+    try {
+        console.log('Mã Hoá Đơn: ', maHoaDon);
+
+        const response = await fetch(`/api/hoadon/edit/${maHoaDon}`);
+        const result = await response.json();
+
+        console.log(result);
+        return result;
+      
+    } catch (error) {
+        console.error('❌ Lỗi khi lấy dữ liệu hóa đơn:', error);
+        showError('Không thể tải dữ liệu hóa đơn: ' + error.message);
+        return null;
+    }
+}
+
+function initializeEventListeners() {
+  // Header actions - TẠO MỚI (không truyền tham số)
+    document.getElementById('createHoaDonBtn').addEventListener('click', function() {
+        openHoaDonModal(); // Không truyền tham số
+    });
+    
+    document.getElementById('createEmptyBtn').addEventListener('click', function() {
+        openHoaDonModal(); // Không truyền tham số
+    });
+
+    // Search and filter
+    document.getElementById('searchBtn').addEventListener('click', filterHoaDon);
+    document.getElementById('searchInput').addEventListener('keyup', filterHoaDon);
+    document.getElementById('statusFilter').addEventListener('change', filterHoaDon);
+    document.getElementById('dateFromFilter').addEventListener('change', filterHoaDon);
+    document.getElementById('dateToFilter').addEventListener('change', filterHoaDon);
+    document.getElementById('sortFilter').addEventListener('change', filterHoaDon);
+    document.getElementById('clearFiltersBtn').addEventListener('click', clearFilters);
+
+    // Modal actions
+    document.getElementById('closeHoaDonModal').addEventListener('click', closeHoaDonModal);
+    document.getElementById('cancelHoaDonBtn').addEventListener('click', closeHoaDonModal);
+    document.getElementById('saveHoaDonBtn').addEventListener('click', saveHoaDon);
+
+    // Service controls
+    document.getElementById('addServiceBtn').addEventListener('click', addService);
+    document.getElementById('serviceSearch').addEventListener('keyup', filterServices);
+    document.getElementById('phongSelect').addEventListener('change', updateRoomPrice);
+
+    // Delegated events for dynamic content
+    document.addEventListener('click', function(e) {
+        // Edit buttons
+        if (e.target.closest('.btn-edit')) {
+            const mahd = e.target.closest('.btn-edit').getAttribute('data-mahd');
+            getHoaDonData(mahd).then(hoaDonData => {
+                openHoaDonModal(hoaDonData);
+            });
+        }
+        // Delete buttons
+        if (e.target.closest('.btn-delete')) {
+            const btn = e.target.closest('.btn-delete');
+            const id = btn.getAttribute('data-id');
+            const mahd = btn.getAttribute('data-mahd');
+            deleteHoaDon(id, mahd);
+        }
+        // Detail buttons
+        if (e.target.closest('.btn-detail')) {
+            const mahd = e.target.closest('.btn-detail').getAttribute('data-mahd');
+            viewHoaDonDetail(mahd);
+        }
+        // Pay buttons
+        if (e.target.closest('.btn-pay')) {
+            const mahd = e.target.closest('.btn-pay').getAttribute('data-mahd');
+            thanhToanHoaDon(mahd);
+        }
+        // Print buttons
+        if (e.target.closest('.btn-print')) {
+            const mahd = e.target.closest('.btn-print').getAttribute('data-mahd');
+            printHoaDon(mahd);
+        }
+        // Remove service buttons
+        if (e.target.closest('.btn-delete-service')) {
+            const index = e.target.closest('.btn-delete-service').getAttribute('data-index');
+            removeService(parseInt(index));
+        }
+    });
+}
+
+function loadInitialData() {
+    allHoaDons = Array.from(document.querySelectorAll('.employee-card'));
+    filteredHoaDons = [...allHoaDons];
+}
+
+// ===== STATISTICS CALCULATION =====
+function calculateStatistics() {
     const hoaDons = allHoaDons;
     
     const totalHoaDons = hoaDons.length;
     const today = new Date().toDateString();
     const todayRevenue = hoaDons
-      .filter(hd => new Date(hd.getAttribute('data-date')).toDateString() === today && 
-                    hd.getAttribute('data-status') === 'Đã thanh toán')
-      .reduce((sum, hd) => sum + parseFloat(hd.getAttribute('data-tongtien')), 0);
+        .filter(hd => new Date(hd.getAttribute('data-date')).toDateString() === today && 
+                      hd.getAttribute('data-status') === 'Đã thanh toán')
+        .reduce((sum, hd) => sum + parseFloat(hd.getAttribute('data-tongtien')), 0);
     
     const countPending = hoaDons.filter(hd => hd.getAttribute('data-status') === 'Chưa thanh toán').length;
     const countPaid = hoaDons.filter(hd => hd.getAttribute('data-status') === 'Đã thanh toán').length;
     const countCancelled = hoaDons.filter(hd => hd.getAttribute('data-status') === 'Đã hủy').length;
     const countToday = hoaDons.filter(hd => 
-      new Date(hd.getAttribute('data-date')).toDateString() === today
+        new Date(hd.getAttribute('data-date')).toDateString() === today
     ).length;
 
     updateStatCard('#statTotal', totalHoaDons);
@@ -461,605 +540,412 @@
     updateStatCard('#statPaid', countPaid);
     updateStatCard('#statCancelled', countCancelled);
     updateStatCard('#statToday', countToday);
-    updateStatCard('#statWeek', Math.floor(countToday * 1.5)); // Giả lập
-    updateStatCard('#statMonth', Math.floor(countToday * 6)); // Giả lập
-  }
+    updateStatCard('#statWeek', Math.floor(countToday * 1.5));
+    updateStatCard('#statMonth', Math.floor(countToday * 6));
+}
 
-  function updateStatCard(selector, value) {
+function updateStatCard(selector, value) {
     const element = document.querySelector(selector);
     if (element) {
-      element.textContent = value;
+        element.textContent = value;
     }
-  }
+}
 
-  // ===== FORMAT FUNCTIONS =====
-
-  function formatDate(dateString) {
+// ===== FORMAT FUNCTIONS =====
+function formatDate(dateString) {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleDateString('vi-VN');
-  }
+}
 
-  function formatTime(dateString) {
+function formatTime(dateString) {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-  }
+}
 
-  // ===== HOA DON MANAGEMENT =====
-  function openHoaDonModal(hoaDonData = null) {
-    document.getElementById('modalTitle').textContent = hoaDonData ? 'Chỉnh sửa hóa đơn' : 'Tạo hóa đơn mới';
+function formatNumber(amount) {
+    if (typeof amount === 'string') {
+        amount = parseFloat(amount) || 0;
+    }
+    return new Intl.NumberFormat('vi-VN').format(amount);
+}
+
+// ===== HOA DON MODAL MANAGEMENT =====
+async function openHoaDonModal(hoaDonData = null) {
+    console.log('📝 Opening modal with data:', hoaDonData); // Debug log
+    
+    // Đảm bảo hoaDonData là null khi tạo mới
+    const isEditMode = hoaDonData !== null && hoaDonData !== undefined;
+    
+    document.getElementById('modalTitle').textContent = isEditMode ? 'Chỉnh sửa hóa đơn' : 'Tạo hóa đơn mới';
     document.getElementById('hoaDonModal').style.display = 'flex';
     document.body.style.overflow = 'hidden';
 
-    if (hoaDonData) {
-      // Điền thông tin hóa đơn
-      document.getElementById('hoaDonId').value = hoaDonData._id || '';
-      document.getElementById('hoaDonMaHD').value = hoaDonData.MaHoaDon || '';
-      document.getElementById('datPhongSelect').value = hoaDonData.MaDatPhong || '';
-      document.getElementById('hoaDonStatus').value = hoaDonData.TrangThai || 'Chưa thanh toán';
-      
-      // Load thông tin đặt phòng
-      loadDatPhongInfo();
-      
-      // Load dịch vụ
-      selectedServices = hoaDonData.ChiTietHoaDon || [];
-      renderServicesList();
-      calculateTotal();
-    } else {
-      resetHoaDonForm();
-    }
-  }
+    await loadAllData();
 
-  function closeHoaDonModal() {
+    if (isEditMode) {
+        populateHoaDonEdit(hoaDonData);
+    } else {
+        resetHoaDonForm();
+    }
+}
+
+function closeHoaDonModal() {
     document.getElementById('hoaDonModal').style.display = 'none';
     document.body.style.overflow = 'auto';
-  }
+    resetHoaDonForm();
+}
 
-  function resetHoaDonForm() {
-    document.getElementById('hoaDonForm').reset();
-    document.getElementById('hoaDonId').value = '';
-    document.getElementById('hoaDonMaHD').value = '';
-    document.getElementById('hoaDonStatus').value = 'Chưa thanh toán';
-    selectedServices = [];
-    renderServicesList();
-    calculateTotal();
-  }
+// ===== LOAD DATA FROM APIs =====
+async function loadAllData() {
+    try {
+        const [phongResponse, mathangResponse] = await Promise.all([
+            fetch('/api/hoadon/phongtrong'),
+            fetch('/api/hoadon/mathang')
+        ]);
 
-  function loadDatPhongInfo() {
-    const selectedOption = document.querySelector('#datPhongSelect option:checked');
-    if (selectedOption && selectedOption.value) {
-      document.getElementById('maKH').value = selectedOption.getAttribute('data-makh') || '';
-      document.getElementById('maPhong').value = selectedOption.getAttribute('data-maphong') || '';
-      
-      // Load thông tin thời gian từ API
-      fetch(`/api/datphong/${selectedOption.value}`)
-        .then(response => response.json())
-        .then(datPhong => {
-          document.getElementById('thoiGianBatDau').value = formatDateTimeLocal(datPhong.ThoiGianBatDau);
-          document.getElementById('thoiGianKetThuc').value = formatDateTimeLocal(datPhong.ThoiGianKetThuc);
-          
-          // Tính tiền phòng
-          calculateRoomPrice();
-        })
-        .catch(error => {
-          console.error('Lỗi khi lấy thông tin đặt phòng:', error);
-        });
+        const phongResult = await phongResponse.json();
+        const mathangResult = await mathangResponse.json();
+
+        console.log(phongResult);
+        console.log(mathangResult);
+
+        if (phongResult.success && mathangResult.success) {
+            allPhongs = phongResult.data;
+            allMatHangs = mathangResult.data;
+            filteredMatHangs = [...allMatHangs];
+            
+            populatePhongSelect();
+            populateMatHangSelect();
+        } else {
+            throw new Error(phongResult.message || mathangResult.message);
+        }
+    } catch (error) {
+        console.error('Lỗi khi load dữ liệu:', error);
+        showError('Không thể tải dữ liệu: ' + error.message);
     }
-  }
+}
 
-  function formatDateTimeLocal(dateString) {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toISOString().slice(0, 16);
-  }
-
-  function calculateRoomPrice() {
-    // Giả lập tính tiền phòng dựa trên thời gian
-    const start = new Date(document.getElementById('thoiGianBatDau').value);
-    const end = new Date(document.getElementById('thoiGianKetThuc').value);
+function populatePhongSelect() {
+    const phongSelect = document.getElementById('phongSelect');
+    phongSelect.innerHTML = '<option value="">Chọn phòng</option>';
     
-    if (start && end) {
-      const hours = (end - start) / (1000 * 60 * 60);
-      currentRoomPrice = hours * 100000; // 100k/giờ
-      document.getElementById('tienPhong').textContent = formatNumber(currentRoomPrice);
-      calculateTotal();
-    }
-  }
+    allPhongs.forEach(phong => {
+        const option = document.createElement('option');
+        option.value = phong.MaPhong;
+        option.textContent = phong.TenPhong;
+        
+        let giaPhong = 0;
+        if (phong.BangGia && phong.BangGia.length > 0) {
+            giaPhong = phong.BangGia[0].GiaTien || 0;
+        }
+        
+        option.setAttribute('data-gia', giaPhong);
+        phongSelect.appendChild(option);
+    });
+}
 
-  function addService() {
+function populateMatHangSelect() {
     const matHangSelect = document.getElementById('matHangSelect');
-    const soLuong = document.getElementById('soLuong');
+    matHangSelect.innerHTML = '<option value="">Chọn mặt hàng</option>';
     
-    if (!matHangSelect.value || !soLuong.value || soLuong.value < 1) {
-      showError('Vui lòng chọn mặt hàng và số lượng');
-      return;
+    filteredMatHangs.forEach(mathang => {
+        const option = document.createElement('option');
+        option.value = mathang.MaHang;
+        option.textContent = `${mathang.TenHang} - ${formatNumber(mathang.DonGia)}/${mathang.DonViTinh} (Tồn: ${mathang.SoLuongTon})`;
+        option.setAttribute('data-dongia', mathang.DonGia);
+        option.setAttribute('data-tenhang', mathang.TenHang);
+        option.setAttribute('data-dvt', mathang.DonViTinh);
+        option.setAttribute('data-slt', mathang.SoLuongTon);
+        matHangSelect.appendChild(option);
+    });
+}
+
+// ===== SERVICE MANAGEMENT =====
+let searchTimeout;
+function filterServices() {
+    const searchTerm = document.getElementById('serviceSearch').value.trim();
+    
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(async () => {
+        if (searchTerm.length === 0) {
+            filteredMatHangs = [...allMatHangs];
+            populateMatHangSelect();
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/mathang/tonkho?search=${encodeURIComponent(searchTerm)}`);
+            const result = await response.json();
+            
+            if (result.success) {
+                filteredMatHangs = result.data;
+                populateMatHangSelect();
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error) {
+            console.error('Lỗi khi tìm kiếm mặt hàng:', error);
+            filteredMatHangs = allMatHangs.filter(mathang => 
+                mathang.TenHang.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            populateMatHangSelect();
+        }
+    }, 300);
+}
+
+function updateRoomPrice() {
+    const phongSelect = document.getElementById('phongSelect');
+    const selectedOption = phongSelect.options[phongSelect.selectedIndex];
+    
+    if (selectedOption.value) {
+        const giaPhong = parseFloat(selectedOption.getAttribute('data-gia'));
+        currentRoomPrice = giaPhong;
+        document.getElementById('giaPhongDisplay').textContent = formatNumber(currentRoomPrice) + ' VND';
+    } else {
+        currentRoomPrice = 0;
+        document.getElementById('giaPhongDisplay').textContent = '0 VND';
+    }
+    
+    calculateTotal();
+}
+
+function addService() {
+    const matHangSelect = document.getElementById('matHangSelect');
+    const soLuongInput = document.getElementById('soLuong');
+    
+    if (!matHangSelect.value) {
+        showError('Vui lòng chọn mặt hàng');
+        return;
+    }
+    
+    const soLuong = parseInt(soLuongInput.value);
+    if (!soLuong || soLuong < 1) {
+        showError('Vui lòng nhập số lượng hợp lệ');
+        return;
     }
 
     const selectedOption = matHangSelect.options[matHangSelect.selectedIndex];
+    const soLuongTon = parseInt(selectedOption.getAttribute('data-slt'));
+
+    if (soLuong > soLuongTon) {
+        showError(`Số lượng tồn không đủ. Chỉ còn ${soLuongTon} ${selectedOption.getAttribute('data-dvt')}`);
+        return;
+    }
+
     const service = {
-      MaCTHD: `CTHD${nextCTHDId++}`,
-      MaHang: matHangSelect.value,
-      TenHang: selectedOption.getAttribute('data-tenhang'),
-      SoLuong: parseInt(soLuong.value),
-      DonGia: parseFloat(selectedOption.getAttribute('data-dongia')),
-      ThanhTien: parseInt(soLuong.value) * parseFloat(selectedOption.getAttribute('data-dongia')),
-      LoaiDichVu: selectedOption.getAttribute('data-loaidichvu')
+        MaHang: matHangSelect.value,
+        TenHang: selectedOption.getAttribute('data-tenhang'),
+        SoLuong: soLuong,
+        DonGia: parseFloat(selectedOption.getAttribute('data-dongia')),
+        DonViTinh: selectedOption.getAttribute('data-dvt'),
+        ThanhTien: soLuong * parseFloat(selectedOption.getAttribute('data-dongia')),
+        SoLuongTon: soLuongTon
     };
 
-    selectedServices.push(service);
+    const existingIndex = selectedServices.findIndex(s => s.MaHang === service.MaHang);
+    if (existingIndex >= 0) {
+        const newQuantity = selectedServices[existingIndex].SoLuong + soLuong;
+        if (newQuantity > service.SoLuongTon) {
+            showError(`Tổng số lượng vượt quá tồn kho. Chỉ còn ${service.SoLuongTon} ${service.DonViTinh}`);
+            return;
+        }
+        selectedServices[existingIndex].SoLuong = newQuantity;
+        selectedServices[existingIndex].ThanhTien = newQuantity * selectedServices[existingIndex].DonGia;
+    } else {
+        selectedServices.push(service);
+    }
+
     renderServicesList();
     calculateTotal();
     
-    // Reset form
-    matHangSelect.value = '';
-    soLuong.value = 1;
-  }
+    soLuongInput.value = 1;
+}
 
-  function removeService(index) {
+function removeService(index) {
     selectedServices.splice(index, 1);
     renderServicesList();
     calculateTotal();
-  }
+}
 
-  function renderServicesList() {
+function updateServiceQuantity(index, change) {
+    const newQuantity = selectedServices[index].SoLuong + change;
+    
+    if (newQuantity < 1) {
+        removeService(index);
+        return;
+    }
+
+    const service = selectedServices[index];
+    if (newQuantity > service.SoLuongTon) {
+        showError(`Số lượng tồn không đủ. Chỉ còn ${service.SoLuongTon} ${service.DonViTinh}`);
+        return;
+    }
+
+    service.SoLuong = newQuantity;
+    service.ThanhTien = newQuantity * service.DonGia;
+    renderServicesList();
+    calculateTotal();
+}
+
+function renderServicesList() {
     const servicesList = document.getElementById('servicesList');
+    
+    if (selectedServices.length === 0) {
+        servicesList.innerHTML = '<div class="no-services">Chưa có dịch vụ nào được thêm</div>';
+        return;
+    }
+
     servicesList.innerHTML = '';
-
     selectedServices.forEach((service, index) => {
-      const serviceElement = document.createElement('div');
-      serviceElement.className = 'service-item-row';
-      serviceElement.innerHTML = `
-        <div class="service-info">
-          <span class="service-name">${service.TenHang}</span>
-          <span class="service-details">${service.SoLuong} x ${formatNumber(service.DonGia)} (${service.LoaiDichVu})</span>
-        </div>
-        <div class="service-actions">
-          <span class="service-total">${formatNumber(service.ThanhTien)} VND</span>
-          <button type="button" class="btn-delete" onclick="removeService(${index})">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-      `;
-      servicesList.appendChild(serviceElement);
+        const serviceElement = document.createElement('div');
+        serviceElement.className = 'service-item-row';
+        serviceElement.innerHTML = `
+            <div class="service-info">
+                <span class="service-name">${service.TenHang}</span>
+                <span class="service-details">${formatNumber(service.DonGia)}/${service.DonViTinh}</span>
+            </div>
+            <div class="service-quantity-controls">
+                <button type="button" class="qty-btn" onclick="updateServiceQuantity(${index}, -1)">-</button>
+                <span class="service-quantity">${service.SoLuong}</span>
+                <button type="button" class="qty-btn" onclick="updateServiceQuantity(${index}, 1)">+</button>
+            </div>
+            <div class="service-actions">
+                <span class="service-total">${formatNumber(service.ThanhTien)} VND</span>
+                <button type="button" class="btn-delete-service" data-index="${index}">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+        servicesList.appendChild(serviceElement);
     });
-  }
+}
 
-  function calculateTotal() {
+function calculateTotal() {
     const serviceTotal = selectedServices.reduce((sum, service) => sum + service.ThanhTien, 0);
     const total = currentRoomPrice + serviceTotal;
 
-    document.getElementById('tienDichVu').textContent = formatNumber(serviceTotal);
-    document.getElementById('tongTien').textContent = formatNumber(total);
-  }
+    document.getElementById('tienDichVuDisplay').textContent = formatNumber(serviceTotal) + ' VND';
+    document.getElementById('tongTienDisplay').textContent = formatNumber(total) + ' VND';
+}
 
-  async function saveHoaDon(event) {
-    event.preventDefault();
+function resetHoaDonForm() {
+    document.getElementById('hoaDonForm').reset();
+    document.getElementById('hoaDonId').value = '';
+    document.getElementById('hoaDonMaHD').value = '';
+    selectedServices = [];
+    currentRoomPrice = 0;
+    document.getElementById('giaPhongDisplay').textContent = '0 VND';
+    document.getElementById('tienDichVuDisplay').textContent = '0 VND';
+    document.getElementById('tongTienDisplay').textContent = '0 VND';
+    renderServicesList();
+}
 
-    const hoaDonId = document.getElementById('hoaDonId').value;
-    const isEdit = !!hoaDonId;
+// ===== SAVE HOA DON =====
+async function saveHoaDon() {
+    const tenKH = document.getElementById('tenKH').value;
+    const sdtKH = document.getElementById('sdtKH').value;
+    const emailKH = document.getElementById('emailKH').value;
+    const phongSelect = document.getElementById('phongSelect').value;
+    const thoiGianBatDau = document.getElementById('thoiGianBatDau').value;
+    const maHoaDon = document.getElementById('hoaDonMaHD').value;
+    const isEditMode = !!maHoaDon;
 
-    const formData = {
-      MaDatPhong: document.getElementById('datPhongSelect').value,
-      TrangThai: document.getElementById('hoaDonStatus').value,
-      TongTien: parseFloat(document.getElementById('tongTien').textContent.replace(/[^\d]/g, '')),
-      ChiTietHoaDon: selectedServices,
-      ThoiGianKetThuc: document.getElementById('thoiGianKetThuc').value || new Date().toISOString()
-    };
 
-    // Validation
-    if (!formData.MaDatPhong) {
-      showError('Vui lòng chọn đặt phòng');
-      return;
+    if (!tenKH || !sdtKH || !phongSelect || !thoiGianBatDau) {
+        showError('Vui lòng điền đầy đủ thông tin bắt buộc');
+        return;
     }
 
     if (selectedServices.length === 0 && currentRoomPrice === 0) {
-      showError('Hóa đơn phải có ít nhất một dịch vụ hoặc tiền phòng');
-      return;
+        showError('Hóa đơn phải có ít nhất một dịch vụ hoặc tiền phòng');
+        return;
     }
 
-    const url = isEdit ? `/api/hoadon/${document.getElementById('hoaDonMaHD').value}` : '/api/hoadon';
-    const method = isEdit ? 'PUT' : 'POST';
+    const formData = {
+        tenKH,
+        sdtKH,
+        emailKH,
+        maPhong: phongSelect,
+        thoiGianBatDau,
+        tienPhong: currentRoomPrice,
+        dichVu: selectedServices.map(service => ({
+            MaHang: service.MaHang,
+            TenHang: service.TenHang,
+            SoLuong: service.SoLuong,
+            DonGia: service.DonGia,
+            DonViTinh: service.DonViTinh,
+            ThanhTien: service.ThanhTien
+        })),
+        tongTien: currentRoomPrice + selectedServices.reduce((sum, service) => sum + service.ThanhTien, 0)
+    };
 
-    try {
-      Swal.fire({
-        title: 'Đang lưu hóa đơn...',
-        text: 'Vui lòng chờ trong giây lát',
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading()
-      });
-
-      const response = await fetch(url, {
-        method: method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Lỗi server');
-
-      Swal.fire({
-        icon: 'success',
-        title: 'Thành công!',
-        text: result.message || `Hóa đơn đã được ${isEdit ? 'cập nhật' : 'tạo'} thành công!`,
-        timer: 1500,
-        showConfirmButton: false
-      });
-
-      setTimeout(() => {
-        location.reload();
-      }, 1500);
-
-    } catch (error) {
-      console.error('❌ Lỗi khi lưu hóa đơn:', error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Lỗi!',
-        text: error.message || 'Không thể lưu hóa đơn',
-        confirmButtonColor: '#667eea'
-      });
+    if (isEditMode) {
+        formData.maHoaDon = maHoaDon;
     }
-  }
 
-  async function thanhToanHoaDon(maHoaDon) {
+    console.log(formData);
+    console.log(isEditMode, maHoaDon);
+
     try {
-      const response = await fetch(`/api/hoadon/${maHoaDon}/thanhtoan`, {
-        method: 'PUT'
-      });
-
-      if (response.ok) {
         Swal.fire({
-          icon: 'success',
-          title: 'Thành công!',
-          text: 'Hóa đơn đã được thanh toán',
-          timer: 1500,
-          showConfirmButton: false
+            title: 'Đang lưu hóa đơn...',
+            text: 'Vui lòng chờ trong giây lát',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
         });
-        setTimeout(() => location.reload(), 1500);
-      } else {
-        throw new Error('Lỗi khi thanh toán');
-      }
-    } catch (error) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Lỗi!',
-        text: 'Không thể thanh toán hóa đơn'
-      });
-    }
-  }
 
-  function printHoaDon(maHoaDon) {
-    // Mở cửa sổ in hoặc tải PDF
-    window.open(`/api/hoadon/${maHoaDon}/print`, '_blank');
-  }
+        const endpoint = isEditMode ? `/api/hoadon/${maHoaDon}` : '/api/hoadon';
+        const method = isEditMode ? 'PUT' : 'POST';
 
+        const response = await fetch(endpoint, {
+            method: method,
+            headers: { 
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
 
-  // ===== RENDER PHẦN BODY CỦA HÓA ĐƠN (KHÔNG BAO GỒM HEADER) =====
-  async function viewHoaDonDetail(maHoaDon) {
-    try {
-      // Hiển thị loading
-      const detailContent = document.getElementById('detailContent');
-      detailContent.innerHTML = `
-        <div class="loading-invoice">
-          <div class="loading-spinner"></div>
-          <p>Đang tải thông tin hóa đơn...</p>
-        </div>
-      `;
-      
-      // Cập nhật ngày xuất với thời gian hiện tại
-      const now = new Date();
-      document.getElementById('modal-invoice-date').textContent = 
-        `${formatDate(now)} ${formatTime(now)}`;
-      
-      document.getElementById('detailModal').style.display = 'flex';
+        const result = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(result.error || result.message || `Lỗi ${response.status}: ${response.statusText}`);
+        }
 
-      // Lấy thông tin hóa đơn và chi tiết song song
-      const [chiTietResponse, hoaDonResponse] = await Promise.all([
-        fetch(`/api/chitiethoadon/${maHoaDon}`),
-        fetch(`/api/hoadon/${maHoaDon}`)
-      ]);
+        let successMessage = result.message || 'Hóa đơn đã được lưu thành công!';
 
-      if (!chiTietResponse.ok || !hoaDonResponse.ok) {
-        throw new Error('Không tìm thấy dữ liệu hóa đơn');
-      }
+        if (result.data) {
+            // Hiển thị thông tin chi tiết nếu có
+            const { MaHoaDon, TongTien, TrangThai } = result.data;
+            successMessage += `\nMã HĐ: ${MaHoaDon}\nTổng tiền: ${formatNumber(TongTien)} VND\nTrạng thái: ${TrangThai}`;
+        }
 
-      const chiTietHoaDon = await chiTietResponse.json();
-      const hoaDon = await hoaDonResponse.json();
+        Swal.fire({
+            icon: 'success',
+            title: 'Thành công!',
+            text: result.message || 'Hóa đơn đã được tạo thành công!',
+            timer: 1500,
+            showConfirmButton: false
+        });
 
-      console.log('Chi tiết hóa đơn:', chiTietHoaDon);
-      console.log('Thông tin hóa đơn:', hoaDon);
-
-      // CẬP NHẬT HEADER VỚI THÔNG TIN TỪ API
-      document.getElementById('modal-invoice-number').textContent = `${hoaDon.MaHoaDon}`;
-      
-      const statusElement = document.getElementById('modal-invoice-status');
-      statusElement.textContent = hoaDon.TrangThai;
-      statusElement.className = `value status-badge ${hoaDon.TrangThai === 'Đã thanh toán' ? 'paid' : hoaDon.TrangThai === 'Chưa thanh toán' ? 'pending' : 'cancelled'}`;
-
-      // CẬP NHẬT NÚT HÀNH ĐỘNG TRONG HEADER
-      updateHeaderActions(maHoaDon, hoaDon.TrangThai);
-
-      // Tính tổng tiền dịch vụ
-      const tongTienDichVu = Array.isArray(chiTietHoaDon) 
-        ? chiTietHoaDon.reduce((sum, item) => sum + (item.ThanhTien || 0), 0)
-        : 0;
-
-      // Render phần body của hóa đơn
-      renderInvoiceBody(hoaDon, chiTietHoaDon, tongTienDichVu);
+        {{!-- setTimeout(() => {
+            location.reload();
+        }, 1500); --}}
 
     } catch (error) {
-      console.error('Lỗi khi tải chi tiết hóa đơn:', error);
-      detailContent.innerHTML = `
-        <div class="error-state">
-          <div class="error-icon">❌</div>
-          <h3>Không thể tải hóa đơn</h3>
-          <p>${error.message || 'Vui lòng thử lại sau'}</p>
-          <button class="btn-primary" onclick="viewHoaDonDetail('${maHoaDon}')">
-            <i class="fas fa-redo"></i>
-            Thử lại
-          </button>
-        </div>
-      `;
+        console.error('❌ Lỗi khi lưu hóa đơn:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Lỗi!',
+            text: error.message || 'Không thể lưu hóa đơn',
+            confirmButtonColor: '#667eea'
+        });
     }
-  }
+}
 
-  // ===== CẬP NHẬT NÚT HÀNH ĐỘNG TRONG HEADER =====
-  function updateHeaderActions(maHoaDon, trangThai) {
-    const headerActions = document.getElementById('headerActions');
-    
-    let actionButtons = `
-      <button class="btn-print-invoice" onclick="printInvoice()">
-        <i class="fas fa-print"></i>
-        In hóa đơn
-      </button>
-    `;
-    
-    if (trangThai === 'Chưa thanh toán') {
-      actionButtons += `
-        <button class="btn-pay-invoice" onclick="thanhToanHoaDon('${maHoaDon}')">
-          <i class="fas fa-credit-card"></i>
-          Thanh toán
-        </button>
-      `;
-    } else {
-      actionButtons += `
-        <button class="btn-download-invoice" onclick="downloadInvoice()">
-          <i class="fas fa-download"></i>
-          Tải PDF
-        </button>
-      `;
-    }
-    
-    actionButtons += `
-      <button class="modal-close" onclick="closeDetailModal()">
-        <i class="fas fa-times"></i>
-      </button>
-    `;
-    
-    headerActions.innerHTML = actionButtons;
-  }
-
-  // ===== RENDER PHẦN BODY CỦA HÓA ĐƠN =====
-  function renderInvoiceBody(hoaDon, chiTietHoaDon, tongTienDichVu) {
-    const detailContent = document.getElementById('detailContent');
-    
-    // Tính các thành phần tiền
-    const tienPhong = (hoaDon.TongTien || 0) - tongTienDichVu;
-    const vat = (hoaDon.TongTien || 0) * 0.1; // VAT 10%
-    const tongThanhToan = (hoaDon.TongTien || 0) + vat;
-
-    detailContent.innerHTML = `
-      <div class="modern-invoice" id="printableInvoice">
-        <!-- Thông tin khách hàng và phòng -->
-        <div class="invoice-customer-info">
-          <div class="info-section">
-            <h3>Thông tin khách hàng</h3>
-            <div class="info-grid">
-              <div class="info-item">
-                <span class="label">Mã KH:</span>
-                <span class="value">${hoaDon.MaKH || 'N/A'}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">Đặt phòng:</span>
-                <span class="value">${hoaDon.MaDatPhong || 'N/A'}</span>
-              </div>
-            </div>
-          </div>
-          <div class="info-section">
-            <h3>Thông tin phòng</h3>
-            <div class="info-grid">
-              <div class="info-item">
-                <span class="label">Phòng:</span>
-                <span class="value">${hoaDon.MaPhong || 'N/A'}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">Thời gian:</span>
-                <span class="value">${formatTime(hoaDon.ThoiGianBatDau)} - ${formatTime(hoaDon.ThoiGianKetThuc)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Bảng dịch vụ -->
-        <div class="invoice-services">
-          <h3>Chi tiết dịch vụ sử dụng</h3>
-          <div class="services-table">
-            <div class="table-header">
-              <div class="col-service">Dịch vụ</div>
-              <div class="col-quantity">Số lượng</div>
-              <div class="col-price">Đơn giá</div>
-              <div class="col-total">Thành tiền</div>
-            </div>
-            
-            ${tienPhong >= 0 ? `
-            <div class="table-row">
-              <div class="col-service">
-                <span class="service-name">Thuê phòng ${hoaDon.MaPhong}</span>
-                <span class="service-desc">${formatTime(hoaDon.ThoiGianBatDau)}</span>
-              </div>
-              <div class="col-quantity">1</div>
-              <div class="col-price">${formatNumber(tienPhong)}</div>
-              <div class="col-total">${formatNumber(tienPhong)}</div>
-            </div>
-            ` : ''}
-            
-            ${Array.isArray(chiTietHoaDon) && chiTietHoaDon.length > 0 
-              ? chiTietHoaDon
-                  .filter(item => item.LoaiDichVu !== "Thuê phòng")
-                  .map(item => `
-                    <div class="table-row">
-                      <div class="col-service">
-                        <span class="service-name">${item.TenHang || item.MaHang || 'N/A'}</span>
-                        ${item.LoaiDichVu ? `<span class="service-desc">${item.LoaiDichVu}</span>` : ''}
-                      </div>
-                      <div class="col-quantity">${item.SoLuong}</div>
-                      <div class="col-price">${formatNumber(item.DonGia)}</div>
-                      <div class="col-total">${formatNumber(item.ThanhTien)}</div>
-                    </div>
-                  `).join('')
-              : '<div class="table-row no-services"><div class="col-service">Không có dịch vụ nào</div></div>'
-            }
-          </div>
-        </div>
-
-        <!-- Tổng kết hóa đơn -->
-        <div class="invoice-summary">
-          <div class="summary-row">
-            <span class="label">Tổng tiền dịch vụ:</span>
-            <span class="value">${formatNumber(hoaDon.TongTien || 0)}</span>
-          </div>
-          <div class="summary-row">
-            <span class="label">VAT (10%):</span>
-            <span class="value">${formatNumber(vat)}</span>
-          </div>
-          <div class="summary-row total">
-            <span class="label">TỔNG CỘNG:</span>
-            <span class="value">${formatNumber(tongThanhToan)}</span>
-          </div>
-        </div>
-
-        <!-- Phương thức thanh toán -->
-        <div class="invoice-payment">
-          <div class="payment-method">
-            <h4>Phương thức thanh toán</h4>
-            <div class="method ${hoaDon.TrangThai === 'Đã thanh toán' ? 'paid' : 'cash'}">
-              <i class="fas ${hoaDon.TrangThai === 'Đã thanh toán' ? 'fa-credit-card' : 'fa-money-bill-wave'}"></i>
-              <span>${hoaDon.TrangThai === 'Đã thanh toán' ? 'Thẻ tín dụng' : 'Tiền mặt'}</span>
-            </div>
-          </div>
-          <div class="payment-notes">
-            <h4>Ghi chú</h4>
-            <p>Cảm ơn quý khách đã sử dụng dịch vụ của chúng tôi!</p>
-            <p>Hẹn gặp lại quý khách trong những lần tiếp theo.</p>
-          </div>
-        </div>
-
-        <!-- Footer hóa đơn -->
-        <div class="invoice-footer">
-          <div class="footer-signature">
-            <div class="signature-line"></div>
-            <p>Chữ ký nhân viên</p>
-          </div>
-          <div class="footer-thanks">
-            <p><strong>KARAOKE NNICE</strong></p>
-            <p>Hotline: (028) 35 170 046</p>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  // ===== CÁC HÀM KHÁC GIỮ NGUYÊN =====
-  function printInvoice() {
-    const printableElement = document.getElementById('printableInvoice');
-    if (!printableElement) return;
-
-    const printWindow = window.open('', '_blank', 'width=800,height=600');
-    
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Hóa đơn ${document.getElementById('modal-invoice-number').textContent}</title>
-          <style>
-            ${getInvoiceStyles()}
-            
-            /* CSS riêng cho in ấn */
-            @media print {
-              body { margin: 0; padding: 20px; }
-              .modern-invoice { 
-                box-shadow: none; 
-                border: 1px solid #ddd;
-                padding: 20px;
-              }
-              .btn-print-invoice, .btn-download-invoice, .btn-pay-invoice, .modal-close { 
-                display: none !important; 
-              }
-            }
-          </style>
-        </head>
-        <body>
-          ${printableElement.outerHTML}
-          <script>
-            window.onload = function() {
-              window.print();
-              setTimeout(() => window.close(), 500);
-            };
-          <\/script>
-        </body>
-      </html>
-    `);
-    
-    printWindow.document.close();
-  }
-
-  function downloadInvoice() {
-    Swal.fire({
-      title: 'Đang tải PDF...',
-      text: 'Hóa đơn đang được xuất ra file PDF',
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading()
-    });
-
-    setTimeout(() => {
-      Swal.fire({
-        icon: 'success',
-        title: 'Thành công!',
-        text: 'Hóa đơn đã được tải xuống',
-        timer: 1500,
-        showConfirmButton: false
-      });
-    }, 2000);
-  }
-
-  function closeDetailModal() {
-    document.getElementById('detailModal').style.display = 'none';
-  }
-
-  // ===== HÀM FORMAT DATE VÀ TIME =====
-  function formatDate(date) {
-    if (!date) return 'N/A';
-    const d = new Date(date);
-    return d.toLocaleDateString('vi-VN');
-  }
-
-  function formatTime(date) {
-    if (!date) return 'N/A';
-    const d = new Date(date);
-    return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-  }
-
-  function formatNumber(amount) {
-    if (typeof amount === 'string') {
-      amount = parseFloat(amount) || 0;
-    }
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(amount);
-  }
-  // ===== FILTER & SEARCH =====
-  function filterHoaDon() {
+// ===== FILTER & SEARCH =====
+function filterHoaDon() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const statusFilter = document.getElementById('statusFilter').value;
     const dateFrom = document.getElementById('dateFromFilter').value;
@@ -1067,52 +953,51 @@
     const sortFilter = document.getElementById('sortFilter').value;
 
     filteredHoaDons = allHoaDons.filter(card => {
-      const maHD = card.getAttribute('data-mahd').toLowerCase();
-      const maDP = card.getAttribute('data-madp').toLowerCase();
-      const status = card.getAttribute('data-status');
-      const date = card.getAttribute('data-date');
+        const maHD = card.getAttribute('data-mahd').toLowerCase();
+        const maDP = card.getAttribute('data-madp').toLowerCase();
+        const status = card.getAttribute('data-status');
+        const date = card.getAttribute('data-date');
 
-      const matchesSearch = !searchTerm || 
-        maHD.includes(searchTerm) || 
-        maDP.includes(searchTerm);
-      const matchesStatus = !statusFilter || status === statusFilter;
-      const matchesDate = (!dateFrom || date >= dateFrom) && 
-                         (!dateTo || date <= dateTo);
+        const matchesSearch = !searchTerm || 
+            maHD.includes(searchTerm) || 
+            maDP.includes(searchTerm);
+        const matchesStatus = !statusFilter || status === statusFilter;
+        const matchesDate = (!dateFrom || date >= dateFrom) && 
+                           (!dateTo || date <= dateTo);
 
-      const shouldShow = matchesSearch && matchesStatus && matchesDate;
-      card.style.display = shouldShow ? 'block' : 'none';
-      return shouldShow;
+        const shouldShow = matchesSearch && matchesStatus && matchesDate;
+        card.style.display = shouldShow ? 'block' : 'none';
+        return shouldShow;
     });
 
-    // Sort
     sortHoaDons(sortFilter);
     calculateFilteredStatistics();
     toggleEmptyState(filteredHoaDons.length === 0);
-  }
+}
 
-  function sortHoaDons(sortType) {
+function sortHoaDons(sortType) {
     const container = document.getElementById('hoaDonGrid');
     const cards = Array.from(container.querySelectorAll('.employee-card'));
 
     cards.sort((a, b) => {
-      switch (sortType) {
-        case 'newest':
-          return new Date(b.getAttribute('data-date')) - new Date(a.getAttribute('data-date'));
-        case 'oldest':
-          return new Date(a.getAttribute('data-date')) - new Date(b.getAttribute('data-date'));
-        case 'highest':
-          return parseFloat(b.getAttribute('data-tongtien')) - parseFloat(a.getAttribute('data-tongtien'));
-        case 'lowest':
-          return parseFloat(a.getAttribute('data-tongtien')) - parseFloat(b.getAttribute('data-tongtien'));
-        default:
-          return 0;
-      }
+        switch (sortType) {
+            case 'newest':
+                return new Date(b.getAttribute('data-date')) - new Date(a.getAttribute('data-date'));
+            case 'oldest':
+                return new Date(a.getAttribute('data-date')) - new Date(b.getAttribute('data-date'));
+            case 'highest':
+                return parseFloat(b.getAttribute('data-tongtien')) - parseFloat(a.getAttribute('data-tongtien'));
+            case 'lowest':
+                return parseFloat(a.getAttribute('data-tongtien')) - parseFloat(b.getAttribute('data-tongtien'));
+            default:
+                return 0;
+        }
     });
 
     cards.forEach(card => container.appendChild(card));
-  }
+}
 
-  function clearFilters() {
+function clearFilters() {
     document.getElementById('searchInput').value = '';
     document.getElementById('statusFilter').value = '';
     document.getElementById('dateFromFilter').value = '';
@@ -1120,43 +1005,144 @@
     document.getElementById('sortFilter').value = 'newest';
 
     filterHoaDon();
-  }
+}
 
-  function toggleEmptyState(show) {
+function toggleEmptyState(show) {
     const emptyState = document.getElementById('emptyState');
     const grid = document.getElementById('hoaDonGrid');
 
     if (!emptyState || !grid) return;
 
     if (show) {
-      grid.style.display = 'none';
-      emptyState.style.display = 'block';
+        grid.style.display = 'none';
+        emptyState.style.display = 'block';
     } else {
-      grid.style.display = 'grid';
-      emptyState.style.display = 'none';
+        grid.style.display = 'grid';
+        emptyState.style.display = 'none';
     }
-  }
+}
 
-  // ===== UTILITY FUNCTIONS =====
-  function showError(message) {
+function calculateFilteredStatistics() {
+    // Cập nhật thống kê dựa trên filteredHoaDons nếu cần
+}
+
+// ===== UTILITY FUNCTIONS =====
+function showError(message) {
     Swal.fire({
-      icon: 'warning',
-      title: 'Thiếu thông tin',
-      text: message,
-      confirmButtonColor: '#667eea'
+        icon: 'error',
+        title: 'Lỗi',
+        text: message,
+        confirmButtonColor: '#667eea'
     });
-  }
+}
 
-  // ===== INITIALIZATION =====
-  document.addEventListener('DOMContentLoaded', function () {
-    allHoaDons = Array.from(document.querySelectorAll('.employee-card'));
-    filteredHoaDons = [...allHoaDons];
+// ===== PLACEHOLDER FUNCTIONS (cần implement) =====
+function editHoaDon(maHoaDon) {
+    console.log('Edit hóa đơn:', maHoaDon);
+    // TODO: Implement edit functionality
+    showError('Tính năng chỉnh sửa đang được phát triển');
+}
+
+function deleteHoaDon(id, maHoaDon) {
+    Swal.fire({
+        title: 'Xác nhận xóa',
+        text: `Bạn có chắc muốn xóa hóa đơn ${maHoaDon}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Xóa',
+        cancelButtonText: 'Hủy'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // TODO: Implement delete functionality
+            showError('Tính năng xóa đang được phát triển');
+        }
+    });
+}
+
+function thanhToanHoaDon(maHoaDon) {
+    // TODO: Implement payment functionality
+    showError('Tính năng thanh toán đang được phát triển');
+}
+
+function printHoaDon(maHoaDon) {
+    // TODO: Implement print functionality
+    showError('Tính năng in hóa đơn đang được phát triển');
+}
+
+function viewHoaDonDetail(maHoaDon) {
+    // TODO: Implement view detail functionality
+    showError('Tính năng xem chi tiết đang được phát triển');
+}
+
+function formatDateTimeLocal(dateString) {
+    if (!dateString) return '';
     
-    calculateStatistics();
+    try {
+        const date = new Date(dateString);
+        
+        // Format thành YYYY-MM-DDTHH:mm
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    } catch (error) {
+        console.error('❌ Lỗi format datetime:', error);
+        return '';
+    }
+}
+
+function populateHoaDonEdit(hoaDonData) {
+    // TODO: Implement populate edit form
+    console.log('Populate edit form:', hoaDonData);
+    if (!hoaDonData) {
+        console.error('❌ No data provided for edit');
+        return;
+    }
     
-    // Event listeners
-    document.getElementById('thoiGianKetThuc').addEventListener('change', calculateRoomPrice);
-  });
+    // Điền dữ liệu vào form chỉnh sửa
+    // Ví dụ:
+    document.getElementById('hoaDonId').value = hoaDonData._id || '';
+    document.getElementById('hoaDonMaHD').value = hoaDonData.MaHoaDon || '';
+    document.getElementById('tenKH').value = hoaDonData.MaKH?.TenKH || '';
+    document.getElementById('sdtKH').value = hoaDonData.MaKH?.SDT || '';
+    document.getElementById('emailKH').value = hoaDonData.MaKH?.Email || '';
+    
+    // Điền thông tin phòng
+    if (hoaDonData.MaPhong) {
+        document.getElementById('phongSelect').value = hoaDonData.MaPhong;
+        updateRoomPrice();
+    }
+    
+    // Điền thời gian
+    if (hoaDonData.ThoiGianBatDau) {
+        document.getElementById('thoiGianBatDau').value = formatDateTimeLocal(hoaDonData.ThoiGianBatDau);
+    }
+
+    console.log('CTHD', hoaDonData.ChiTietHoaDon);
+    
+    // Điền dịch vụ
+    if (hoaDonData.ChiTietHoaDon && Array.isArray(hoaDonData.ChiTietHoaDon)) {
+        selectedServices = hoaDonData.ChiTietHoaDon.map(service => ({
+            MaHang: service.MaHang,
+            TenHang: service.MatHang.TenHang,
+            SoLuong: service.SoLuong,
+            DonGia: service.MatHang.DonGia,
+            DonViTinh: service.MatHang.DonViTinh,
+            ThanhTien: service.ThanhTien,
+            SoLuongTon: service.MatHang.SoLuongTon || 0 // Cần lấy từ API mặt hàng
+        }));
+        renderServicesList();
+        calculateTotal();
+    }
+}
+
+// Export functions to global scope
+window.updateServiceQuantity = updateServiceQuantity;
 </script>
 
 <style>
@@ -2789,5 +2775,14 @@
     max-width: none;
     max-height: none;
   }
+}
+/* Fix z-index cho SweetAlert2 */
+.swal2-container {
+  z-index: 99999 !important;
+}
+
+/* Đảm bảo modal backdrop của SweetAlert2 cũng có z-index cao */
+.swal2-backdrop-show {
+  z-index: 99998 !important;
 }
 </style>
