@@ -131,7 +131,7 @@
               <button class="btn-edit" onclick="editThietBi('{{this.MaThietBi}}')">
                 <i class="fas fa-edit"></i>
               </button>
-              <button class="btn-delete" onclick="deleteThietBi('{{this._id}}', '{{this.TenThietBi}}')">
+              <button class="btn-delete" onclick="deleteThietBi('{{this.MaThietBi}}', '{{this.TenThietBi}}')">
                 <i class="fas fa-trash"></i>
               </button>
             </div>
@@ -189,7 +189,7 @@
 
           <div class="room-footer">
             <span class="room-id">#{{this.MaThietBi}}</span>
-            <button class="btn-status" onclick="toggleStatus('{{this._id}}', '{{this.TinhTrang}}')">
+            <button class="btn-status" onclick="toggleStatus('{{this.MaThietBi}}', '{{this.TinhTrang}}')">
               <i class="fas fa-sync-alt"></i>
             </button>
           </div>
@@ -225,6 +225,7 @@
         <form id="thietBiForm" onsubmit="saveThietBi(event)">
           <input type="hidden" id="thietBiId">
           <input type="hidden" id="thietBiMaTB">
+          <input type="hidden" id="thietBiForm">
 
           <div class="form-grid">
             <div class="form-group">
@@ -560,6 +561,8 @@
 
   // ===== THIET BI MANAGEMENT =====
   function openThietBiModal(thietBiData = null) {
+    console.log(thietBiData);
+
     const modal = document.getElementById('thietBiModal');
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
@@ -574,18 +577,13 @@
   }
 
   function populateThietBiForm(data) {
-    document.getElementById('thietBiId').value = data._id || '';
-    document.getElementById('thietBiMaTB').value = data.MaThietBi || '';
+    document.getElementById('thietBiId').value = data._id;
+    document.getElementById('thietBiMaTB').value = data.MaThietBi;
     document.getElementById('thietBiName').value = data.TenThietBi || '';
     document.getElementById('thietBiMaPhong').value = data.MaPhong || '';
     document.getElementById('thietBiLoai').value = data.LoaiThietBi || '';
     document.getElementById('thietBiStatus').value = data.TinhTrang || 'Tốt';
-    document.getElementById('thietBiHangSX').value = data.HangSanXuat || '';
-    document.getElementById('thietBiModel').value = data.Model || '';
-    document.getElementById('thietBiGiaTri').value = data.GiaTri || '';
     document.getElementById('thietBiNgayNhap').value = data.NgayNhap ? new Date(data.NgayNhap).toISOString().split('T')[0] : '';
-    document.getElementById('thietBiBaoHanh').value = data.ThoiGianBaoHanh || '';
-    document.getElementById('thietBiGhiChu').value = data.GhiChu || '';
     document.getElementById('thietBiAvatar').value = data.LinkAnh || '';
     updateThietBiPreview(data.LinkAnh || '');
   }
@@ -607,7 +605,7 @@
   function updateThietBiPreview(avatarUrl) {
     const preview = document.getElementById('thietBiPreview');
     if (avatarUrl && avatarUrl.trim() !== '') {
-      preview.innerHTML = `<img src="${avatarUrl}" alt="Preview" onerror="handleImageError(this)">`;
+      preview.innerHTML = `<img src="${avatarUrl}" alt="Preview">`;
     } else {
       preview.innerHTML = '<i class="fas fa-microphone"></i><p>Preview sẽ hiển thị ở đây</p>';
     }
@@ -630,13 +628,13 @@
       return;
     }
 
-    const isEdit = !!document.getElementById('thietBiId').value;
+    const isEdit = !!document.getElementById('thietBiMaTB').value;
     const url = isEdit ? `/api/thietbi/${document.getElementById('thietBiMaTB').value}` : '/api/thietbi';
     const method = isEdit ? 'PUT' : 'POST';
-    console.log(isEdit, url, method);
+    console.log(document.getElementById('thietBiMaTB').value, document.getElementById('thietBiId').value, isEdit, url, method);
 
     try {
-      await showLoading('Đang lưu thông tin...');
+      await showLoading('Đang lưu thông tin...');  
 
       const response = await fetch(url, {
         method: method,
@@ -644,12 +642,14 @@
         body: JSON.stringify(formData)
       });
 
+      Swal.close();
+    
       const result = await handleResponse(response);
-      await showSuccess(result.message || `Thiết bị "${formData.TenThietBi}" đã được ${isEdit ? 'cập nhật' : 'thêm'} thành công!`);
+      await showSuccess(`Thiết bị "${formData.MaThietBi}" đã được ${isEdit ? 'cập nhật' : 'thêm'} thành công!`);
 
       setTimeout(() => {
         location.reload();
-      }, 1500);
+      }, 500);
 
     } catch (error) {
       handleError('Lỗi khi lưu thiết bị:', error);
@@ -658,6 +658,7 @@
 
   function getThietBiFormData() {
     return {
+      MaThietBi: document.getElementById('thietBiMaTB').value,
       TenThietBi: document.getElementById('thietBiName').value.trim(),
       MaPhong: document.getElementById('thietBiMaPhong').value,
       LoaiThietBi: document.getElementById('thietBiLoai').value,
@@ -692,7 +693,7 @@
     }
   }
 
-  async function deleteThietBi(thietBiId, tenThietBi) {
+  async function deleteThietBi(thietBiMa, tenThietBi) {
     const result = await Swal.fire({
       title: 'Xác nhận xóa?',
       html: `Bạn có chắc muốn xóa thiết bị <strong>${tenThietBi}</strong>?`,
@@ -706,7 +707,7 @@
 
     if (result.isConfirmed) {
       try {
-        const response = await fetch(`/api/thietbi/${thietBiId}`, { method: 'DELETE' });
+        const response = await fetch(`/api/thietbi/${thietBiMa}`, { method: 'DELETE' });
         await handleResponse(response);
 
         await showSuccess('Thiết bị đã được xóa thành công');
@@ -996,11 +997,16 @@
   }
 
   async function showLoading(message) {
-    await Swal.fire({
-      title: message,
-      text: 'Vui lòng chờ trong giây lát',
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading()
+     Swal.fire({
+        title: message,
+        html: 'Vui lòng chờ trong giây lát...',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        allowEnterKey: false,
+        showConfirmButton: false,
+        willOpen: () => {
+            Swal.showLoading();
+        }
     });
   }
 
@@ -1042,31 +1048,52 @@
   }
 
   // ===== STATUS MANAGEMENT =====
-  async function toggleStatus(thietBiId, currentStatus) {
+  async function toggleStatus(thietBiMaTB, currentStatus) {
     const statusOrder = ['Tốt', 'Đang bảo trì', 'Cần sửa chữa', 'Hỏng'];
     const currentIndex = statusOrder.indexOf(currentStatus);
     const nextStatus = statusOrder[(currentIndex + 1) % statusOrder.length];
 
+    console.log('=== TOGGLE STATUS DEBUG ===');
+    console.log('thietBiMaTB:', thietBiMaTB);
+    console.log('currentStatus:', currentStatus);
+    console.log('nextStatus:', nextStatus);
+
     try {
-      const response = await fetch(`/api/thietbi/${thietBiId}/status`, {
+      const response = await fetch(`/api/thietbi/${thietBiMaTB}/status`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({ TinhTrang: nextStatus })
       });
+
+      console.log('Response status:', response.status);
+      
+      // Đọc response text trước để debug
+      const responseText = await response.text();
+      console.log('Response text:', responseText);
+      
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (e) {
+        console.error('Failed to parse JSON:', e);
+        throw new Error('Invalid JSON response from server');
+      }
 
       if (response.ok) {
         await showSuccess(`Đã chuyển trạng thái thành: ${nextStatus}`);
         location.reload();
       } else {
-        throw new Error('Không thể cập nhật trạng thái');
+        throw new Error(result.error || `HTTP error! status: ${response.status}`);
       }
     } catch (error) {
+      console.error('Toggle status error:', error);
       handleError('Lỗi khi cập nhật trạng thái:', error);
     }
-  }
+}
 
-
- 
 
 </script>
 

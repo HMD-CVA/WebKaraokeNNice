@@ -1,5 +1,5 @@
 <!-- templates/phonghat-card.hbs -->
-<div class="cyberpunk-card" data-phong-id="{{this._id}}">
+<div class="cyberpunk-card" data-phong-id="{{this.MaPhong}}">
   <!-- Image Container -->
   <div class="image-container">
     <img src="{{this.LinkAnh}}" alt="{{this.TenPhong}}"
@@ -45,7 +45,7 @@
         </div>
         <div class="info-item">
           <i class="fas fa-clock"></i>
-          <span>{{formatNumber this.GiaTien}}VNĐ/H</span>
+          <span>{{formatNumber this.GiaTien}} VNĐ/H</span>
         </div>
       </div>
 
@@ -72,11 +72,11 @@
 
       <!-- Action Buttons -->
       <div class="action-buttons">
-        <button class="btn-book" data-room-id="{{this._id}}">
+        <button class="btn-book" data-room-id="{{this.MaPhong}}">
           <i class="fas fa-calendar-plus"></i>
           ĐẶT NGAY
         </button>
-        <button class="btn-detail" data-room-id="{{this._id}}">
+        <button class="btn-detail" data-room-id="{{this.MaPhong}}">
           <i class="fas fa-info-circle"></i>
           CHI TIẾT
         </button>
@@ -1264,54 +1264,9 @@
     });
   });
 
-  // Xử lý đặt phòng
-  document.addEventListener('click', function (e) {
-    if (e.target.closest('.btn-book')) {
-      const roomId = e.target.closest('.btn-book').dataset.roomId;
-      bookRoom(roomId);
-    }
-
-    if (e.target.closest('.btn-detail')) {
-      const roomId = e.target.closest('.btn-detail').dataset.roomId;
-      showRoomDetail(roomId);
-    }
-  });
-
-  function bookRoom(roomId) {
-    // Gọi API đặt phòng
-    console.log('Đặt phòng:', roomId);
-    // Hiển thị thông báo
-    showNotification('Đang xử lý đặt phòng...', 'info');
-  }
 
   function showRoomDetail(roomId) {
     // Hiển thị chi tiết phòng
     console.log('Chi tiết phòng:', roomId);
   }
-
-  function showNotification(message, type = 'info') {
-    // Tạo thông báo tạm thời
-    const notification = document.createElement('div');
-    notification.className = `alert alert-${type} cyber-notification`;
-    notification.textContent = message;
-    notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 1001;
-      background: var(--cyber-dark);
-      color: var(--cyber-cyan);
-      border: 1px solid var(--cyber-cyan);
-      padding: 1rem;
-      border-radius: 8px;
-      box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
-    `;
-
-    document.body.appendChild(notification);
-
-    setTimeout(() => {
-      notification.remove();
-    }, 3000);
-  }
-
 </script>
