@@ -40,9 +40,9 @@
         </select>
         <select class="filter-select" id="loaiFilter" onchange="filterThietBi()">
           <option value="">Tất cả loại</option>
-            {{#each loaiThietBis}}
-              <option value="{{this}}">{{this}}</option>
-            {{/each}}
+          {{#each loaiThietBis}}
+          <option value="{{this}}">{{this}}</option>
+          {{/each}}
           <option value="Khác">Khác</option>
         </select>
         <button class="clear-filters" onclick="clearFilters()">
@@ -54,6 +54,19 @@
 
     <!-- Stats Overview -->
     <div class="stats-overview">
+      {{#each thietbisThongKe}}
+      <div class="stat-card">
+        <div class="{{this.bgColor}}">
+          <i class="{{this.icon}}"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="statTotal">{{this.SoLuong}}</h3>
+          <p>{{this.TinhTrang}}</p>
+        </div>
+      </div>
+      {{/each}}
+    </div>
+    {{!-- <div class="stats-overview">
       <div class="stat-card">
         <div class="stat-icon total">
           <i class="fas fa-microphone"></i>
@@ -90,7 +103,7 @@
           <p>Thiết bị hỏng</p>
         </div>
       </div>
-    </div>
+    </div> --}}
 
     <!-- Room Navigation -->
     <div class="room-navigation" id="roomNavigation">
@@ -100,13 +113,8 @@
     <!-- ThietBi Grid -->
     <div class="rooms-grid" id="thietBiGrid">
       {{#each thietbis}}
-      <div class="room-card" 
-           data-id="{{this._id}}" 
-           data-matb="{{this.MaThietBi}}"
-           data-maphong="{{this.MaPhong}}"
-           data-tenthietbi="{{this.TenThietBi}}" 
-           data-tinhtrang="{{this.TinhTrang}}" 
-           data-loai="{{this.LoaiThietBi}}">
+      <div class="room-card" data-id="{{this._id}}" data-matb="{{this.MaThietBi}}" data-maphong="{{this.MaPhong}}"
+        data-tenthietbi="{{this.TenThietBi}}" data-tinhtrang="{{this.TinhTrang}}" data-loai="{{this.LoaiThietBi}}">
         <div class="room-image">
           {{#if this.LinkAnh}}
           <img src="{{this.LinkAnh}}" alt="{{this.TenThietBi}}">
@@ -131,7 +139,8 @@
           <div class="room-badge {{this.LoaiThietBi}}">
             {{this.LoaiThietBi}}
           </div>
-          <div class="room-status {{#if (eq this.TinhTrang 'Tốt')}}active{{else if (eq this.TinhTrang 'Đang bảo trì')}}onleave{{else}}inactive{{/if}}">
+          <div
+            class="room-status {{#if (eq this.TinhTrang 'Tốt')}}active{{else if (eq this.TinhTrang 'Đang bảo trì')}}onleave{{else}}inactive{{/if}}">
             {{this.TinhTrang}}
           </div>
         </div>
@@ -190,7 +199,8 @@
     </div>
 
     <!-- Empty State -->
-    <div class="empty-state" id="emptyState" style="{{#if thietbis.length}}display: none;{{else}}display: block;{{/if}}">
+    <div class="empty-state" id="emptyState"
+      style="{{#if thietbis.length}}display: none;{{else}}display: block;{{/if}}">
       <div class="empty-icon">🔧</div>
       <h3>Không tìm thấy thiết bị</h3>
       <p>Thử thay đổi bộ lọc hoặc thêm thiết bị mới</p>
@@ -227,7 +237,7 @@
               <select id="thietBiMaPhong" required>
                 <option value="">Chọn phòng</option>
                 {{#each uniqueMaPhongs}}
-                  <option value="{{this}}">{{this}}</option>
+                <option value="{{this}}">{{this}}</option>
                 {{/each}}
                 <option value="Khác">Khác</option>
               </select>
@@ -238,7 +248,7 @@
               <select id="thietBiLoai" required>
                 <option value="">Chọn loại thiết bị</option>
                 {{#each loaiThietBis}}
-                  <option value="{{this}}">{{this}}</option>
+                <option value="{{this}}">{{this}}</option>
                 {{/each}}
                 <option value="Khác">Khác</option>
               </select>
@@ -303,7 +313,8 @@
               <select id="baoTriMaThietBi" required onchange="updateThietBiInfo()">
                 <option value="">Chọn thiết bị</option>
                 {{#each thietbis}}
-                <option value="{{this.MaThietBi}}" data-tenthietbi="{{this.TenThietBi}}" data-maphong="{{this.MaPhong}}">
+                <option value="{{this.MaThietBi}}" data-tenthietbi="{{this.TenThietBi}}"
+                  data-maphong="{{this.MaPhong}}">
                   {{this.MaThietBi}} - {{this.TenThietBi}} ({{this.MaPhong}})
                 </option>
                 {{/each}}
@@ -380,7 +391,15 @@
       </div>
     </div>
   </div>
+
+  <!-- Pagination -->
+  <div>
+    {{{pagination 'thietbi' page totalPages totalItems}}}
+  </div>
+
 </div>
+
+
 
 
 
@@ -393,7 +412,7 @@
   let currentRoomFilter = 'all';
 
   // ===== INITIALIZATION =====
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function () {
     initializeApp();
   });
 
@@ -401,7 +420,7 @@
     // Khởi tạo dữ liệu và giao diện
     allThietBis = Array.from(document.querySelectorAll('.room-card'));
     filteredThietBis = [...allThietBis];
-    
+
     calculateStatistics();
     initRoomNavigation();
     setupEventListeners();
@@ -411,9 +430,9 @@
     // Setup real-time search
     const searchInput = document.getElementById('searchInput');
     let searchTimeout;
-    
+
     if (searchInput) {
-      searchInput.addEventListener('input', function() {
+      searchInput.addEventListener('input', function () {
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => {
           filterThietBi();
@@ -422,18 +441,18 @@
     }
 
     // Close modals when clicking outside
-    document.addEventListener('click', function(event) {
+    document.addEventListener('click', function (event) {
       const thietBiModal = document.getElementById('thietBiModal');
       const baoTriModal = document.getElementById('baoTriModal');
       const historyModal = document.getElementById('historyModal');
-      
+
       if (event.target === thietBiModal) closeThietBiModal();
       if (event.target === baoTriModal) closeBaoTriModal();
       if (event.target === historyModal) closeHistoryModal();
     });
 
     // Close modals with Escape key
-    document.addEventListener('keydown', function(event) {
+    document.addEventListener('keydown', function (event) {
       if (event.key === 'Escape') {
         closeThietBiModal();
         closeBaoTriModal();
@@ -445,24 +464,24 @@
   // ===== STATISTICS CALCULATION =====
   function calculateStatistics() {
     const thietBis = allThietBis;
-    
+
     const totalThietBis = thietBis.length;
-    const countGood = thietBis.filter(tb => 
+    const countGood = thietBis.filter(tb =>
       tb.getAttribute('data-tinhtrang') === 'Tốt'
     ).length;
-    
-    const countMaintenance = thietBis.filter(tb => 
+
+    const countMaintenance = thietBis.filter(tb =>
       tb.getAttribute('data-tinhtrang') === 'Đang bảo trì'
     ).length;
-    
-    const countBroken = thietBis.filter(tb => 
+
+    const countBroken = thietBis.filter(tb =>
       tb.getAttribute('data-tinhtrang') === 'Hỏng'
     ).length;
 
-    updateStatCard('#statTotal', totalThietBis);
-    updateStatCard('#statGood', countGood);
-    updateStatCard('#statMaintenance', countMaintenance);
-    updateStatCard('#statBroken', countBroken);
+    // updateStatCard('#statTotal', totalThietBis);
+    // updateStatCard('#statGood', countGood);
+    // updateStatCard('#statMaintenance', countMaintenance);
+    // updateStatCard('#statBroken', countBroken);
   }
 
   function updateStatCard(selector, value) {
@@ -492,7 +511,7 @@
 
     // Lấy tất cả các phòng từ dữ liệu thiết bị
     const rooms = [...new Set(allThietBis.map(card => card.getAttribute('data-maphong')))].filter(room => room);
-    
+
     // Thêm nút "Tất cả"
     const allButton = document.createElement('button');
     allButton.className = 'room-nav-btn active';
@@ -517,22 +536,22 @@
     roomNavigation.appendChild(otherButton);
 
     // Thêm sự kiện click cho các nút
-    roomNavigation.addEventListener('click', function(e) {
+    roomNavigation.addEventListener('click', function (e) {
       if (e.target.closest('.room-nav-btn')) {
         const clickedButton = e.target.closest('.room-nav-btn');
         const room = clickedButton.getAttribute('data-room');
-        
+
         // Xóa active class từ tất cả các nút
         document.querySelectorAll('.room-nav-btn').forEach(btn => {
           btn.classList.remove('active');
         });
-        
+
         // Thêm active class cho nút được click
         clickedButton.classList.add('active');
-        
+
         // Cập nhật bộ lọc phòng
         currentRoomFilter = room;
-        
+
         // Lọc thiết bị
         filterThietBi();
       }
@@ -605,7 +624,7 @@
 
     const formData = getThietBiFormData();
     const validation = validateThietBiForm(formData);
-    
+
     if (!validation.isValid) {
       showError(validation.message);
       return;
@@ -618,7 +637,7 @@
 
     try {
       await showLoading('Đang lưu thông tin...');
-      
+
       const response = await fetch(url, {
         method: method,
         headers: { 'Content-Type': 'application/json' },
@@ -665,7 +684,7 @@
     try {
       const response = await fetch(`/api/thietbi/${maThietBi}`);
       if (!response.ok) throw new Error('Không thể tải thông tin thiết bị');
-      
+
       const thietBiData = await response.json();
       openThietBiModal(thietBiData);
     } catch (error) {
@@ -689,7 +708,7 @@
       try {
         const response = await fetch(`/api/thietbi/${thietBiId}`, { method: 'DELETE' });
         await handleResponse(response);
-        
+
         await showSuccess('Thiết bị đã được xóa thành công');
         location.reload();
       } catch (error) {
@@ -745,7 +764,7 @@
 
     const formData = getBaoTriFormData();
     const validation = validateBaoTriForm(formData);
-    
+
     if (!validation.isValid) {
       showError(validation.message);
       return;
@@ -753,7 +772,7 @@
 
     try {
       await showLoading('Đang lưu thông tin bảo trì...');
-      
+
       const response = await fetch('/api/baotri', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -807,7 +826,7 @@
 
       currentThietBiHistory = history;
       showHistoryModal(maThietBi, history);
-      
+
     } catch (error) {
       handleError('Lỗi khi lấy lịch sử bảo trì:', error);
     }
@@ -822,7 +841,7 @@
 
   function renderBaoTriHistory(history) {
     const historyList = document.getElementById('historyList');
-    
+
     if (!history || history.length === 0) {
       historyList.innerHTML = '<div class="empty-history">Chưa có lịch sử bảo trì</div>';
       return;
@@ -859,7 +878,7 @@
       const matchesStatus = matchesFilterCriteria(card, 'data-tinhtrang', statusFilter);
       const matchesLoai = matchesFilterCriteria(card, 'data-loai', loaiFilter);
       const matchesRoom = matchesRoomCriteria(card);
-      
+
       const shouldShow = matchesSearch && matchesStatus && matchesLoai && matchesRoom;
       card.style.display = shouldShow ? 'block' : 'none';
       return shouldShow;
@@ -870,10 +889,10 @@
 
   function matchesSearchCriteria(card, searchTerm) {
     if (!searchTerm) return true;
-    
+
     const tenthietbi = card.getAttribute('data-tenthietbi').toLowerCase();
     const matb = card.getAttribute('data-matb').toLowerCase();
-    
+
     return tenthietbi.includes(searchTerm) || matb.includes(searchTerm);
   }
 
@@ -884,7 +903,7 @@
 
   function matchesRoomCriteria(card) {
     const maphong = card.getAttribute('data-maphong');
-    
+
     if (currentRoomFilter === 'all') return true;
     if (currentRoomFilter === 'other') {
       return !maphong || maphong === '' || maphong === 'Khác';
@@ -899,22 +918,22 @@
 
   function calculateFilteredStatistics() {
     const totalThietBis = filteredThietBis.length;
-    const countGood = filteredThietBis.filter(tb => 
+    const countGood = filteredThietBis.filter(tb =>
       tb.getAttribute('data-tinhtrang') === 'Tốt'
     ).length;
-    
-    const countMaintenance = filteredThietBis.filter(tb => 
+
+    const countMaintenance = filteredThietBis.filter(tb =>
       tb.getAttribute('data-tinhtrang') === 'Đang bảo trì'
     ).length;
-    
-    const countBroken = filteredThietBis.filter(tb => 
+
+    const countBroken = filteredThietBis.filter(tb =>
       tb.getAttribute('data-tinhtrang') === 'Hỏng'
     ).length;
 
-    updateStatCard('#statTotal', totalThietBis);
-    updateStatCard('#statGood', countGood);
-    updateStatCard('#statMaintenance', countMaintenance);
-    updateStatCard('#statBroken', countBroken);
+    // updateStatCard('#statTotal', totalThietBis);
+    // updateStatCard('#statGood', countGood);
+    // updateStatCard('#statMaintenance', countMaintenance);
+    // updateStatCard('#statBroken', countBroken);
   }
 
   function clearFilters() {
@@ -1045,6 +1064,10 @@
       handleError('Lỗi khi cập nhật trạng thái:', error);
     }
   }
+
+
+ 
+
 </script>
 
 
@@ -1945,12 +1968,14 @@
     line-height: 1.5;
   }
 
-  .history-staff, .history-result {
+  .history-staff,
+  .history-result {
     font-size: 0.85em;
     color: #4a5568;
   }
 
-  .history-staff strong, .history-result strong {
+  .history-staff strong,
+  .history-result strong {
     color: #2d3748;
   }
 
@@ -2005,6 +2030,8 @@
   .employee-avatar-placeholder.device.Khác {
     background: linear-gradient(135deg, #636e72 0%, #2d3436 100%);
   }
+
+
 
   /* ===== RESPONSIVE STYLES ===== */
   @media (max-width: 1200px) {

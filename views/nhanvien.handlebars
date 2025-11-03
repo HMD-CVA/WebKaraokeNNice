@@ -57,6 +57,19 @@
 
     <!-- Stats Overview -->
     <div class="stats-overview">
+      {{#each nhanviensThongKe}}
+        <div class="stat-card">
+          <div class="{{this.bgColor}}">
+            <i class="{{this.icon}}"></i>
+          </div>
+          <div class="stat-info">
+            <h3 id="statTotal">{{this.SoLuong}}</h3>
+            <p>{{this.VaiTro}}</p>
+          </div>
+        </div>
+      {{/each}}
+    </div>
+    {{!-- <div class="stats-overview">
       <div class="stat-card">
         <div class="stat-icon total">
           <i class="fas fa-users"></i>
@@ -129,20 +142,14 @@
           <p>Full-time</p>
         </div>
       </div>
-    </div>
+    </div> --}}
 
     <!-- Employees Grid -->
     <div class="employees-grid" id="employeesGrid">
       {{#each nhanviens}}
-      <div class="employee-card" 
-           data-id="{{this._id}}" 
-           data-manv="{{this.MaNV}}"
-           data-name="{{this.TenNV}}" 
-           data-phone="{{this.SĐT}}" 
-           data-email="{{this.Email}}" 
-           data-role="{{this.VaiTro}}" 
-           data-status="{{this.TrangThai}}" 
-           data-shift="{{this.CaTruc}}">
+      <div class="employee-card" data-id="{{this._id}}" data-manv="{{this.MaNV}}" data-name="{{this.TenNV}}"
+        data-phone="{{this.SĐT}}" data-email="{{this.Email}}" data-role="{{this.VaiTro}}"
+        data-status="{{this.TrangThai}}" data-shift="{{this.CaTruc}}">
         <div class="employee-image">
           {{#if this.LinkAvatar}}
           <img src="{{this.LinkAvatar}}" alt="{{this.TenNV}}">
@@ -164,7 +171,8 @@
           <div class="employee-badge {{this.VaiTro}}">
             {{this.VaiTro}}
           </div>
-          <div class="employee-status {{#if (eq this.TrangThai 'Đang làm việc')}}active{{else if (eq this.TrangThai 'Nghỉ phép')}}onleave{{else}}inactive{{/if}}">
+          <div
+            class="employee-status {{#if (eq this.TrangThai 'Đang làm việc')}}active{{else if (eq this.TrangThai 'Nghỉ phép')}}onleave{{else}}inactive{{/if}}">
             {{this.TrangThai}}
           </div>
         </div>
@@ -213,7 +221,8 @@
     </div>
 
     <!-- Empty State -->
-    <div class="empty-state" id="emptyState" style="{{#if nhanviens.length}}display: none;{{else}}display: block;{{/if}}">
+    <div class="empty-state" id="emptyState"
+      style="{{#if nhanviens.length}}display: none;{{else}}display: block;{{/if}}">
       <div class="empty-icon">👨‍💼</div>
       <h3>Không tìm thấy nhân viên</h3>
       <p>Thử thay đổi bộ lọc hoặc thêm nhân viên mới</p>
@@ -375,6 +384,15 @@
       </div>
     </div>
   </div>
+
+
+  <div>
+    {{{pagination 'nhanvien' page totalPages totalItems}}}
+  </div>
+
+  <div>
+  </div>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -387,120 +405,120 @@
   // ===== STATISTICS CALCULATION =====
   function calculateStatistics() {
     const employees = allEmployees;
-    
+
     // Tổng số nhân viên
     const totalEmployees = employees.length;
-    
+
     // Đếm nhân viên đang làm việc
-    const countActive = employees.filter(card => 
+    const countActive = employees.filter(card =>
       card.getAttribute('data-status') === 'Đang làm việc'
     ).length;
-    
+
     // Đếm theo vai trò
-    const countReception = employees.filter(card => 
+    const countReception = employees.filter(card =>
       card.getAttribute('data-role') === 'Lễ tân'
     ).length;
-    
-    const countService = employees.filter(card => 
+
+    const countService = employees.filter(card =>
       card.getAttribute('data-role') === 'Phục vụ'
     ).length;
-    
-    const countTechnical = employees.filter(card => 
+
+    const countTechnical = employees.filter(card =>
       card.getAttribute('data-role') === 'Kỹ thuật'
     ).length;
-    
-    const countManager = employees.filter(card => 
+
+    const countManager = employees.filter(card =>
       card.getAttribute('data-role') === 'Quản lý'
     ).length;
-    
-    const countSecurity = employees.filter(card => 
+
+    const countSecurity = employees.filter(card =>
       card.getAttribute('data-role') === 'Bảo vệ'
     ).length;
-    
+
     // Đếm nhân viên full-time
-    const countFullTime = employees.filter(card => 
+    const countFullTime = employees.filter(card =>
       card.getAttribute('data-shift') === 'Full-time'
     ).length;
-    
+
     // Cập nhật các stat card
-    updateStatCard('#statTotal', totalEmployees);
-    updateStatCard('#statActive', countActive);
-    updateStatCard('#statReception', countReception);
-    updateStatCard('#statService', countService);
-    updateStatCard('#statTechnical', countTechnical);
-    updateStatCard('#statManager', countManager);
-    updateStatCard('#statSecurity', countSecurity);
-    updateStatCard('#statFullTime', countFullTime);
+    // updateStatCard('#statTotal', totalEmployees);
+    // updateStatCard('#statActive', countActive);
+    // updateStatCard('#statReception', countReception);
+    // updateStatCard('#statService', countService);
+    // updateStatCard('#statTechnical', countTechnical);
+    // updateStatCard('#statManager', countManager);
+    // updateStatCard('#statSecurity', countSecurity);
+    // updateStatCard('#statFullTime', countFullTime);
   }
-  
+
   function calculateFilteredStatistics() {
     const employees = filteredEmployees;
-    
+
     // Tổng số nhân viên sau lọc
     const totalEmployees = employees.length;
-    
+
     // Đếm nhân viên đang làm việc sau lọc
-    const countActive = employees.filter(card => 
+    const countActive = employees.filter(card =>
       card.getAttribute('data-status') === 'Đang làm việc'
     ).length;
-    
+
     // Đếm theo vai trò sau lọc
-    const countReception = employees.filter(card => 
+    const countReception = employees.filter(card =>
       card.getAttribute('data-role') === 'Lễ tân'
     ).length;
-    
-    const countService = employees.filter(card => 
+
+    const countService = employees.filter(card =>
       card.getAttribute('data-role') === 'Phục vụ'
     ).length;
-    
-    const countTechnical = employees.filter(card => 
+
+    const countTechnical = employees.filter(card =>
       card.getAttribute('data-role') === 'Kỹ thuật'
     ).length;
-    
-    const countManager = employees.filter(card => 
+
+    const countManager = employees.filter(card =>
       card.getAttribute('data-role') === 'Quản lý'
     ).length;
-    
-    const countSecurity = employees.filter(card => 
+
+    const countSecurity = employees.filter(card =>
       card.getAttribute('data-role') === 'Bảo vệ'
     ).length;
-    
+
     // Đếm nhân viên full-time sau lọc
-    const countFullTime = employees.filter(card => 
+    const countFullTime = employees.filter(card =>
       card.getAttribute('data-shift') === 'Full-time'
     ).length;
-    
+
     // Cập nhật các stat card
-    updateStatCard('#statTotal', totalEmployees);
-    updateStatCard('#statActive', countActive);
-    updateStatCard('#statReception', countReception);
-    updateStatCard('#statService', countService);
-    updateStatCard('#statTechnical', countTechnical);
-    updateStatCard('#statManager', countManager);
-    updateStatCard('#statSecurity', countSecurity);
-    updateStatCard('#statFullTime', countFullTime);
+    // updateStatCard('#statTotal', totalEmployees);
+    // updateStatCard('#statActive', countActive);
+    // updateStatCard('#statReception', countReception);
+    // updateStatCard('#statService', countService);
+    // updateStatCard('#statTechnical', countTechnical);
+    // updateStatCard('#statManager', countManager);
+    // updateStatCard('#statSecurity', countSecurity);
+    // updateStatCard('#statFullTime', countFullTime);
   }
-  
+
   function updateStatCard(selector, value) {
     const element = document.querySelector(selector);
     if (element) {
       element.textContent = value;
     }
   }
-  
+
   function formatCurrency(amount) {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND'
     }).format(amount);
   }
-  
+
   function formatDate(dateString) {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleDateString('vi-VN');
   }
-  
+
   // Helper function cho Handlebars để so sánh giá trị
   function eq(a, b) {
     return a === b;
@@ -591,7 +609,7 @@
     // Lấy employeeId trước để xác định là thêm mới hay cập nhật
     const employeeMaNV = document.getElementById('employeeMaNV').value;
     console.log(employeeMaNV);
-    
+
     const isEdit = !!employeeMaNV;
 
     const formData = {
@@ -615,82 +633,82 @@
       LinkAvatar: document.getElementById('employeeAvatar').value.trim()
     };
 
-  // Validate required fields
-  if (!formData.TenNV) {
-    showError('Vui lòng nhập tên nhân viên');
-    return;
-  }
-  if (!formData.SĐT) {
-    showError('Vui lòng nhập số điện thoại');
-    return;
-  }
-  if (!formData.Email) {
-    showError('Vui lòng nhập email');
-    return;
-  }
-  if (!formData.VaiTro) {
-    showError('Vui lòng chọn vai trò');
-    return;
-  }
-  if (!formData.CaTruc) {
-    showError('Vui lòng chọn ca trực');
-    return;
-  }
-  if (!formData.LuongCoBan) {
-    showError('Vui lòng nhập lương cơ bản');
-    return;
-  }
-  if (!formData.NgayVaoLam) {
-    showError('Vui lòng chọn ngày vào làm');
-    return;
-  }
-  if (!formData.TrangThai) {
-    showError('Vui lòng chọn trạng thái');
-    return;
-  }
+    // Validate required fields
+    if (!formData.TenNV) {
+      showError('Vui lòng nhập tên nhân viên');
+      return;
+    }
+    if (!formData.SĐT) {
+      showError('Vui lòng nhập số điện thoại');
+      return;
+    }
+    if (!formData.Email) {
+      showError('Vui lòng nhập email');
+      return;
+    }
+    if (!formData.VaiTro) {
+      showError('Vui lòng chọn vai trò');
+      return;
+    }
+    if (!formData.CaTruc) {
+      showError('Vui lòng chọn ca trực');
+      return;
+    }
+    if (!formData.LuongCoBan) {
+      showError('Vui lòng nhập lương cơ bản');
+      return;
+    }
+    if (!formData.NgayVaoLam) {
+      showError('Vui lòng chọn ngày vào làm');
+      return;
+    }
+    if (!formData.TrangThai) {
+      showError('Vui lòng chọn trạng thái');
+      return;
+    }
 
-  const url = isEdit ? `/api/nhanvien/${employeeMaNV}` : '/api/nhanvien';
-  const method = isEdit ? 'PUT' : 'POST';
+    const url = isEdit ? `/api/nhanvien/${employeeMaNV}` : '/api/nhanvien';
+    const method = isEdit ? 'PUT' : 'POST';
 
-  try {
-    Swal.fire({
-      title: 'Đang lưu thông tin...',
-      text: 'Vui lòng chờ trong giây lát',
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading()
-    });
+    try {
+      Swal.fire({
+        title: 'Đang lưu thông tin...',
+        text: 'Vui lòng chờ trong giây lát',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
 
-    const response = await fetch(url, {
-      method: method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
-    });
+      const response = await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
 
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.error || 'Lỗi server');
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Lỗi server');
 
-    Swal.fire({
-      icon: 'success',
-      title: 'Thành công!',
-      text: result.message || `Nhân viên "${formData.TenNV}" đã được ${isEdit ? 'cập nhật' : 'thêm'} thành công!`,
-      timer: 1500,
-      showConfirmButton: false
-    });
+      Swal.fire({
+        icon: 'success',
+        title: 'Thành công!',
+        text: result.message || `Nhân viên "${formData.TenNV}" đã được ${isEdit ? 'cập nhật' : 'thêm'} thành công!`,
+        timer: 1500,
+        showConfirmButton: false
+      });
 
-    setTimeout(() => {
-      location.reload();
-    }, 1500);
+      setTimeout(() => {
+        location.reload();
+      }, 1500);
 
-  } catch (error) {
-    console.error('❌ Lỗi khi lưu nhân viên:', error);
-    Swal.fire({
-      icon: 'error',
-      title: 'Lỗi!',
-      text: error.message || 'Không thể lưu thông tin nhân viên',
-      confirmButtonColor: '#667eea'
-    });
+    } catch (error) {
+      console.error('❌ Lỗi khi lưu nhân viên:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi!',
+        text: error.message || 'Không thể lưu thông tin nhân viên',
+        confirmButtonColor: '#667eea'
+      });
+    }
   }
-}
 
   async function deleteEmployee(employeeMaNV, employeeName) {
     console.log(employeeMaNV);
@@ -745,8 +763,8 @@
       const shift = card.getAttribute('data-shift');
       const status = card.getAttribute('data-status');
 
-      const matchesSearch = !searchTerm || 
-        name.includes(searchTerm) || 
+      const matchesSearch = !searchTerm ||
+        name.includes(searchTerm) ||
         phone.includes(searchTerm) ||
         email.includes(searchTerm);
       const matchesRole = !roleFilter || role === roleFilter;
@@ -759,7 +777,7 @@
     });
 
     // Tính toán lại thống kê dựa trên kết quả lọc
-    calculateFilteredStatistics();
+    // calculateFilteredStatistics();
     toggleEmptyState(filteredEmployees.length === 0);
   }
 
@@ -774,9 +792,9 @@
     });
 
     filteredEmployees = [...allEmployees];
-    
+
     // Tính toán lại thống kê toàn bộ
-    calculateStatistics();
+    // calculateStatistics();
     toggleEmptyState(false);
   }
 
@@ -836,7 +854,7 @@
     const roleFilter = document.getElementById('roleFilter');
     const shiftFilter = document.getElementById('shiftFilter');
     const statusFilter = document.getElementById('statusFilter');
-    
+
     if (roleFilter) roleFilter.addEventListener('change', filterEmployees);
     if (shiftFilter) shiftFilter.addEventListener('change', filterEmployees);
     if (statusFilter) statusFilter.addEventListener('change', filterEmployees);
@@ -1449,6 +1467,7 @@
       opacity: 0;
       transform: translateY(-30px) scale(0.9);
     }
+
     to {
       opacity: 1;
       transform: translateY(0) scale(1);
