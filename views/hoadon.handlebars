@@ -158,7 +158,13 @@
 
         <div class="employee-content">
           <h3 class="employee-name">{{this.MaHoaDon}}</h3>
-          <p class="employee-code">Đặt phòng: {{this.MaDatPhong}}</p>
+          <p class="employee-code">Đặt phòng: 
+            {{#if this.MaDatPhong}}
+                {{this.MaDatPhong}}
+            {{else}}
+                Gọi trực tiếp
+            {{/if}}
+          </p>
 
           <div class="employee-details">
             <div class="detail-item">
@@ -194,18 +200,6 @@
               <span class="highlight">Kết thúc: Đang sử dụng</span>
             </div>
             {{/if}}
-          </div>
-
-          <!-- Chi tiết dịch vụ -->
-          <div class="service-breakdown">
-            <h4>Dịch vụ sử dụng:</h4>
-            {{#each this.ChiTietHoaDon}}
-            <div class="service-item">
-              <span class="service-name">{{this.TenHang}}</span>
-              <span class="service-quantity">x{{this.SoLuong}}</span>
-              <span class="service-price">{{formatNumber this.ThanhTien}} VND</span>
-            </div>
-            {{/each}}
           </div>
 
           <!-- FOOTER VỚI 2 NÚT -->
@@ -413,6 +407,7 @@ let allMatHangs = [];
 let filteredMatHangs = [];
 let selectedServices = [];
 let currentRoomPrice = 0;
+let thoiGianBatDauComeBack;
 
 // ===== KHỞI TẠO KHI DOM READY =====
 document.addEventListener('DOMContentLoaded', function() {
@@ -471,6 +466,7 @@ function initializeEventListeners() {
     document.getElementById('addServiceBtn').addEventListener('click', addService);
     document.getElementById('serviceSearch').addEventListener('keyup', filterServices);
     document.getElementById('phongSelect').addEventListener('change', updateRoomPrice);
+    document.getElementById('thoiGianBatDau').addEventListener('change', updateRoomPrice);
 
     // Delegated events for dynamic content
     document.addEventListener('click', function(e) {
@@ -695,22 +691,6 @@ function filterServices() {
     }, 300);
 }
 
-function updateRoomPrice() {
-    const phongSelect = document.getElementById('phongSelect');
-    const selectedOption = phongSelect.options[phongSelect.selectedIndex];
-    
-    if (selectedOption.value) {
-        const giaPhong = parseFloat(selectedOption.getAttribute('data-gia'));
-        currentRoomPrice = giaPhong;
-        document.getElementById('giaPhongDisplay').textContent = formatNumber(currentRoomPrice) + ' VND';
-    } else {
-        currentRoomPrice = 0;
-        document.getElementById('giaPhongDisplay').textContent = '0 VND';
-    }
-    
-    calculateTotal();
-}
-
 function addService() {
     const matHangSelect = document.getElementById('matHangSelect');
     const soLuongInput = document.getElementById('soLuong');
@@ -799,6 +779,11 @@ function renderServicesList() {
 
     servicesList.innerHTML = '';
     selectedServices.forEach((service, index) => {
+          // Bỏ qua dịch vụ "Thuê phòng"
+        if (service.LoaiDichVu === 'Thuê phòng') {
+            return;
+        }
+
         const serviceElement = document.createElement('div');
         serviceElement.className = 'service-item-row';
         serviceElement.innerHTML = `
@@ -818,12 +803,12 @@ function renderServicesList() {
                 </button>
             </div>
         `;
-        servicesList.appendChild(serviceElement);
+      servicesList.appendChild(serviceElement);
     });
 }
 
 function calculateTotal() {
-    const serviceTotal = selectedServices.reduce((sum, service) => sum + service.ThanhTien, 0);
+    const serviceTotal = selectedServices.filter(service => service.LoaiDichVu !== 'Thuê phòng').reduce((sum, service) => sum + service.ThanhTien, 0);
     const total = currentRoomPrice + serviceTotal;
 
     document.getElementById('tienDichVuDisplay').textContent = formatNumber(serviceTotal) + ' VND';
@@ -1036,12 +1021,6 @@ function showError(message) {
     });
 }
 
-// ===== PLACEHOLDER FUNCTIONS (cần implement) =====
-function editHoaDon(maHoaDon) {
-    console.log('Edit hóa đơn:', maHoaDon);
-    // TODO: Implement edit functionality
-    showError('Tính năng chỉnh sửa đang được phát triển');
-}
 
 function deleteHoaDon(id, maHoaDon) {
     Swal.fire({
@@ -1071,10 +1050,300 @@ function printHoaDon(maHoaDon) {
     showError('Tính năng in hóa đơn đang được phát triển');
 }
 
-function viewHoaDonDetail(maHoaDon) {
-    // TODO: Implement view detail functionality
-    showError('Tính năng xem chi tiết đang được phát triển');
-}
+async function viewHoaDonDetail(maHoaDon) {
+    try {
+      // Hiển thị loading
+      const detailContent = document.getElementById('detailContent');
+      detailContent.innerHTML = `
+        <div class="loading-invoice">
+          <div class="loading-spinner"></div>
+          <p>Đang tải thông tin hóa đơn...</p>
+        </div>
+      `;
+      
+      // Cập nhật ngày xuất với thời gian hiện tại
+      const now = new Date();
+      document.getElementById('modal-invoice-date').textContent = 
+        `${formatDate(now)} ${formatTime(now)}`;
+      
+      document.getElementById('detailModal').style.display = 'flex';
+
+      // Lấy thông tin hóa đơn và chi tiết song song
+      const [chiTietResponse, hoaDonResponse] = await Promise.all([
+        fetch(`/api/chitiethoadon/${maHoaDon}`),
+        fetch(`/api/hoadon/${maHoaDon}`)
+      ]);
+
+      if (!chiTietResponse.ok || !hoaDonResponse.ok) {
+        throw new Error('Không tìm thấy dữ liệu hóa đơn');
+      }
+
+      const chiTietHoaDon = await chiTietResponse.json();
+      const hoaDon = await hoaDonResponse.json();
+
+      console.log('Chi tiết hóa đơn:', chiTietHoaDon);
+      console.log('Thông tin hóa đơn:', hoaDon);
+
+      // CẬP NHẬT HEADER VỚI THÔNG TIN TỪ API
+      document.getElementById('modal-invoice-number').textContent = `${hoaDon.MaHoaDon}`;
+      
+      const statusElement = document.getElementById('modal-invoice-status');
+      statusElement.textContent = hoaDon.TrangThai;
+      statusElement.className = `value status-badge ${hoaDon.TrangThai === 'Đã thanh toán' ? 'paid' : hoaDon.TrangThai === 'Chưa thanh toán' ? 'pending' : 'cancelled'}`;
+
+      // CẬP NHẬT NÚT HÀNH ĐỘNG TRONG HEADER
+      updateHeaderActions(maHoaDon, hoaDon.TrangThai);
+
+      // Tính tổng tiền dịch vụ
+      const tongTienDichVu = Array.isArray(chiTietHoaDon) 
+        ? chiTietHoaDon.reduce((sum, item) => sum + (item.ThanhTien || 0), 0)
+        : 0;
+
+      // Render phần body của hóa đơn
+      renderInvoiceBody(hoaDon, chiTietHoaDon, tongTienDichVu);
+
+    } catch (error) {
+      console.error('Lỗi khi tải chi tiết hóa đơn:', error);
+      detailContent.innerHTML = `
+        <div class="error-state">
+          <div class="error-icon">❌</div>
+          <h3>Không thể tải hóa đơn</h3>
+          <p>${error.message || 'Vui lòng thử lại sau'}</p>
+          <button class="btn-primary" onclick="viewHoaDonDetail('${maHoaDon}')">
+            <i class="fas fa-redo"></i>
+            Thử lại
+          </button>
+        </div>
+      `;
+    }
+  }
+
+// ===== RENDER PHẦN BODY CỦA HÓA ĐƠN =====
+  function renderInvoiceBody(hoaDon, chiTietHoaDon, tongTienDichVu) {
+    const detailContent = document.getElementById('detailContent');
+    
+    // Tính các thành phần tiền
+    const tienPhong = (hoaDon.TongTien || 0) - tongTienDichVu;
+    const vat = (hoaDon.TongTien || 0) * 0.1; // VAT 10%
+    const tongThanhToan = (hoaDon.TongTien || 0) + vat;
+
+    detailContent.innerHTML = `
+      <div class="modern-invoice" id="printableInvoice">
+        <!-- Thông tin khách hàng và phòng -->
+        <div class="invoice-customer-info">
+          <div class="info-section">
+            <h3>Thông tin khách hàng</h3>
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="label">Mã KH:</span>
+                <span class="value">${hoaDon.MaKH || 'N/A'}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Đặt phòng:</span>
+                <span class="value">${hoaDon.MaDatPhong || 'N/A'}</span>
+              </div>
+            </div>
+          </div>
+          <div class="info-section">
+            <h3>Thông tin phòng</h3>
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="label">Phòng:</span>
+                <span class="value">${hoaDon.MaPhong || 'N/A'}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Thời gian:</span>
+                <span class="value">${formatTime(hoaDon.ThoiGianBatDau)} - ${formatTime(hoaDon.ThoiGianKetThuc)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bảng dịch vụ -->
+        <div class="invoice-services">
+          <h3>Chi tiết dịch vụ sử dụng</h3>
+          <div class="services-table">
+            <div class="table-header">
+              <div class="col-service">Dịch vụ</div>
+              <div class="col-quantity">Số lượng</div>
+              <div class="col-price">Đơn giá</div>
+              <div class="col-total">Thành tiền</div>
+            </div>
+            
+            ${tienPhong >= 0 ? `
+            <div class="table-row">
+              <div class="col-service">
+                <span class="service-name">Thuê phòng ${hoaDon.MaPhong}</span>
+                <span class="service-desc">${formatTime(hoaDon.ThoiGianBatDau)} - ${formatTime(hoaDon.ThoiGianKetThuc)}</span>
+              </div>
+              <div class="col-quantity">1</div>
+              <div class="col-price">${formatNumber(tienPhong)}</div>
+              <div class="col-total">${formatNumber(tienPhong)}</div>
+            </div>
+            ` : ''}
+            
+            ${Array.isArray(chiTietHoaDon) && chiTietHoaDon.length > 0 ? chiTietHoaDon.filter(item => item.LoaiDichVu !== 'Thuê phòng').map(item => `
+                    <div class="table-row">
+                      <div class="col-service">
+                        <span class="service-name">${item.TenHang || item.MaHang || 'N/A'}</span>
+                        <span class="service-desc">${item.LoaiDichVu || 'Dịch vụ'}</span>
+                      </div>
+                      <div class="col-quantity">${item.SoLuong}</div>
+                      <div class="col-price">${formatNumber(item.DonGia)}</div>
+                      <div class="col-total">${formatNumber(item.ThanhTien)}</div>
+                    </div>
+                  `).join('')
+              : '<div class="table-row no-services"><div class="col-service">Không có dịch vụ nào</div></div>'
+            }
+          </div>
+        </div>
+
+        <!-- Tổng kết hóa đơn -->
+        <div class="invoice-summary">
+          <div class="summary-row">
+            <span class="label">Tổng tiền dịch vụ:</span>
+            <span class="value">${formatNumber(hoaDon.TongTien || 0)}</span>
+          </div>
+          <div class="summary-row">
+            <span class="label">VAT (10%):</span>
+            <span class="value">${formatNumber(vat)}</span>
+          </div>
+          <div class="summary-row total">
+            <span class="label">TỔNG CỘNG:</span>
+            <span class="value">${formatNumber(tongThanhToan)}</span>
+          </div>
+        </div>
+
+        <!-- Phương thức thanh toán -->
+        <div class="invoice-payment">
+          <div class="payment-method">
+            <h4>Phương thức thanh toán</h4>
+            <div class="method ${hoaDon.TrangThai === 'Đã thanh toán' ? 'paid' : 'cash'}">
+              <i class="fas ${hoaDon.TrangThai === 'Đã thanh toán' ? 'fa-credit-card' : 'fa-money-bill-wave'}"></i>
+              <span>${hoaDon.TrangThai === 'Đã thanh toán' ? 'Thẻ tín dụng' : 'Tiền mặt'}</span>
+            </div>
+          </div>
+          <div class="payment-notes">
+            <h4>Ghi chú</h4>
+            <p>Cảm ơn quý khách đã sử dụng dịch vụ của chúng tôi!</p>
+            <p>Hẹn gặp lại quý khách trong những lần tiếp theo.</p>
+          </div>
+        </div>
+
+        <!-- Footer hóa đơn -->
+        <div class="invoice-footer">
+          <div class="footer-signature">
+            <div class="signature-line"></div>
+            <p>Chữ ký nhân viên</p>
+          </div>
+          <div class="footer-thanks">
+            <p><strong>KARAOKE NNICE</strong></p>
+            <p>Hotline: (028) 35 170 046</p>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function printInvoice() {
+    const printableElement = document.getElementById('printableInvoice');
+    if (!printableElement) return;
+
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Hóa đơn ${document.getElementById('modal-invoice-number').textContent}</title>
+          <style>
+            ${getInvoiceStyles()}
+            
+            /* CSS riêng cho in ấn */
+            @media print {
+              body { margin: 0; padding: 20px; }
+              .modern-invoice { 
+                box-shadow: none; 
+                border: 1px solid #ddd;
+                padding: 20px;
+              }
+              .btn-print-invoice, .btn-download-invoice, .btn-pay-invoice, .modal-close { 
+                display: none !important; 
+              }
+            }
+          </style>
+        </head>
+        <body>
+          ${printableElement.outerHTML}
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(() => window.close(), 500);
+            };
+          <\/script>
+        </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
+  }
+
+function updateHeaderActions(maHoaDon, trangThai) {
+    const headerActions = document.getElementById('headerActions');
+    
+    let actionButtons = `
+      <button class="btn-print-invoice" onclick="printInvoice()">
+        <i class="fas fa-print"></i>
+        In hóa đơn
+      </button>
+    `;
+    
+    if (trangThai === 'Chưa thanh toán') {
+      actionButtons += `
+        <button class="btn-pay-invoice" onclick="thanhToanHoaDon('${maHoaDon}')">
+          <i class="fas fa-credit-card"></i>
+          Thanh toán
+        </button>
+      `;
+    } else {
+      actionButtons += `
+        <button class="btn-download-invoice" onclick="downloadInvoice()">
+          <i class="fas fa-download"></i>
+          Tải PDF
+        </button>
+      `;
+    }
+    
+    actionButtons += `
+      <button class="modal-close" onclick="closeDetailModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    `;
+    
+    headerActions.innerHTML = actionButtons;
+  }
+
+function downloadInvoice() {
+    Swal.fire({
+      title: 'Đang tải PDF...',
+      text: 'Hóa đơn đang được xuất ra file PDF',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
+
+    setTimeout(() => {
+      Swal.fire({
+        icon: 'success',
+        title: 'Thành công!',
+        text: 'Hóa đơn đã được tải xuống',
+        timer: 1500,
+        showConfirmButton: false
+      });
+    }, 2000);
+  }
+  function closeDetailModal() {
+    document.getElementById('detailModal').style.display = 'none';
+  }
 
 function formatDateTimeLocal(dateString) {
     if (!dateString) return '';
@@ -1096,13 +1365,215 @@ function formatDateTimeLocal(dateString) {
     }
 }
 
+// Hàm phụ trợ định dạng thời gian
+function formatTimeForDisplay(hours, minutes) {
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+}
+
+// Hàm tính toán giá phòng dựa trên THỜI GIAN (có xử lý qua ngày hôm sau)
+function calculateRoomPrice(thoiGianBatDau, bangGia) {
+    if (!thoiGianBatDau || !bangGia || !Array.isArray(bangGia)) {
+        console.warn('❌ Không có thời gian bắt đầu hoặc bảng giá');
+        return 0;
+    }
+    console.log('Time Back: ', thoiGianBatDauComeBack);
+
+    const thoiGian = new Date(thoiGianBatDau);
+    const gioHienTai = thoiGian.getHours();
+    const phutHienTai = thoiGian.getMinutes();
+    const thoiGianHienTai = gioHienTai * 60 + phutHienTai;
+
+    console.log(`🕒 Thời gian bắt đầu: ${gioHienTai}:${phutHienTai.toString().padStart(2, '0')}`);
+    console.log(`📊 Số khung giờ trong bảng giá: ${bangGia.length}`);
+
+    let foundPrice = 0;
+    let foundTimeSlot = '';
+    let hasValidTimeSlot = false;
+
+    for (const gia of bangGia) {
+        if (!gia.KhungGio) continue;
+
+        const [batDauStr, ketThucStr] = gia.KhungGio.split('-');
+        if (!batDauStr || !ketThucStr) continue;
+
+        // Chuyển đổi thời gian bắt đầu và kết thúc thành phút
+        const [gioBatDau, phutBatDau] = batDauStr.split(':').map(Number);
+        const [gioKetThuc, phutKetThuc] = ketThucStr.split(':').map(Number);
+        
+        let thoiGianBatDauPhut = gioBatDau * 60 + phutBatDau;
+        let thoiGianKetThucPhut = gioKetThuc * 60 + phutKetThuc;
+
+        console.log(`⏰ Kiểm tra khung giờ: ${gia.KhungGio}, Giá: ${gia.GiaTien}`);
+
+        let isMatch = false;
+        const isQuaNgay = thoiGianBatDauPhut >= thoiGianKetThucPhut;
+
+        if (isQuaNgay) {
+            // KHUNG GIỜ QUA NGÀY: thời gian kết thúc phải + thêm 1 ngày (1440 phút)
+            thoiGianKetThucPhut += 1440; // Thêm 24 giờ (1440 phút)
+            
+            // Tạo thời gian hiện tại mở rộng để so sánh
+            // Nếu thời gian hiện tại < thời gian bắt đầu, coi như nó thuộc ngày hôm sau
+            const thoiGianHienTaiExtended = thoiGianHienTai < thoiGianBatDauPhut 
+                ? thoiGianHienTai + 1440 
+                : thoiGianHienTai;
+            
+            isMatch = (thoiGianHienTaiExtended >= thoiGianBatDauPhut && 
+                      thoiGianHienTaiExtended < thoiGianKetThucPhut);
+            
+            console.log(`   🌙 Khung giờ qua ngày - Thời gian mở rộng: ${thoiGianHienTaiExtended} phút`);
+            console.log(`   🌙 Khoảng thời gian: ${thoiGianBatDauPhut} - ${thoiGianKetThucPhut} phút`);
+        } else {
+            // KHUNG GIỜ TRONG CÙNG NGÀY
+            isMatch = (thoiGianHienTai >= thoiGianBatDauPhut && 
+                      thoiGianHienTai < thoiGianKetThucPhut);
+            
+            console.log(`   📅 Khung giờ trong ngày - Khoảng thời gian: ${thoiGianBatDauPhut} - ${thoiGianKetThucPhut} phút`);
+        }
+
+        console.log(`   Kết quả: ${isMatch ? '✅ PHÙ HỢP' : '❌ KHÔNG PHÙ HỢP'}`);
+
+        if (isMatch) {
+            foundPrice = gia.GiaTien || 0;
+            foundTimeSlot = gia.KhungGio;
+            hasValidTimeSlot = true;
+            
+            // Hiển thị thông báo nếu là khung giờ qua ngày
+            {{!-- if (isQuaNgay) {
+                foundTimeSlot += " (qua ngày)";
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Khung giờ qua ngày',
+                    html: `Áp dụng khung giờ <strong>${foundTimeSlot}</strong><br>
+                          Giá: <strong>${formatNumber(foundPrice)} VND</strong>`,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } --}}
+            
+            thoiGianBatDauComeBack = formatToISODateTimeSimple(document.getElementById('thoiGianBatDau').value);
+            console.log('TIME BACK: ',thoiGianBatDauComeBack);
+            break;
+        }
+    }
+
+    // XỬ LÝ KHI KHÔNG TÌM THẤY KHUNG GIỜ PHÙ HỢP
+    if (!hasValidTimeSlot) {
+        console.warn('❌ Không tìm thấy khung giờ phù hợp');
+        
+        // Lấy danh sách khung giờ có sẵn
+        const khungGioList = bangGia
+            .filter(gia => gia.KhungGio)
+            .map(gia => {
+                const [batDau, ketThuc] = gia.KhungGio.split('-');
+                const [gioBatDau, phutBatDau] = batDau.split(':').map(Number);
+                const [gioKetThuc, phutKetThuc] = ketThuc.split(':').map(Number);
+                const thoiGianBatDauPhut = gioBatDau * 60 + phutBatDau;
+                const thoiGianKetThucPhut = gioKetThuc * 60 + phutKetThuc;
+                const isQuaNgay = thoiGianBatDauPhut >= thoiGianKetThucPhut;
+                
+                if (isQuaNgay) {
+                    return `${gia.KhungGio} (qua ngày) - ${formatNumber(gia.GiaTien)} VND`;
+                }
+                return `${gia.KhungGio} - ${formatNumber(gia.GiaTien)} VND`;
+            })
+            .filter(Boolean)
+            .join('<br>');
+
+        // Hiển thị cảnh báo chi tiết
+        Swal.fire({
+            icon: 'warning',
+            title: 'Ngoài thời gian phục vụ',
+            html: `Thời gian <strong>${formatTimeForDisplay(gioHienTai, phutHienTai)}</strong> không nằm trong khung giờ phục vụ.<br><br>
+                  <strong>Các khung giờ hiện có:</strong><br>
+                  ${khungGioList}<br><br>
+                  Vui lòng chọn thời gian trong khung giờ phù hợp.`,
+            confirmButtonText: 'Đã hiểu',
+            confirmButtonColor: '#667eea',
+            width: '600px'
+        }).then((result) => {
+          if (result.isConfirmed) {
+              document.getElementById('thoiGianBatDau').value = formatDateTimeLocal(thoiGianBatDauComeBack);
+              
+              // Gọi lại updateRoomPrice để tính toán với thời gian mới
+              updateRoomPrice();
+          }
+        });
+      return 0;
+    }
+
+    console.log(`💰 Áp dụng khung giờ: ${foundTimeSlot}, Giá: ${formatNumber(foundPrice)} VND`);
+    return foundPrice;
+}
+
+
+async function updateRoomPrice() {
+    const phongSelect = document.getElementById('phongSelect');
+    const selectedOption = phongSelect.options[phongSelect.selectedIndex];
+    const thoiGianBatDau = document.getElementById('thoiGianBatDau').value;
+    console.log('Select phòng đc chọn: ', phongSelect);
+    console.log('Phòng đc chọn:' , selectedOption.value);
+    const maPhong = selectedOption.value;
+    console.log('Mã Phòng: ', maPhong);
+    try {
+        const response = await fetch(`/api/hoadon/banggia/${maPhong}`);
+        
+        if (!response.ok) {
+            throw new Error('Không thể tải bảng giá chi tiết');
+        }
+        
+        const bangGiaChiTiet = await response.json();
+        console.log('Gia', bangGiaChiTiet);
+        
+        // 3. TÍNH TOÁN GIÁ DỰA TRÊN THỜI GIAN VÀ BẢNG GIÁ
+        // Giả sử hàm này tính toán tổng tiền dựa trên BangGiaChiTiet và thời gian
+        const giaPhongTinhToan = calculateRoomPrice(thoiGianBatDau, bangGiaChiTiet);
+        
+        currentRoomPrice = giaPhongTinhToan;
+        document.getElementById('giaPhongDisplay').textContent = formatNumber(giaPhongTinhToan);
+        
+        console.log(`✅ Đã tính toán giá phòng: ${giaPhongTinhToan}`);
+
+    } catch (error) {
+        console.error('❌ Lỗi API khi lấy bảng giá:', error);
+        
+        // Fallback: Sử dụng giá cơ bản nếu API thất bại
+        currentRoomPrice = parseFloat(giaCoBan) || 0; 
+        document.getElementById('giaPhongDisplay').textContent = formatNumber(currentRoomPrice);
+        
+        showError(`Không thể tính giá chính xác. Sử dụng giá cơ bản: ${formatNumber(currentRoomPrice)}.`);
+    }
+  
+    calculateTotal();
+}
+function formatToISODateTimeSimple(dateTimeString) {
+    if (!dateTimeString) return '';
+    
+    try {
+        const date = new Date(dateTimeString);
+        
+        if (isNaN(date.getTime())) {
+            console.error('❌ Thời gian không hợp lệ:', dateTimeString);
+            return '';
+        }
+        
+        // Sử dụng toISOString() và thay thế 'Z' bằng '+00:00'
+        return date.toISOString().replace('Z', '+00:00');
+        
+    } catch (error) {
+        console.error('❌ Lỗi khi format thời gian:', error);
+        return '';
+    }
+}
 function populateHoaDonEdit(hoaDonData) {
     // TODO: Implement populate edit form
     console.log('Populate edit form:', hoaDonData);
+    console.log(hoaDonData.PH.TenPhong);
     if (!hoaDonData) {
         console.error('❌ No data provided for edit');
         return;
     }
+    resetHoaDonForm();
     
     // Điền dữ liệu vào form chỉnh sửa
     // Ví dụ:
@@ -1111,11 +1582,37 @@ function populateHoaDonEdit(hoaDonData) {
     document.getElementById('tenKH').value = hoaDonData.MaKH?.TenKH || '';
     document.getElementById('sdtKH').value = hoaDonData.MaKH?.SDT || '';
     document.getElementById('emailKH').value = hoaDonData.MaKH?.Email || '';
+    thoiGianBatDauComeBack = formatToISODateTimeSimple(hoaDonData.ThoiGianBatDau);
     
-    // Điền thông tin phòng
-    if (hoaDonData.MaPhong) {
-        document.getElementById('phongSelect').value = hoaDonData.MaPhong;
-        updateRoomPrice();
+    // Điền thông tin phòng - XỬ LÝ TRƯỜNG HỢP PHÒNG KHÔNG CÓ TRONG SELECT
+    if (hoaDonData.PH) {
+        const phongSelect = document.getElementById('phongSelect');
+        const maPhongValue = hoaDonData.PH.MaPhong;
+        
+        // Kiểm tra xem phòng có trong select chưa
+        let optionExists = false;
+        for (let i = 0; i < phongSelect.options.length; i++) {
+            if (phongSelect.options[i].value === maPhongValue) {
+                optionExists = true;
+                break;
+            }
+        }
+        
+        // Nếu chưa có, thêm option mới
+        if (!optionExists && hoaDonData.MaPhong) {
+            const newOption = document.createElement('option');
+            newOption.value = maPhongValue;
+            newOption.textContent = `${hoaDonData.PH.TenPhong} (Đang sử dụng)`;
+            const giaPhong = calculateRoomPrice(hoaDonData.ThoiGianBatDau, hoaDonData.BangGia);
+            console.log('GIÁ NÈ: ', giaPhong);
+            newOption.setAttribute('data-gia', giaPhong);
+            phongSelect.appendChild(newOption);
+        }
+        
+        // Set giá trị cho select
+        phongSelect.value = maPhongValue;
+        
+        console.log('✅ Đã set phòng:', maPhongValue);
     }
     
     // Điền thời gian
@@ -1127,18 +1624,41 @@ function populateHoaDonEdit(hoaDonData) {
     
     // Điền dịch vụ
     if (hoaDonData.ChiTietHoaDon && Array.isArray(hoaDonData.ChiTietHoaDon)) {
-        selectedServices = hoaDonData.ChiTietHoaDon.map(service => ({
-            MaHang: service.MaHang,
-            TenHang: service.MatHang.TenHang,
-            SoLuong: service.SoLuong,
-            DonGia: service.MatHang.DonGia,
-            DonViTinh: service.MatHang.DonViTinh,
-            ThanhTien: service.ThanhTien,
-            SoLuongTon: service.MatHang.SoLuongTon || 0 // Cần lấy từ API mặt hàng
-        }));
+        selectedServices = hoaDonData.ChiTietHoaDon.map(service => {
+            console.log('Service item from API:', service);
+            
+            return {
+                MaHang: service.MaHang, // Đây là ID của mặt hàng
+                TenHang: service.MatHang?.TenHang || 'Unknown Item',
+                SoLuong: service.SoLuong || 1,
+                DonGia: service.MatHang?.DonGia || service.DonGia || 0,
+                DonViTinh: service.MatHang?.DonViTinh || '',
+                ThanhTien: service.ThanhTien || (service.SoLuong * (service.MatHang?.DonGia || service.DonGia)),
+                SoLuongTon: service.MatHang?.SoLuongTon || 0,
+                LoaiDichVu: service.LoaiDichVu || 'Đồ uống' // Thêm LoaiDichVu từ API
+            };
+        });
+        
+        console.log('Processed services for form:', selectedServices);
         renderServicesList();
         calculateTotal();
+    } else {
+        console.warn('Không có chi tiết hóa đơn hoặc dữ liệu không đúng định dạng');
+        selectedServices = [];
+        renderServicesList();
     }
+    // Cập nhật UI để hiển thị đang edit mode
+    document.getElementById('modalTitle').textContent = 'Chỉnh sửa hóa đơn';
+    setTimeout(() => {
+        updateRoomPrice();
+        calculateTotal();
+    }, 200);
+    
+    // Debug: Kiểm tra giá trị đã được set
+    setTimeout(() => {
+        console.log('Phòng select value:', document.getElementById('phongSelect').value);
+        console.log('Số lượng services:', selectedServices.length);
+    }, 200);
 }
 
 // Export functions to global scope
@@ -2785,4 +3305,255 @@ window.updateServiceQuantity = updateServiceQuantity;
 .swal2-backdrop-show {
   z-index: 99998 !important;
 }
+/* ===== CSS CHO HEADER MODAL MỚI ===== */
+  .modal-header.invoice-company-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 25px 30px 20px;
+    border-radius: 24px 24px 0 0;
+  }
+
+  /* Hàng 1: Logo và nút hành động */
+  .header-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+
+  .company-logo {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .logo-placeholder {
+    width: 50px;
+    height: 50px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+
+  .company-info h1 {
+    margin: 0 0 5px 0;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .company-info p {
+    margin: 0;
+    font-size: 13px;
+    opacity: 0.9;
+    line-height: 1.3;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .btn-print-invoice,
+  .btn-download-invoice,
+  .btn-pay-invoice {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    backdrop-filter: blur(10px);
+  }
+
+  .btn-print-invoice:hover,
+  .btn-download-invoice:hover,
+  .btn-pay-invoice:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateY(-2px);
+  }
+
+  .btn-pay-invoice {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+  }
+
+  .modal-close {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    font-size: 16px;
+  }
+
+  .modal-close:hover {
+    background: rgba(255,255,255,0.3);
+    transform: rotate(90deg);
+  }
+
+  /* Hàng 2: Tiêu đề */
+  .header-title-row {
+    text-align: center;
+    margin-bottom: 15px;
+  }
+
+  .header-title-row h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* Hàng 3: Thông tin hóa đơn */
+  .header-meta-row {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+  }
+
+  .meta-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .meta-item .label {
+    font-size: 13px;
+    opacity: 0.8;
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+
+  .meta-item .value {
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .status-badge.paid {
+    background: rgba(72, 187, 120, 0.9);
+    color: white;
+  }
+
+  .status-badge.pending {
+    background: rgba(237, 137, 54, 0.9);
+    color: white;
+  }
+
+  .status-badge.cancelled {
+    background: rgba(245, 101, 101, 0.9);
+    color: white;
+  }
+
+  /* ===== ĐIỀU CHỈNH LẠI MODAL CHO HEADER MỚI ===== */
+  .invoice-modal {
+    max-width: 800px;
+  }
+
+  .invoice-modal .modal-body {
+    padding: 0;
+  }
+
+  .modern-invoice {
+    border-radius: 0 0 12px 12px;
+  }
+
+  /* ===== RESPONSIVE CHO HEADER MỚI ===== */
+  @media (max-width: 768px) {
+    .modal-header.invoice-company-header {
+      padding: 20px 15px 15px;
+    }
+
+    .header-top-row {
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .company-logo {
+      flex-direction: column;
+      text-align: center;
+      gap: 10px;
+    }
+
+    .company-info h1 {
+      font-size: 20px;
+    }
+
+    .company-info p {
+      font-size: 12px;
+    }
+
+    .header-actions {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .header-title-row h2 {
+      font-size: 20px;
+    }
+
+    .header-meta-row {
+      gap: 15px;
+    }
+
+    .meta-item .label {
+      font-size: 12px;
+    }
+
+    .meta-item .value {
+      font-size: 14px;
+    }
+
+    .btn-print-invoice,
+    .btn-download-invoice,
+    .btn-pay-invoice {
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .header-meta-row {
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .meta-item {
+      flex-direction: row;
+      justify-content: space-between;
+      width: 100%;
+    }
+    
+    .meta-item .label {
+      margin-bottom: 0;
+    }
+  }
 </style>

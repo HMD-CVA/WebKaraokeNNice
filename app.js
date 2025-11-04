@@ -568,6 +568,45 @@ app.get('/api/phonghat/check-loai-phong/:loaiPhong', async (req, res) => {
     }
 });
 
+app.get('/api/hoadon/banggia/:maPhong', async (req, res) => {
+    try {
+        const { maPhong } = req.params;
+        console.log('🔍 Bắt đầu tìm Bảng giá cho Mã phòng:', maPhong);
+
+        // 1. TÌM KIẾM LOẠI PHÒNG: Tìm thông tin phòng để lấy LoaiPhong
+        const phong = await DataModel.Data_PhongHat_Model.findOne({ 
+            MaPhong: maPhong 
+        }).select('LoaiPhong').lean().exec();
+
+        if (!phong || !phong.LoaiPhong) {
+            console.log(`⚠️ Không tìm thấy phòng hoặc Loại Phòng cho mã: ${maPhong}`);
+            return res.status(404).json({ 
+                success: false, 
+                message: `Không tìm thấy loại phòng cho mã ${maPhong}` 
+            });
+        }
+        
+        const loaiPhong = phong.LoaiPhong;
+
+        // 2. TRUY VẤN BẢNG GIÁ: Dùng LoaiPhong vừa tìm được
+        const bangGia = await DataModel.Data_BangGiaPhong_Model.find({ 
+            LoaiPhong: loaiPhong 
+        }).lean().exec();
+
+        console.log(`✅ Đã tải ${bangGia.length} mục giá cho Loại phòng: ${loaiPhong}`);
+        
+        res.json(bangGia); // Trả về mảng bảng giá
+        
+    } catch (err) {
+        console.error('❌ Lỗi Server khi truy vấn bảng giá:', err);
+        res.status(500).json({ 
+            success: false,
+            error: 'Lỗi server khi truy vấn bảng giá.' 
+        });
+    }
+});
+
+
 app.get('/api/banggia/:loaiPhong', async (req, res) => {
     try {
         const { loaiPhong } = req.params;
@@ -581,6 +620,8 @@ app.get('/api/banggia/:loaiPhong', async (req, res) => {
         res.status(500).json({ error: 'Lỗi server!' });
     }
 });
+
+
 
 
 // Quản lý nhân viên
@@ -895,6 +936,16 @@ app.get('/api/hoadon/edit/:maHoaDon', async (req, res) => {
         const khachHang = await DataModel.Data_KhachHang_Model.findOne({ MaKH: hoaDon.MaKH }).lean();
         // Tìm chi tiết hóa đơn
         const chiTietHoaDon = await DataModel.Data_ChiTietHD_Model.find({ MaHoaDon: maHoaDon }).lean();
+        // Tìm phòng hát
+        const phongHat = await DataModel.Data_PhongHat_Model.findOne({ MaPhong: hoaDon.MaPhong }).lean();
+
+        // Lấy tất cả bảng giá
+        const bangGiaList = await DataModel.Data_BangGiaPhong_Model.find({}).lean();
+
+        // Lọc bảng giá theo LoaiPhong của phòng hiện tại
+        const bangGiaCuaPhong = bangGiaList.filter(banggia => 
+            banggia.LoaiPhong === phongHat.LoaiPhong
+        );
 
         // Lấy thông tin mặt hàng cho từng chi tiết
         const chiTietWithMatHang = await Promise.all(
@@ -920,6 +971,14 @@ app.get('/api/hoadon/edit/:maHoaDon', async (req, res) => {
                 SDT: khachHang.SDT,
                 Email: khachHang.Email
             } : null,
+            PH: phongHat ? {
+                MaPhong: phongHat.MaPhong,
+                TenPhong: phongHat.TenPhong,
+                LoaiPhong: phongHat.LoaiPhong,
+                SucChua: phongHat.SucChua,
+                TrangThai: phongHat.TrangThai
+            } : null,
+            BangGia: bangGiaCuaPhong, 
             ChiTietHoaDon: chiTietWithMatHang
         };
 
@@ -2300,12 +2359,13 @@ app.put('/api/mathang/:maHang/tonkho', async (req, res) => {
 app.put('/api/hoadon/:maHoaDon', async (req, res) => {
   try {
     const { maHoaDon } = req.params;
-    const { 
-      TenHang, LoaiHang, DonGia, DonViTinh, SoLuongTon, LinkAnh
-    } = req.body;
-
-    console.log('Nhận: ', maMH, TenHang, LoaiHang, DonGia, DonViTinh, SoLuongTon, LinkAnh);
-
+    const { tenKH, sdtKH, emailKH, maPhong,  thoiGianBatDau, tienPhong, dichVu, tongTien } = req.body;           
+    console.log('📥 Nhận dữ liệu hóa đơn:', { 
+        maHoaDon, tenKH, sdtKH, emailKH, maPhong, thoiGianBatDau, 
+        tienPhong, tongTien, soDichVu: dichVu.length 
+    });
+    return;
+    
     const mh = await DataModel.Data_MatHang_Model.findOneAndUpdate(
         { MaHang: maMH },
         { 
