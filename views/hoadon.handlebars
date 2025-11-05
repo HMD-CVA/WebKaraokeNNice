@@ -140,9 +140,11 @@
           </div>
           <div class="employee-overlay">
             <div class="employee-actions">
+              {{#unless (or (eq this.TrangThai "Đã thanh toán") (eq this.TrangThai "Đã hủy"))}}
               <button class="btn-edit" data-mahd="{{this.MaHoaDon}}">
                 <i class="fas fa-edit"></i>
               </button>
+              {{/unless}}
               <button class="btn-delete" data-id="{{this._id}}" data-mahd="{{this.MaHoaDon}}">
                 <i class="fas fa-trash"></i>
               </button>
@@ -254,6 +256,7 @@
 
           <!-- Phần 1: Thông tin khách hàng -->
           <div class="form-section">
+            <input type="hidden" id="maKH">
             <h3>Thông tin khách hàng</h3>
             <div class="form-grid">
               <div class="form-group">
@@ -465,7 +468,10 @@ function initializeEventListeners() {
     // Service controls
     document.getElementById('addServiceBtn').addEventListener('click', addService);
     document.getElementById('serviceSearch').addEventListener('keyup', filterServices);
-    document.getElementById('phongSelect').addEventListener('change', updateRoomPrice);
+    document.getElementById('phongSelect').addEventListener('change', function() {
+        {{!-- updateRoomPrice(); --}}
+        resetRoomForm(); // hàm mới muốn thêm
+    });
     document.getElementById('thoiGianBatDau').addEventListener('change', updateRoomPrice);
 
     // Delegated events for dynamic content
@@ -829,6 +835,7 @@ function resetHoaDonForm() {
 
 // ===== SAVE HOA DON =====
 async function saveHoaDon() {
+    const maKH = document.getElementById('maKH').value;
     const tenKH = document.getElementById('tenKH').value;
     const sdtKH = document.getElementById('sdtKH').value;
     const emailKH = document.getElementById('emailKH').value;
@@ -848,22 +855,27 @@ async function saveHoaDon() {
         return;
     }
 
+    console.log(selectedServices);
+
     const formData = {
+        maHoaDon,
+        maKH,
         tenKH,
         sdtKH,
         emailKH,
         maPhong: phongSelect,
         thoiGianBatDau,
         tienPhong: currentRoomPrice,
-        dichVu: selectedServices.map(service => ({
+        dichVu: selectedServices.filter(service => service.LoaiDichVu !== 'Thuê phòng').map(service => ({
             MaHang: service.MaHang,
             TenHang: service.TenHang,
+            LoaiDichVu: service.LoaiDichVu,
             SoLuong: service.SoLuong,
             DonGia: service.DonGia,
             DonViTinh: service.DonViTinh,
             ThanhTien: service.ThanhTien
         })),
-        tongTien: currentRoomPrice + selectedServices.reduce((sum, service) => sum + service.ThanhTien, 0)
+        tongTien: currentRoomPrice + selectedServices.filter(service => service.LoaiDichVu !== 'Thuê phòng').reduce((sum, service) => sum + service.ThanhTien, 0)
     };
 
     if (isEditMode) {
@@ -881,7 +893,7 @@ async function saveHoaDon() {
             didOpen: () => Swal.showLoading()
         });
 
-        const endpoint = isEditMode ? `/api/hoadon/${maHoaDon}` : '/api/hoadon';
+        const endpoint = isEditMode ? `/api/hoadon/edit/${maHoaDon}` : '/api/hoadon';
         const method = isEditMode ? 'PUT' : 'POST';
 
         const response = await fetch(endpoint, {
@@ -914,9 +926,9 @@ async function saveHoaDon() {
             showConfirmButton: false
         });
 
-        {{!-- setTimeout(() => {
+        setTimeout(() => {
             location.reload();
-        }, 1500); --}}
+        }, 1500);
 
     } catch (error) {
         console.error('❌ Lỗi khi lưu hóa đơn:', error);
@@ -1040,9 +1052,138 @@ function deleteHoaDon(id, maHoaDon) {
     });
 }
 
-function thanhToanHoaDon(maHoaDon) {
-    // TODO: Implement payment functionality
-    showError('Tính năng thanh toán đang được phát triển');
+async function thanhToanHoaDon(maHoaDon) {
+    try {
+        // Hiển thị cảnh báo xác nhận
+        const result = await Swal.fire({
+            title: 'Xác nhận thanh toán?',
+            text: `Bạn có chắc muốn thanh toán hóa đơn ${maHoaDon}?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Thanh toán',
+            cancelButtonText: 'Hủy',
+            width: '500px'
+        });
+
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        // Hiển thị loading
+        Swal.fire({
+            title: 'Đang xử lý thanh toán...',
+            text: 'Vui lòng chờ trong giây lát',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+
+        // Lấy thông tin hóa đơn hiện tại
+        const [hoaDonResponse, chiTietResponse] = await Promise.all([
+            fetch(`/api/hoadon/${maHoaDon}`),
+            fetch(`/api/chitiethoadon/${maHoaDon}`)
+        ]);
+
+        if (!hoaDonResponse.ok || !chiTietResponse.ok) {
+            throw new Error('Không thể tải thông tin hóa đơn');
+        }
+
+        const hoaDon = await hoaDonResponse.json();
+        const chiTietHoaDon = await chiTietResponse.json();
+
+        // Lấy thời gian hiện tại
+        const now = new Date();
+        const thoiGianKetThuc = now.toISOString();
+
+        // Lấy bảng giá phòng để tính toán
+        const bangGiaResponse = await fetch(`/api/hoadon/banggia/${hoaDon.MaPhong}`);
+        if (!bangGiaResponse.ok) {
+            throw new Error('Không thể tải bảng giá phòng');
+        }
+        const bangGia = await bangGiaResponse.json();
+
+        // Tính toán tiền phòng mới dựa trên thời gian thực tế
+        const tienPhongMoi = calculateActualRoomPrice(
+            hoaDon.ThoiGianBatDau, 
+            thoiGianKetThuc, 
+            bangGia
+        );
+
+        // Tính tổng tiền dịch vụ (loại trừ Thuê phòng)
+        const tienDichVu = Array.isArray(chiTietHoaDon) 
+            ? chiTietHoaDon
+                .filter(item => item.LoaiDichVu !== 'Thuê phòng')
+                .reduce((sum, item) => sum + (item.ThanhTien || 0), 0)
+            : 0;
+
+        // Tổng tiền mới
+        const tongTienMoi = tienPhongMoi + tienDichVu;
+
+        console.log('💰 Tính toán thanh toán:', {
+            tienPhongCu: hoaDon.TongTien - tienDichVu,
+            tienPhongMoi: tienPhongMoi,
+            tienDichVu: tienDichVu,
+            tongTienMoi: tongTienMoi,
+            thoiGianBatDau: hoaDon.ThoiGianBatDau,
+            thoiGianKetThuc: thoiGianKetThuc
+        });
+
+        // Gửi yêu cầu cập nhật thanh toán
+        const updateResponse = await fetch(`/api/hoadon/thanhtoan/${maHoaDon}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                thoiGianKetThuc: thoiGianKetThuc,
+                tienPhong: tienPhongMoi,
+                tongTien: tongTienMoi,
+                trangThai: 'Đã thanh toán'
+            })
+        });
+
+        if (!updateResponse.ok) {
+            const errorResult = await updateResponse.json();
+            throw new Error(errorResult.error || 'Cập nhật thanh toán thất bại');
+        }
+
+        const updateResult = await updateResponse.json();
+
+        // Hiển thị thông báo thành công với thông tin chi tiết
+        await Swal.fire({
+            icon: 'success',
+            title: 'Thanh toán thành công!',
+            html: `
+                <div style="text-align: left;">
+                    <p><strong>Mã HĐ:</strong> ${maHoaDon}</p>
+                    <p><strong>Thời gian:</strong> ${formatTime(hoaDon.ThoiGianBatDau)} - ${formatTime(thoiGianKetThuc)}</p>
+                    <p><strong>Tiền phòng:</strong> ${formatNumber(tienPhongMoi)} VND</p>
+                    <p><strong>Tiền dịch vụ:</strong> ${formatNumber(tienDichVu)} VND</p>
+                    <p><strong>Tổng cộng:</strong> ${formatNumber(tongTienMoi)} VND</p>
+                </div>
+            `,
+            confirmButtonText: 'Đóng',
+            confirmButtonColor: '#667eea',
+            width: '500px'
+        });
+
+        // Cập nhật UI ngay lập tức mà không cần reload
+        updateHoaDonUI(maHoaDon, {
+            trangThai: 'Đã thanh toán',
+            tongTien: tongTienMoi,
+            thoiGianKetThuc: thoiGianKetThuc
+        });
+
+    } catch (error) {
+        console.error('❌ Lỗi thanh toán hóa đơn:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Lỗi!',
+            text: error.message || 'Không thể thực hiện thanh toán',
+            confirmButtonColor: '#667eea'
+        });
+    }
 }
 
 function printHoaDon(maHoaDon) {
@@ -1506,11 +1647,22 @@ function calculateRoomPrice(thoiGianBatDau, bangGia) {
     return foundPrice;
 }
 
+function resetRoomForm() {
+  document.getElementById('thoiGianBatDau').value = null;
+  document.getElementById('giaPhongDisplay').textContent = 0;
+  thoiGianBatDauComeBack = null;
+}
 
 async function updateRoomPrice() {
     const phongSelect = document.getElementById('phongSelect');
     const selectedOption = phongSelect.options[phongSelect.selectedIndex];
     const thoiGianBatDau = document.getElementById('thoiGianBatDau').value;
+    console.log('Thời gian bắt đầu: ', thoiGianBatDau);
+    if (thoiGianBatDau === null) {
+      document.getElementById('giaPhongDisplay').textContent = 0;
+      console.log('reset form phòng');
+      return;
+    }
     console.log('Select phòng đc chọn: ', phongSelect);
     console.log('Phòng đc chọn:' , selectedOption.value);
     const maPhong = selectedOption.value;
@@ -1579,9 +1731,10 @@ function populateHoaDonEdit(hoaDonData) {
     // Ví dụ:
     document.getElementById('hoaDonId').value = hoaDonData._id || '';
     document.getElementById('hoaDonMaHD').value = hoaDonData.MaHoaDon || '';
-    document.getElementById('tenKH').value = hoaDonData.MaKH?.TenKH || '';
-    document.getElementById('sdtKH').value = hoaDonData.MaKH?.SDT || '';
-    document.getElementById('emailKH').value = hoaDonData.MaKH?.Email || '';
+    document.getElementById('maKH').value = hoaDonData.KH.MaKH || '';
+    document.getElementById('tenKH').value = hoaDonData.KH?.TenKH || '';
+    document.getElementById('sdtKH').value = hoaDonData.KH?.SDT || '';
+    document.getElementById('emailKH').value = hoaDonData.KH?.Email || '';
     thoiGianBatDauComeBack = formatToISODateTimeSimple(hoaDonData.ThoiGianBatDau);
     
     // Điền thông tin phòng - XỬ LÝ TRƯỜNG HỢP PHÒNG KHÔNG CÓ TRONG SELECT
