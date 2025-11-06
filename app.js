@@ -2823,7 +2823,91 @@ app.delete('/api/mathang/:mhID', async (req, res) => {
   }
 });
 
+app.delete('/api/delete/hoadon/:maHoaDon', async (req, res) => {
+  try {
+    const { maHoaDon } = req.params;
 
+    console.log(`🗑️ Nhận yêu cầu xóa hóa đơn: ${maHoaDon}`);
+
+    // 1. Tìm hóa đơn cần xóa
+    const hoaDon = await DataModel.Data_HoaDon_Model.findOne({ MaHoaDon: maHoaDon });
+    if (!hoaDon) {
+      return res.status(404).json({
+        success: false,
+        error: 'Không tìm thấy hóa đơn'
+      });
+    }
+
+    // 2. Kiểm tra trạng thái hóa đơn - chỉ cho phép xóa hóa đơn chưa thanh toán
+    // if (hoaDon.TrangThai === 'Đã thanh toán') {
+    //   return res.status(400).json({
+    //     success: false,
+    //     error: 'Không thể xóa hóa đơn đã thanh toán'
+    //   });
+    // }
+
+    const maPhong = hoaDon.MaPhong;
+
+    // 3. Lấy danh sách chi tiết hóa đơn để hoàn trả tồn kho
+    const chiTietHoaDons = await DataModel.Data_ChiTietHD_Model.find({ MaHoaDon: maHoaDon });
+
+    // 4. Hoàn trả tồn kho cho các mặt hàng đã sử dụng
+    for (const chiTiet of chiTietHoaDons) {
+      if (chiTiet.MaHang && chiTiet.LoaiDichVu !== 'Thuê phòng') {
+        // Hoàn trả số lượng tồn kho
+        await DataModel.Data_MatHang_Model.findOneAndUpdate(
+          { MaHang: chiTiet.MaHang },
+          { $inc: { SoLuongTon: chiTiet.SoLuong } }
+        );
+        console.log(`🔄 Đã hoàn trả tồn kho cho mặt hàng ${chiTiet.MaHang}: +${chiTiet.SoLuong}`);
+      }
+    }
+
+    // 5. Xóa tất cả chi tiết hóa đơn
+    await DataModel.Data_ChiTietHD_Model.deleteMany({ MaHoaDon: maHoaDon });
+    console.log(`✅ Đã xóa ${chiTietHoaDons.length} chi tiết hóa đơn`);
+
+    // 6. Xóa hóa đơn chính
+    await DataModel.Data_HoaDon_Model.findOneAndDelete({ MaHoaDon: maHoaDon });
+    console.log(`✅ Đã xóa hóa đơn ${maHoaDon}`);
+
+    // 7. Cập nhật trạng thái phòng về "Trống" (nếu hóa đơn đang giữ phòng)
+    if (maPhong) {
+      const updatedPhong = await DataModel.Data_PhongHat_Model.findOneAndUpdate(
+        { MaPhong: maPhong },
+        { 
+          TrangThai: 'Trống',
+          updatedAt: new Date()
+        },
+        { new: true, runValidators: true }
+      );
+
+      if (updatedPhong) {
+        console.log(`✅ Đã cập nhật trạng thái phòng ${maPhong} thành: ${updatedPhong.TrangThai}`);
+      } else {
+        console.warn(`⚠️ Không tìm thấy phòng ${maPhong} để cập nhật trạng thái`);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Xóa hóa đơn thành công',
+      data: {
+        maHoaDon: maHoaDon,
+        soChiTietDaXoa: chiTietHoaDons.length,
+        maPhong: maPhong
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Lỗi khi xóa hóa đơn:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi xóa hóa đơn',
+      error: error.message
+    });
+  }
+});
 
 
 

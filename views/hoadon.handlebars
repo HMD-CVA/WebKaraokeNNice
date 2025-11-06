@@ -140,11 +140,11 @@
           </div>
           <div class="employee-overlay">
             <div class="employee-actions">
-              {{#unless (or (eq this.TrangThai "Đã thanh toán") (eq this.TrangThai "Đã hủy"))}}
+              {{!-- {{#unless (or (eq this.TrangThai "Đã thanh toán") (eq this.TrangThai "Đã hủy"))}} --}}
               <button class="btn-edit" data-mahd="{{this.MaHoaDon}}">
                 <i class="fas fa-edit"></i>
               </button>
-              {{/unless}}
+              {{!-- {{/unless}} --}}
               <button class="btn-delete" data-id="{{this._id}}" data-mahd="{{this.MaHoaDon}}">
                 <i class="fas fa-trash"></i>
               </button>
@@ -483,13 +483,6 @@ function initializeEventListeners() {
                 openHoaDonModal(hoaDonData);
             });
         }
-        // Delete buttons
-        if (e.target.closest('.btn-delete')) {
-            const btn = e.target.closest('.btn-delete');
-            const id = btn.getAttribute('data-id');
-            const mahd = btn.getAttribute('data-mahd');
-            deleteHoaDon(id, mahd);
-        }
         // Detail buttons
         if (e.target.closest('.btn-detail')) {
             const mahd = e.target.closest('.btn-detail').getAttribute('data-mahd');
@@ -509,6 +502,14 @@ function initializeEventListeners() {
         if (e.target.closest('.btn-delete-service')) {
             const index = e.target.closest('.btn-delete-service').getAttribute('data-index');
             removeService(parseInt(index));
+        }
+
+        // Delete buttons
+        if (e.target.closest('.btn-delete')) {
+            const btn = e.target.closest('.btn-delete');
+            const id = btn.getAttribute('data-id');
+            const mahd = btn.getAttribute('data-mahd');
+            deleteHoaDon(id, mahd);
         }
     });
 }
@@ -1034,22 +1035,107 @@ function showError(message) {
 }
 
 
-function deleteHoaDon(id, maHoaDon) {
-    Swal.fire({
-        title: 'Xác nhận xóa',
-        text: `Bạn có chắc muốn xóa hóa đơn ${maHoaDon}?`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Xóa',
-        cancelButtonText: 'Hủy'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // TODO: Implement delete functionality
-            showError('Tính năng xóa đang được phát triển');
+async function deleteHoaDon(id, maHoaDon) {
+    try {
+        // Hiển thị cảnh báo xác nhận
+        const results = await Swal.fire({
+            title: 'Xác nhận xóa?',
+            text: `Bạn có chắc muốn xóa hóa đơn ${maHoaDon}? Hành động này sẽ:\n• Xóa vĩnh viễn hóa đơn\n• Hoàn trả tồn kho các mặt hàng đã sử dụng\n• Chuyển trạng thái phòng về "Trống"\n\nHành động này không thể hoàn tác!`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Xóa',
+            cancelButtonText: 'Hủy',
+            width: '500px'
+        });
+
+        if (!results.isConfirmed) {
+            return;
         }
-    });
+
+        // Hiển thị loading
+        Swal.fire({
+            title: 'Đang xóa hóa đơn...',
+            text: 'Đang hoàn trả tồn kho và cập nhật trạng thái phòng...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+
+        // Gọi API xóa hóa đơn
+        const response = await fetch(`/api/delete/hoadon/${maHoaDon}`, {
+            method: 'DELETE'
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || 'Xóa hóa đơn thất bại');
+        }
+
+        // Hiển thị thông báo thành công
+        await Swal.fire({
+            icon: 'success',
+            title: 'Đã xóa!',
+            html: `
+                <div style="text-align: left;">
+                    <p><strong>Hóa đơn ${maHoaDon} đã được xóa thành công!</strong></p>
+                    <p>• Đã xóa ${result.data.soChiTietDaXoa} dịch vụ</p>
+                    ${result.data.maPhong ? `<p>• Phòng ${result.data.maPhong} đã chuyển về trạng thái "Trống"</p>` : ''}
+                    <p>• Đã hoàn trả tồn kho các mặt hàng</p>
+                </div>
+            `,
+            confirmButtonText: 'Đóng',
+            confirmButtonColor: '#667eea',
+            width: '500px'
+        });
+
+        // Xóa card hóa đơn khỏi UI ngay lập tức
+        removeHoaDonFromUI(maHoaDon);
+
+    } catch (error) {
+        console.error('❌ Lỗi khi xóa hóa đơn:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Lỗi!',
+            text: error.message || 'Không thể xóa hóa đơn',
+            confirmButtonColor: '#667eea'
+        });
+    }
+}
+
+// Hàm xóa hóa đơn khỏi UI
+function removeHoaDonFromUI(maHoaDon) {
+    const hoaDonCard = document.querySelector(`.employee-card[data-mahd="${maHoaDon}"]`);
+    
+    if (hoaDonCard) {
+        // Thêm hiệu ứng fade out trước khi xóa
+        hoaDonCard.style.transition = 'all 0.3s ease';
+        hoaDonCard.style.opacity = '0';
+        hoaDonCard.style.transform = 'translateX(-100px)';
+        
+        setTimeout(() => {
+            hoaDonCard.remove();
+            console.log('✅ Đã xóa hóa đơn khỏi UI:', maHoaDon);
+            
+            // Cập nhật thống kê
+            calculateStatistics();
+            
+            // Kiểm tra và hiển thị empty state nếu cần
+            const remainingCards = document.querySelectorAll('.employee-card');
+            toggleEmptyState(remainingCards.length === 0);
+            
+            // Cập nhật danh sách phòng trống
+            updateAvailableRoomsList();
+            
+        }, 300);
+    } else {
+        // Nếu không tìm thấy card, reload trang để đảm bảo đồng bộ
+        console.warn('❌ Không tìm thấy card hóa đơn, reload trang...');
+        setTimeout(() => {
+            location.reload();
+        }, 1000);
+    }
 }
 
 async function thanhToanHoaDon(maHoaDon) {
@@ -1184,6 +1270,238 @@ async function thanhToanHoaDon(maHoaDon) {
             confirmButtonColor: '#667eea'
         });
     }
+}
+
+function calculateActualRoomPrice(thoiGianBatDau, thoiGianKetThuc, bangGia) {
+    if (!thoiGianBatDau || !thoiGianKetThuc || !Array.isArray(bangGia)) {
+        console.warn('❌ Thiếu dữ liệu để tính toán tiền phòng');
+        return 0;
+    }
+
+    const start = new Date(thoiGianBatDau);
+    const end = new Date(thoiGianKetThuc);
+    
+    // Tính tổng số phút sử dụng
+    const totalMinutes = Math.max(0, (end - start) / (1000 * 60));
+    
+    console.log(`⏱️ Thời gian sử dụng: ${totalMinutes.toFixed(2)} phút (${formatTime(start)} - ${formatTime(end)})`);
+
+    if (totalMinutes <= 0) {
+        console.warn('⚠️ Thời gian sử dụng không hợp lệ');
+        return 0;
+    }
+
+    // Tìm khung giờ phù hợp với thời điểm bắt đầu
+    const startHour = start.getHours();
+    const startMinute = start.getMinutes();
+    const startTotalMinutes = startHour * 60 + startMinute;
+
+    console.log(`🕒 Giờ bắt đầu: ${startHour}:${startMinute.toString().padStart(2, '0')} (${startTotalMinutes} phút)`);
+
+    let foundPrice = 0;
+    let foundTimeSlot = '';
+
+    for (const gia of bangGia) {
+        if (!gia.KhungGio) continue;
+
+        const [batDauStr, ketThucStr] = gia.KhungGio.split('-');
+        if (!batDauStr || !ketThucStr) continue;
+
+        const [gioBatDau, phutBatDau] = batDauStr.split(':').map(Number);
+        const [gioKetThuc, phutKetThuc] = ketThucStr.split(':').map(Number);
+        
+        const thoiGianBatDauPhut = gioBatDau * 60 + phutBatDau;
+        const thoiGianKetThucPhut = gioKetThuc * 60 + phutKetThuc;
+
+        console.log(`🔍 Kiểm tra khung giờ: ${gia.KhungGio} (${thoiGianBatDauPhut} - ${thoiGianKetThucPhut} phút)`);
+
+        let isMatch = false;
+        const isQuaNgay = thoiGianBatDauPhut >= thoiGianKetThucPhut;
+
+        if (isQuaNgay) {
+            // KHUNG GIỜ QUA NGÀY (ví dụ: 18:00-03:00)
+            // Kiểm tra: nếu thời gian nằm trong [batDau, 24:00) hoặc [00:00, ketThuc]
+            if (startTotalMinutes >= thoiGianBatDauPhut || startTotalMinutes < thoiGianKetThucPhut) {
+                isMatch = true;
+                console.log(`✅ Khung qua ngày ${gia.KhungGio} PHÙ HỢP`);
+            }
+        } else {
+            // KHUNG GIỜ TRONG CÙNG NGÀY
+            if (startTotalMinutes >= thoiGianBatDauPhut && startTotalMinutes < thoiGianKetThucPhut) {
+                isMatch = true;
+                console.log(`✅ Khung trong ngày ${gia.KhungGio} PHÙ HỢP`);
+            }
+        }
+
+        if (isMatch) {
+            foundPrice = gia.GiaTien || 0;
+            foundTimeSlot = gia.KhungGio;
+            break;
+        }
+    }
+
+    if (foundPrice === 0) {
+        console.warn('❌ Không tìm thấy khung giờ phù hợp, sử dụng giá mặc định');
+        if (bangGia.length > 0 && bangGia[0].GiaTien) {
+            foundPrice = bangGia[0].GiaTien;
+            foundTimeSlot = bangGia[0].KhungGio;
+        } else {
+            return 0;
+        }
+    }
+
+    // Tính giá theo phút (giá giờ / 60)
+    const pricePerMinute = foundPrice / 60;
+    const totalPrice = totalMinutes * pricePerMinute;
+    
+    console.log(`💰 Tính toán chi tiết:`);
+    console.log(`   - Giá/giờ: ${formatNumber(foundPrice)} VND`);
+    console.log(`   - Giá/phút: ${formatNumber(pricePerMinute)} VND`);
+    console.log(`   - Số phút: ${totalMinutes.toFixed(2)} phút`);
+    console.log(`   - Tổng tiền: ${totalMinutes.toFixed(2)} × ${formatNumber(pricePerMinute)} = ${formatNumber(totalPrice)} VND`);
+
+    // Làm tròn đến hàng nghìn
+    const roundedPrice = Math.round(totalPrice / 1000) * 1000;
+    
+    console.log(`💰 Tổng tiền phòng (đã làm tròn): ${formatNumber(roundedPrice)} VND`);
+    return roundedPrice;
+}
+  
+// Hàm tính số phút chồng lấn cho khung giờ trong ngày
+function calculateOverlapMinutes(startTime, endTime, slotStartMinute, slotEndMinute) {
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    
+    // Tạo thời gian bắt đầu và kết thúc của khung giờ trong cùng ngày
+    const slotStart = new Date(start);
+    slotStart.setHours(Math.floor(slotStartMinute / 60), slotStartMinute % 60, 0, 0);
+
+    const slotEnd = new Date(start);
+    slotEnd.setHours(Math.floor(slotEndMinute / 60), slotEndMinute % 60, 0, 0);
+
+    // Nếu slotEnd nhỏ hơn slotStart, nghĩa là qua ngày - không xử lý ở đây
+    if (slotEnd <= slotStart) {
+        return 0;
+    }
+
+    // Tính thời gian giao nhau
+    const overlapStart = new Date(Math.max(start.getTime(), slotStart.getTime()));
+    const overlapEnd = new Date(Math.min(end.getTime(), slotEnd.getTime()));
+
+    if (overlapStart >= overlapEnd) {
+        return 0;
+    }
+
+    const overlapMinutes = (overlapEnd - overlapStart) / (1000 * 60);
+    return Math.max(0, overlapMinutes);
+}
+
+// Hàm tính số phút chồng lấn cho khung giờ qua ngày
+function calculateOverlapMinutesForOvernight(startTime, endTime, slotStartMinute, slotEndMinute) {
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    
+    let totalMinutes = 0;
+
+    // Phần 1: Từ slotStartMinute đến cuối ngày (1440 phút)
+    const slotStartDay1 = new Date(start);
+    slotStartDay1.setHours(Math.floor(slotStartMinute / 60), slotStartMinute % 60, 0, 0);
+
+    const slotEndDay1 = new Date(start);
+    slotEndDay1.setHours(23, 59, 59, 999); // Cuối ngày
+
+    const overlapStart1 = new Date(Math.max(start.getTime(), slotStartDay1.getTime()));
+    const overlapEnd1 = new Date(Math.min(end.getTime(), slotEndDay1.getTime()));
+
+    if (overlapStart1 < overlapEnd1) {
+        const minutes1 = (overlapEnd1 - overlapStart1) / (1000 * 60);
+        totalMinutes += Math.max(0, minutes1);
+    }
+
+    // Phần 2: Từ đầu ngày tiếp theo đến slotEndMinute (đã trừ 1440)
+    const slotStartDay2 = new Date(start);
+    slotStartDay2.setDate(slotStartDay2.getDate() + 1);
+    slotStartDay2.setHours(0, 0, 0, 0); // Đầu ngày tiếp theo
+
+    const slotEndDay2 = new Date(start);
+    slotEndDay2.setDate(slotEndDay2.getDate() + 1);
+    slotEndDay2.setHours(Math.floor((slotEndMinute - 1440) / 60), (slotEndMinute - 1440) % 60, 0, 0);
+
+    const overlapStart2 = new Date(Math.max(start.getTime(), slotStartDay2.getTime()));
+    const overlapEnd2 = new Date(Math.min(end.getTime(), slotEndDay2.getTime()));
+
+    if (overlapStart2 < overlapEnd2) {
+        const minutes2 = (overlapEnd2 - overlapStart2) / (1000 * 60);
+        totalMinutes += Math.max(0, minutes2);
+    }
+
+    return totalMinutes;
+}
+
+function updateHoaDonUI(maHoaDon, updatedData) {
+    const hoaDonCard = document.querySelector(`.employee-card[data-mahd="${maHoaDon}"]`);
+    
+    if (!hoaDonCard) {
+        console.warn('❌ Không tìm thấy card hóa đơn để cập nhật:', maHoaDon);
+        return;
+    }
+
+    // Cập nhật data attributes
+    hoaDonCard.setAttribute('data-status', updatedData.trangThai);
+    hoaDonCard.setAttribute('data-tongtien', updatedData.tongTien);
+
+    // Cập nhật badge trạng thái
+    const statusBadge = hoaDonCard.querySelector('.employee-badge');
+    if (statusBadge) {
+        statusBadge.textContent = updatedData.trangThai;
+        statusBadge.className = `employee-badge ${updatedData.trangThai}`;
+    }
+
+    // Cập nhật hiển thị tổng tiền
+    const statusDisplay = hoaDonCard.querySelector('.employee-status');
+    if (statusDisplay) {
+        statusDisplay.textContent = `${formatNumber(updatedData.tongTien)} VND`;
+        statusDisplay.className = `employee-status active`; // Đã thanh toán -> active
+    }
+
+    // Cập nhật thời gian kết thúc trong details
+    const detailItems = hoaDonCard.querySelectorAll('.detail-item');
+    detailItems.forEach(item => {
+        if (item.textContent.includes('Kết thúc:')) {
+            const timeSpan = item.querySelector('span');
+            if (timeSpan) {
+                if (updatedData.thoiGianKetThuc) {
+                    timeSpan.textContent = `Kết thúc: ${formatTime(updatedData.thoiGianKetThuc)}`;
+                    timeSpan.className = ''; // Xóa highlight
+                } else {
+                    timeSpan.textContent = 'Kết thúc: Đã thanh toán';
+                }
+            }
+        }
+    });
+
+    // Cập nhật nút hành động
+    const footer = hoaDonCard.querySelector('.employee-footer');
+    if (footer) {
+        footer.innerHTML = `
+            <button class="btn-detail" data-mahd="${maHoaDon}">
+                <i class="fas fa-eye"></i>
+                Xem chi tiết
+            </button>
+            <button class="btn-print" data-mahd="${maHoaDon}">
+                <i class="fas fa-print"></i>
+                In hóa đơn
+            </button>
+        `;
+    }
+
+    // Ẩn nút edit (nếu có)
+    const editButton = hoaDonCard.querySelector('.btn-edit');
+    if (editButton) {
+        editButton.style.display = 'none';
+    }
+
+    console.log('✅ Đã cập nhật UI cho hóa đơn:', maHoaDon);
 }
 
 function printHoaDon(maHoaDon) {
@@ -3709,4 +4027,25 @@ window.updateServiceQuantity = updateServiceQuantity;
       margin-bottom: 0;
     }
   }
+/* Hiệu ứng cho card khi bị xóa */
+.employee-card {
+    transition: all 0.3s ease;
+}
+
+/* Trạng thái khi đang xóa */
+.employee-card.deleting {
+    opacity: 0.5;
+    transform: scale(0.95);
+    background-color: #ffeef0;
+}
+
+/* Nút xóa với hiệu ứng hover */
+.btn-delete {
+    transition: all 0.2s ease;
+}
+
+.btn-delete:hover {
+    background-color: #e74c3c;
+    transform: scale(1.1);
+}
 </style>
