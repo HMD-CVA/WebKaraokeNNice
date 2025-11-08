@@ -492,7 +492,23 @@
     if (!roomNavigation) return;
 
     // Lấy tất cả các phòng từ dữ liệu thiết bị
-    const rooms = [...new Set(allThietBis.map(card => card.getAttribute('data-maphong')))].filter(room => room);
+    const rooms = [...new Set(allThietBis.map(card => card.getAttribute('data-maphong')))]
+    .filter(room => room)
+    .sort((a, b) => {
+      // Hàm trích xuất số từ mã phòng
+      const extractNumber = (code) => {
+          if (!code) return 0;
+          // Tìm tất cả các số trong chuỗi và lấy số đầu tiên
+          const matches = code.match(/\d+/);
+          return matches ? parseInt(matches[0], 10) : 0;
+      };
+
+      const numA = extractNumber(a);
+      const numB = extractNumber(b);
+
+      // So sánh số học
+      return numA - numB;
+    });
     
     // Thêm nút "Tất cả"
     const allButton = document.createElement('button');
@@ -1077,8 +1093,6 @@
 
 
 </script>
-
-
 
 
 

@@ -4,13 +4,39 @@ import db from './config/server.js';
 import DataModel from './app/model/index.js';
 import { generateCode } from './app/utils/codeGenerator.js'
 
+import multer from 'multer';
+import { google } from 'googleapis';
+import stream from 'stream';
+import path from 'path';
+
+import { v2 as cloudinary } from 'cloudinary';
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+
+import fs from 'fs';
+// import cors from 'cors';
+
+import dotenv from 'dotenv';
+dotenv.config();
+
+// Kiểm tra biến môi trường
+console.log('🔧 Environment check:');
+console.log('📁 GOOGLE_DRIVE_FOLDER_ID:', process.env.GOOGLE_DRIVE_FOLDER_ID);
+console.log('🌐 NODE_ENV:', process.env.NODE_ENV);
+
 db.connectDB();
 const app = express();
 
 // Middleware
+// app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
+const router = express.Router();  
 
 // Handlebars setup
 app.engine('handlebars', engine({
@@ -350,6 +376,244 @@ app.engine('handlebars', engine({
 app.set('view engine', 'handlebars');
 app.set('views', './views');
 
+console.log('🔧 Checking Cloudinary environment variables...');
+console.log('CLOUDINARY_CLOUD_NAME:', process.env.CLOUDINARY_CLOUD_NAME ? '✅ Set' : '❌ Missing');
+console.log('CLOUDINARY_API_KEY:', process.env.CLOUDINARY_API_KEY ? '✅ Set' : '❌ Missing');
+console.log('CLOUDINARY_API_SECRET:', process.env.CLOUDINARY_API_SECRET ? '✅ Set' : '❌ Missing');
+
+if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+  console.error('❌ CLOUDINARY environment variables are missing!');
+  console.log('👉 Please check your .env file');
+} else {
+  // Cấu hình Cloudinary
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+  console.log('✅ Cloudinary configured successfully');
+}
+
+// Cấu hình multer cho upload file
+const uploadsDir = path.join(process.cwd(), 'temp_uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Cấu hình multer để lưu file tạm
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadsDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'temp-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Chỉ chấp nhận file ảnh!'), false);
+    }
+  }
+});
+
+
+router.post('/api/upload/image', upload.single('image'), async (req, res) => {
+  try {
+    console.log('🖼️ Starting image upload...');
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'Không có file ảnh được chọn'
+      });
+    }
+
+    // 🔥 NHẬN THÔNG TIN ẢNH CŨ TỪ CLIENT
+    const { oldImageUrl } = req.body;
+    console.log('🗑️ Old image to delete:', oldImageUrl);
+
+    // 🔥 XOÁ ẢNH CŨ TRƯỚC KHI UPLOAD ẢNH MỚI
+    if (oldImageUrl) {
+      try {
+        // Kiểm tra xem ảnh cũ có phải là ảnh local không
+        if (oldImageUrl.includes('/uploads/')) {
+          // Extract tên file từ URL
+          const oldFileName = oldImageUrl.split('/').pop();
+          const oldFilePath = path.join('public', 'uploads', oldFileName);
+          
+          if (fs.existsSync(oldFilePath)) {
+            fs.unlinkSync(oldFilePath);
+            console.log('✅ Deleted old local image:', oldFileName);
+          } else {
+            console.log('⚠️ Old local image not found:', oldFilePath);
+          }
+        }
+        // Nếu ảnh cũ từ Cloudinary, có thể xóa trên Cloudinary nếu cần
+        else if (oldImageUrl.includes('cloudinary.com') && process.env.CLOUDINARY_CLOUD_NAME) {
+          console.log('ℹ️ Old image is from Cloudinary, consider deleting it from Cloudinary if needed');
+          // Để xóa ảnh Cloudinary: await cloudinary.uploader.destroy(public_id);
+        }
+      } catch (deleteError) {
+        console.warn('⚠️ Could not delete old image:', deleteError.message);
+        // KHÔNG throw error - tiếp tục upload ảnh mới
+      }
+    }
+
+    // 🔥 KIỂM TRA CLOUDINARY CONFIG
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      console.warn('⚠️ Cloudinary not configured, using local storage');
+      
+      // Upload locally
+      const localFilePath = path.join('public', 'uploads', req.file.filename);
+      fs.renameSync(req.file.path, localFilePath);
+      
+      const localUrl = `/uploads/${req.file.filename}`;
+      
+      return res.json({
+        success: true,
+        directLink: localUrl,
+        fileName: req.file.filename,
+        message: 'Upload ảnh thành công (local storage)'
+      });
+    }
+
+    console.log('☁️ Uploading to Cloudinary...');
+    console.log('📁 File:', req.file.originalname);
+
+    // Upload lên Cloudinary
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      folder: 'karaoke-rooms',
+      resource_type: 'image',
+      quality: 'auto:good',
+      fetch_format: 'auto'
+    });
+
+    console.log('✅ Cloudinary upload successful:', result.secure_url);
+
+    // Xóa file tạm
+    fs.unlinkSync(req.file.path);
+
+    res.json({
+      success: true,
+      directLink: result.secure_url,
+      fileId: result.public_id,
+      fileName: result.original_filename,
+      message: 'Upload ảnh thành công lên Cloudinary'
+    });
+
+  } catch (error) {
+    console.error('❌ Upload error:', error);
+    
+    // Fallback to local storage khi có lỗi
+    if (req.file && fs.existsSync(req.file.path)) {
+      try {
+        console.log('🔄 Using local storage fallback due to error');
+        const localFilePath = path.join('public', 'uploads', req.file.filename);
+        fs.renameSync(req.file.path, localFilePath);
+        
+        const localUrl = `/uploads/${req.file.filename}`;
+        
+        return res.json({
+          success: true,
+          directLink: localUrl,
+          fileName: req.file.filename,
+          message: 'Upload ảnh thành công (local fallback)'
+        });
+      } catch (fallbackError) {
+        console.error('❌ Fallback also failed:', fallbackError);
+      }
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Lỗi khi upload ảnh: ' + error.message
+    });
+  }
+});
+
+
+app.use(router);
+
+
+
+// API xóa ảnh từ Google Drive
+router.delete('/image/:fileId', async (req, res) => {
+  try {
+    const { fileId } = req.params;
+
+    const auth = new google.auth.GoogleAuth({
+      keyFile: path.join(process.cwd(), 'service-account-key.json'),
+      scopes: ['https://www.googleapis.com/auth/drive.file'],
+    });
+
+    const drive = google.drive({ version: 'v3', auth });
+
+    await drive.files.delete({
+      fileId: fileId
+    });
+
+    res.json({
+      success: true,
+      message: 'Đã xóa ảnh thành công'
+    });
+
+  } catch (error) {
+    console.error('❌ Delete error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Lỗi khi xóa ảnh: ' + error.message
+    });
+  }
+});
+
+// API lấy danh sách ảnh (optional)
+router.get('/images', async (req, res) => {
+  try {
+    const auth = new google.auth.GoogleAuth({
+      keyFile: path.join(process.cwd(), 'service-account-key.json'),
+      scopes: ['https://www.googleapis.com/auth/drive.readonly'],
+    });
+
+    const drive = google.drive({ version: 'v3', auth });
+
+    const response = await drive.files.list({
+      q: `'${process.env.GOOGLE_DRIVE_FOLDER_ID}' in parents and mimeType contains 'image/'`,
+      fields: 'files(id, name, webViewLink, createdTime)',
+      orderBy: 'createdTime desc'
+    });
+
+    const files = response.data.files.map(file => ({
+      id: file.id,
+      name: file.name,
+      url: `https://drive.google.com/uc?export=view&id=${file.id}`,
+      createdTime: file.createdTime
+    }));
+
+    res.json({
+      success: true,
+      files: files
+    });
+
+  } catch (error) {
+    console.error('❌ List images error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Lỗi khi lấy danh sách ảnh'
+    });
+  }
+});
+
+
+
 ///////////////////////////////
 //         GET ROUTES         //
 ///////////////////////////////
@@ -409,12 +673,6 @@ app.get('/', async (req, res) => {
     }
 });
 
-// Định nghĩa hàm formatCurrency cho server-side
-function formatCurrency(amount) {
-  if (amount === null || amount === undefined || isNaN(amount)) return '0 VNĐ';
-  return new Intl.NumberFormat('vi-VN').format(amount) + ' VNĐ';
-}
-
 // Helper function để format thời gian
 function formatTimeAgo(date) {
   const now = new Date();
@@ -428,6 +686,23 @@ function formatTimeAgo(date) {
   if (diffHours < 24) return `${diffHours} giờ trước`;
   if (diffDays === 1) return '1 ngày trước';
   return `${diffDays} ngày trước`;
+}
+
+// Helper function để lấy trạng thái phòng
+async function getRoomStatusData() {
+  const roomStatusData = await DataModel.Data_PhongHat_Model.aggregate([
+    {
+      $group: {
+        _id: '$TrangThai',
+        count: { $sum: 1 }
+      }
+    }
+  ]);
+  
+  return roomStatusData.map(item => ({
+    label: item._id,
+    count: item.count
+  }));
 }
 
 // Thêm các route API mới cho biểu đồ
@@ -792,22 +1067,6 @@ app.get('/admin', async (req, res) => {
   }
 });
 
-// Helper function để lấy trạng thái phòng
-async function getRoomStatusData() {
-  const roomStatusData = await DataModel.Data_PhongHat_Model.aggregate([
-    {
-      $group: {
-        _id: '$TrangThai',
-        count: { $sum: 1 }
-      }
-    }
-  ]);
-  
-  return roomStatusData.map(item => ({
-    label: item._id,
-    count: item.count
-  }));
-}
 
 // Helper function format date
 function formatDate(date) {
@@ -824,10 +1083,11 @@ app.get('/logout', (req, res) => {
 // Quản lý phòng hát
 app.get('/admin/phonghat', async (req, res) => {
     try {
-        const [phonghats, bangGiaList, roomTypes] = await Promise.all([
+        const [phonghats, bangGiaList, roomTypes, roomStatus] = await Promise.all([
             DataModel.Data_PhongHat_Model.find({}).lean().exec(),
             DataModel.Data_BangGiaPhong_Model.find({}).lean().exec(),
-            DataModel.Data_BangGiaPhong_Model.distinct('LoaiPhong')
+            DataModel.Data_BangGiaPhong_Model.distinct('LoaiPhong'),
+            DataModel.Data_BangGiaPhong_Model.distinct('TrangThai')
         ]);
 
         // Tạo map để tra cứu nhanh bảng giá theo LoaiPhong
@@ -870,6 +1130,7 @@ app.get('/admin/phonghat', async (req, res) => {
             countBusy: countBusy,
             countReserved: countReserved,
             phonghatPage: true,
+            roomStatus: roomStatus,
             helpers: {
                 formatNumber: function(price) {
                     return new Intl.NumberFormat('vi-VN').format(price);
@@ -904,9 +1165,23 @@ app.get('/admin/thietbi', async (req, res) => {
         const thietbis = await DataModel.Data_ThietBi_Model.find({}).lean();
         
         // Lấy danh sách mã phòng duy nhất từ thiết bị
-        const uniqueMaPhongs = [...new Set(thietbis.map(item => item.MaPhong))];
+        const uniqueMaPhongs = [...new Set(thietbis.map(item => item.MaPhong))].sort((a, b) => {
+            // Hàm trích xuất số từ mã phòng
+            const extractNumber = (code) => {
+                if (!code) return 0;
+                // Tìm tất cả các số trong chuỗi và lấy số đầu tiên
+                const matches = code.match(/\d+/);
+                return matches ? parseInt(matches[0], 10) : 0;
+            };
+
+            const numA = extractNumber(a);
+            const numB = extractNumber(b);
+
+            // So sánh số học
+            return numA - numB;
+        });
         const loaiThietBis = [...new Set(thietbis.map(item => item.LoaiThietBi))];
-        
+
         res.render('thietbi', { 
             layout: 'AdminMain', 
             title: 'Quản lý thiết bị', 
@@ -3159,14 +3434,17 @@ app.delete('/api/phonghatt', async (req, res) => {
 
 // Xóa phòng hát
 app.delete('/api/phonghat/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const ph = await DataModel.Data_PhongHat_Model.findByIdAndDelete(id);
-        if (!ph) return res.status(404).json({ error: 'Không tìm thấy phòng hát' });
-        res.json({ message: 'Xóa phòng hát thành công' });
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
+  try {
+      const { id } = req.params;
+      const ph = await DataModel.Data_PhongHat_Model.findOneAndDelete({
+        _id: id,
+        trangThai: 'Trống'
+      });
+      if (!ph) return res.status(404).json({ error: 'Phòng hát đang được sử dụng!' });
+      res.json({ message: 'Xóa phòng hát thành công' });
+  } catch (err) {
+      res.status(400).json({ error: err.message });
+  }
 });
 
 app.delete('/api/nhanvien/:maNV', async (req, res) => {
