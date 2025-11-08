@@ -442,95 +442,24 @@ router.post('/api/upload/image', upload.single('image'), async (req, res) => {
     // 🔥 XOÁ ẢNH CŨ TRƯỚC KHI UPLOAD ẢNH MỚI
     if (oldImageUrl) {
       try {
-        // Kiểm tra xem ảnh cũ có phải là ảnh local không
-        if (oldImageUrl.includes('/uploads/')) {
-          // Extract tên file từ URL
-          const oldFileName = oldImageUrl.split('/').pop();
-          const oldFilePath = path.join('public', 'uploads', oldFileName);
-          
-          if (fs.existsSync(oldFilePath)) {
-            fs.unlinkSync(oldFilePath);
-            console.log('✅ Deleted old local image:', oldFileName);
-          } else {
-            console.log('⚠️ Old local image not found:', oldFilePath);
-          }
-        }
-        // Nếu ảnh cũ từ Cloudinary, có thể xóa trên Cloudinary nếu cần
-        else if (oldImageUrl.includes('cloudinary.com') && process.env.CLOUDINARY_CLOUD_NAME) {
-          console.log('ℹ️ Old image is from Cloudinary, consider deleting it from Cloudinary if needed');
-          // Để xóa ảnh Cloudinary: await cloudinary.uploader.destroy(public_id);
-        }
+        await deleteOldImage(oldImageUrl);
       } catch (deleteError) {
         console.warn('⚠️ Could not delete old image:', deleteError.message);
         // KHÔNG throw error - tiếp tục upload ảnh mới
       }
     }
 
-    // 🔥 KIỂM TRA CLOUDINARY CONFIG
-    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-      console.warn('⚠️ Cloudinary not configured, using local storage');
-      
-      // Upload locally
-      const localFilePath = path.join('public', 'uploads', req.file.filename);
-      fs.renameSync(req.file.path, localFilePath);
-      
-      const localUrl = `/uploads/${req.file.filename}`;
-      
-      return res.json({
-        success: true,
-        directLink: localUrl,
-        fileName: req.file.filename,
-        message: 'Upload ảnh thành công (local storage)'
-      });
-    }
-
-    console.log('☁️ Uploading to Cloudinary...');
-    console.log('📁 File:', req.file.originalname);
-
-    // Upload lên Cloudinary
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: 'karaoke-rooms',
-      resource_type: 'image',
-      quality: 'auto:good',
-      fetch_format: 'auto'
-    });
-
-    console.log('✅ Cloudinary upload successful:', result.secure_url);
-
-    // Xóa file tạm
-    fs.unlinkSync(req.file.path);
-
+    // 🔥 UPLOAD ẢNH MỚI
+    const imageUrl = await uploadNewImage(req.file);
+    
     res.json({
       success: true,
-      directLink: result.secure_url,
-      fileId: result.public_id,
-      fileName: result.original_filename,
-      message: 'Upload ảnh thành công lên Cloudinary'
+      directLink: imageUrl,
+      message: 'Upload ảnh thành công'
     });
 
   } catch (error) {
     console.error('❌ Upload error:', error);
-    
-    // Fallback to local storage khi có lỗi
-    if (req.file && fs.existsSync(req.file.path)) {
-      try {
-        console.log('🔄 Using local storage fallback due to error');
-        const localFilePath = path.join('public', 'uploads', req.file.filename);
-        fs.renameSync(req.file.path, localFilePath);
-        
-        const localUrl = `/uploads/${req.file.filename}`;
-        
-        return res.json({
-          success: true,
-          directLink: localUrl,
-          fileName: req.file.filename,
-          message: 'Upload ảnh thành công (local fallback)'
-        });
-      } catch (fallbackError) {
-        console.error('❌ Fallback also failed:', fallbackError);
-      }
-    }
-    
     res.status(500).json({
       success: false,
       error: 'Lỗi khi upload ảnh: ' + error.message
@@ -538,77 +467,167 @@ router.post('/api/upload/image', upload.single('image'), async (req, res) => {
   }
 });
 
+// 🔥 HÀM XOÁ ẢNH CŨ
+async function deleteOldImage(oldImageUrl) {
+  if (!oldImageUrl) return;
+
+  console.log('🗑️ Deleting old image:', oldImageUrl);
+
+  // Nếu là ảnh Cloudinary
+  if (oldImageUrl.includes('cloudinary.com') && process.env.CLOUDINARY_CLOUD_NAME) {
+    try {
+      // Extract public_id từ URL
+      const publicId = extractPublicIdFromUrl(oldImageUrl);
+      if (publicId) {
+        await cloudinary.uploader.destroy(publicId);
+        console.log('✅ Deleted old Cloudinary image:', publicId);
+      }
+    } catch (cloudinaryError) {
+      console.warn('⚠️ Could not delete Cloudinary image:', cloudinaryError.message);
+    }
+  }
+  
+  // Nếu là ảnh local
+  else if (oldImageUrl.includes('/uploads/')) {
+    try {
+      const oldFileName = oldImageUrl.split('/').pop();
+      const oldFilePath = path.join('public', 'uploads', oldFileName);
+      
+      if (fs.existsSync(oldFilePath)) {
+        fs.unlinkSync(oldFilePath);
+        console.log('✅ Deleted old local image:', oldFileName);
+      }
+    } catch (localError) {
+      console.warn('⚠️ Could not delete local image:', localError.message);
+    }
+  }
+}
+
+// 🔥 HÀM EXTRACT PUBLIC_ID TỪ CLOUDINARY URL
+function extractPublicIdFromUrl(url) {
+  try {
+    // Ví dụ: https://res.cloudinary.com/cloudname/image/upload/v1234567/folder/image.jpg
+    const matches = url.match(/\/upload\/(?:v\d+\/)?(.+)\.(?:jpg|jpeg|png|gif)/i);
+    if (matches && matches[1]) {
+      return matches[1];
+    }
+    return null;
+  } catch (error) {
+    console.error('Error extracting public_id:', error);
+    return null;
+  }
+}
+
+// 🔥 HÀM UPLOAD ẢNH MỚI
+async function uploadNewImage(file) {
+  // Upload lên Cloudinary nếu được config
+  if (process.env.CLOUDINARY_CLOUD_NAME && 
+      process.env.CLOUDINARY_API_KEY && 
+      process.env.CLOUDINARY_API_SECRET) {
+    
+    console.log('☁️ Uploading to Cloudinary...');
+    const result = await cloudinary.uploader.upload(file.path, {
+      folder: 'karaoke-rooms',
+      resource_type: 'image',
+      quality: 'auto:good',
+      fetch_format: 'auto'
+    });
+
+    // Xóa file tạm
+    fs.unlinkSync(file.path);
+    return result.secure_url;
+  }
+  
+  // Fallback: upload local
+  console.log('📁 Uploading locally...');
+  const fileName = `room-${Date.now()}-${file.originalname}`;
+  const filePath = path.join('public', 'uploads', fileName);
+  
+  fs.renameSync(file.path, filePath);
+  return `/uploads/${fileName}`;
+}
+
+// API để lấy danh sách ảnh không sử dụng
+router.get('/api/images/unused', async (req, res) => {
+  try {
+    // Lấy tất cả ảnh đang được sử dụng
+    const rooms = await DataModel.PhongHat.find({}, 'LinkAnh');
+    const usedImages = rooms.map(room => room.LinkAnh).filter(img => img);
+    
+    // Lấy tất cả file trong thư mục uploads
+    const uploadsDir = path.join('public', 'uploads');
+    const allFiles = fs.readdirSync(uploadsDir);
+    
+    const unusedFiles = allFiles.filter(file => {
+      const fileUrl = `/uploads/${file}`;
+      return !usedImages.includes(fileUrl);
+    });
+    
+    res.json({
+      success: true,
+      unusedFiles: unusedFiles,
+      totalUsed: usedImages.length,
+      totalUnused: unusedFiles.length
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// API để xóa ảnh không sử dụng
+router.delete('/api/images/cleanup', async (req, res) => {
+  try {
+    const rooms = await DataModel.PhongHat.find({}, 'LinkAnh');
+    const usedImages = rooms.map(room => room.LinkAnh).filter(img => img);
+    
+    const uploadsDir = path.join('public', 'uploads');
+    const allFiles = fs.readdirSync(uploadsDir);
+    
+    let deletedCount = 0;
+    const errors = [];
+    
+    for (const file of allFiles) {
+      const fileUrl = `/uploads/${file}`;
+      if (!usedImages.includes(fileUrl)) {
+        try {
+          fs.unlinkSync(path.join(uploadsDir, file));
+          deletedCount++;
+        } catch (deleteError) {
+          errors.push(`Không thể xóa ${file}: ${deleteError.message}`);
+        }
+      }
+    }
+    
+    res.json({
+      success: true,
+      deletedCount: deletedCount,
+      errors: errors,
+      message: `Đã xóa ${deletedCount} ảnh không sử dụng`
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
 
 app.use(router);
 
-
-
-// API xóa ảnh từ Google Drive
-// router.delete('/image/:fileId', async (req, res) => {
-//   try {
-//     const { fileId } = req.params;
-
-//     const auth = new google.auth.GoogleAuth({
-//       keyFile: path.join(process.cwd(), 'service-account-key.json'),
-//       scopes: ['https://www.googleapis.com/auth/drive.file'],
-//     });
-
-//     const drive = google.drive({ version: 'v3', auth });
-
-//     await drive.files.delete({
-//       fileId: fileId
-//     });
-
-//     res.json({
-//       success: true,
-//       message: 'Đã xóa ảnh thành công'
-//     });
-
-//   } catch (error) {
-//     console.error('❌ Delete error:', error);
-//     res.status(500).json({
-//       success: false,
-//       error: 'Lỗi khi xóa ảnh: ' + error.message
-//     });
-//   }
-// });
-
-// API lấy danh sách ảnh (optional)
-// router.get('/images', async (req, res) => {
-//   try {
-//     const auth = new google.auth.GoogleAuth({
-//       keyFile: path.join(process.cwd(), 'service-account-key.json'),
-//       scopes: ['https://www.googleapis.com/auth/drive.readonly'],
-//     });
-
-//     const drive = google.drive({ version: 'v3', auth });
-
-//     const response = await drive.files.list({
-//       q: `'${process.env.GOOGLE_DRIVE_FOLDER_ID}' in parents and mimeType contains 'image/'`,
-//       fields: 'files(id, name, webViewLink, createdTime)',
-//       orderBy: 'createdTime desc'
-//     });
-
-//     const files = response.data.files.map(file => ({
-//       id: file.id,
-//       name: file.name,
-//       url: `https://drive.google.com/uc?export=view&id=${file.id}`,
-//       createdTime: file.createdTime
-//     }));
-
-//     res.json({
-//       success: true,
-//       files: files
-//     });
-
-//   } catch (error) {
-//     console.error('❌ List images error:', error);
-//     res.status(500).json({
-//       success: false,
-//       error: 'Lỗi khi lấy danh sách ảnh'
-//     });
-//   }
-// });
 
 
 
@@ -3607,7 +3626,52 @@ app.delete('/api/delete/hoadon/:maHoaDon', async (req, res) => {
 });
 
 
+// API để xóa ảnh của phòng mà không xóa phòng
+app.put('/api/phonghat/:id/remove-image', async (req, res) => {
+  try {
+    const roomId = req.params.id;
+    const { oldImageUrl } = req.body;
 
+    console.log(`🗑️ Removing image from room ${roomId}`, { oldImageUrl });
+
+    // Tìm phòng
+    const room = await DataModel.PhongHat.findById(roomId);
+    if (!room) {
+      return res.status(404).json({
+        success: false,
+        error: 'Phòng không tồn tại'
+      });
+    }
+
+    // 🔥 XÓA ẢNH CŨ TRÊN SERVER NẾU CÓ
+    if (oldImageUrl) {
+      try {
+        await deleteImageFromStorage(oldImageUrl);
+        console.log('✅ Đã xóa ảnh cũ:', oldImageUrl);
+      } catch (deleteError) {
+        console.warn('⚠️ Không thể xóa ảnh cũ:', deleteError.message);
+        // Vẫn tiếp tục cập nhật phòng dù không xóa được ảnh
+      }
+    }
+
+    // Cập nhật phòng - xóa ảnh
+    room.LinkAnh = '';
+    await room.save();
+
+    res.json({
+      success: true,
+      message: 'Đã xóa ảnh khỏi phòng thành công',
+      room: room
+    });
+
+  } catch (error) {
+    console.error('❌ Lỗi khi xóa ảnh khỏi phòng:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Lỗi server khi xóa ảnh: ' + error.message
+    });
+  }
+});
 
 
 

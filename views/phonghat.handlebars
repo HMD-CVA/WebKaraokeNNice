@@ -298,13 +298,13 @@
                   Ảnh đại diện
                 </label>
 
-                <input type="hidden" id="currentImageUrl" name="currentImageUrl" value="{{this.LinkAnh}}">
+                <input type="hidden" id="currentImageUrl" name="currentImageUrl" value="">
                 
                 <!-- File input -->
                 <input type="file" id="roomImage" class="room-form-input" accept="image/*" onchange="previewRoomImage(this)">
 
-                <img id="currentImagePreview" src="{{this.LinkAnh}}" style="max-width: 200px; display: block; margin: 10px 0;">
-                
+                <img id="currentImagePreview" src="" style="max-width: 200px; display: block; margin: 10px 0;">
+
                 <!-- Preview container -->
                 <div class="image-preview-container" id="imagePreviewContainer" style="display: none;">
                   <div class="image-preview">
@@ -590,20 +590,27 @@
     currentRoomImage = null;
 
     if (roomData) {
-      document.getElementById('roomId').value = roomData._id || '';
-      document.getElementById('roomName').value = roomData.TenPhong || '';
-      document.getElementById('roomType').value = roomData.LoaiPhong || '';
-      document.getElementById('roomSize').value = roomData.SucChua || '';
-      document.getElementById('roomStatus').value = roomData.TrangThai || 'Trống';
-      document.getElementById('roomDescription').value = roomData.GhiChu || '';
-      if (roomData.LinkAnh) {
-        currentRoomImage = roomData.LinkAnh;
-        updateImagePreview(roomData.LinkAnh);
-      } else {
-        updateImagePreview('');
-      }
+        document.getElementById('roomId').value = roomData._id || '';
+        document.getElementById('roomName').value = roomData.TenPhong || '';
+        document.getElementById('roomType').value = roomData.LoaiPhong || '';
+        document.getElementById('roomSize').value = roomData.SucChua || '';
+        document.getElementById('roomStatus').value = roomData.TrangThai || 'Trống';
+        document.getElementById('roomDescription').value = roomData.GhiChu || '';
+        
+        // 🔥 SET ẢNH HIỆN TẠI VÀO HIDDEN FIELD
+        if (roomData.LinkAnh) {
+            document.getElementById('currentImageUrl').value = roomData.LinkAnh;
+            {{!-- document.getElementById('currentImagePreview').src = roomData.LinkAnh; --}}
+            currentRoomImage = roomData.LinkAnh;
+        } else {
+            document.getElementById('currentImageUrl').value = '';
+            document.getElementById('currentImagePreview').src = '';
+        }
     } else {
-      resetRoomForm();
+        resetRoomForm();
+        // Reset hidden field khi thêm mới
+        document.getElementById('currentImageUrl').value = '';
+        document.getElementById('currentImagePreview').src = '';
     }
   }
 
@@ -667,11 +674,13 @@
     document.getElementById('roomForm').reset();
     document.getElementById('roomId').value = '';
     document.getElementById('roomStatus').value = 'Trống';
+    document.getElementById('currentImageUrl').value = '';
+    document.getElementById('currentImagePreview').src = '';
     uploadedImageFile = null;
     currentRoomImage = null;
     removeImagePreview();
   }
-
+  
   // ===== IMAGE PREVIEW FUNCTIONS =====
 function previewRoomImage(input) {
     const previewContainer = document.getElementById('imagePreviewContainer');
@@ -739,82 +748,62 @@ function removeImagePreview() {
 }
 
 // ===== GOOGLE DRIVE UPLOAD FUNCTION =====
-async function uploadImageToDrive(file) {
-    try {
-        console.log('🖼️ Starting image upload...', {
-            name: file.name,
-            size: file.size,
-            type: file.type
-        });
+async function uploadImageToDrive(file, oldImageUrl = null) {
+  try {
+    console.log('🖼️ Starting image upload...', {
+      name: file.name,
+      size: file.size,
+      oldImage: oldImageUrl
+    });
 
-        // Hiển thị loading
-        Swal.fire({
-            title: 'Đang upload ảnh...',
-            text: 'Vui lòng chờ trong giây lát',
-            allowOutsideClick: false,
-            didOpen: () => Swal.showLoading()
-        });
+    Swal.fire({
+      title: 'Đang upload ảnh...',
+      text: 'Vui lòng chờ trong giây lát',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
 
-        // Tạo FormData
-        const formData = new FormData();
-        formData.append('image', file);
-        formData.append('fileName', `room_${Date.now()}_${file.name}`);
-
-        console.log('📤 Sending upload request...');
-        
-        // Gửi request đến server endpoint
-        const response = await fetch('/api/upload/image', {
-            method: 'POST',
-            body: formData
-            // KHÔNG đặt Content-Type header, browser sẽ tự set
-        });
-
-        console.log('📥 Response received:', {
-            status: response.status,
-            ok: response.ok
-        });
-
-        const result = await response.json();
-        console.log('📄 Response data:', result);
-
-        if (!response.ok) {
-            throw new Error(result.error || `Upload failed with status ${response.status}`);
-        }
-
-        Swal.close();
-        
-        if (result.success && result.directLink) {
-            console.log('✅ Upload successful, directLink:', result.directLink);
-            return result.directLink;
-        } else {
-            throw new Error(result.error || 'Không thể lấy link ảnh');
-        }
-        
-    } catch (error) {
-        Swal.close();
-        console.error('❌ Upload error:', error);
-        
-        // Hiển thị lỗi chi tiết
-        await Swal.fire({
-            icon: 'error',
-            title: 'Lỗi upload ảnh',
-            html: `
-                <div style="text-align: left;">
-                    <p><strong>Chi tiết lỗi:</strong></p>
-                    <p>${error.message}</p>
-                    <details style="margin-top: 10px;">
-                        <summary>Xem thêm</summary>
-                        <pre style="text-align: left; background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto;">
-${error.stack || 'No stack trace'}
-                        </pre>
-                    </details>
-                </div>
-            `,
-            confirmButtonColor: '#667eea'
-        });
-        
-        throw error;
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    // 🔥 GỬI THÔNG TIN ẢNH CŨ ĐỂ SERVER XOÁ
+    if (oldImageUrl) {
+      formData.append('oldImageUrl', oldImageUrl);
     }
+
+    const response = await fetch('/api/upload/image', {
+      method: 'POST',
+      body: formData
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.error || `Upload failed with status ${response.status}`);
+    }
+
+    Swal.close();
+    
+    if (result.success && result.directLink) {
+      console.log('✅ Upload successful, directLink:', result.directLink);
+      return result.directLink;
+    } else {
+      throw new Error(result.error || 'Không thể lấy link ảnh');
+    }
+    
+  } catch (error) {
+    Swal.close();
+    console.error('❌ Upload error:', error);
+    
+    await Swal.fire({
+      icon: 'error',
+      title: 'Lỗi upload ảnh',
+      text: error.message,
+      confirmButtonColor: '#667eea'
+    });
+    
+    throw error;
+  }
 }
 
   function updateImagePreview(imageData) {
@@ -888,90 +877,84 @@ ${error.stack || 'No stack trace'}
   }
 
   async function saveRoom(event) {
-    event.preventDefault();
+  event.preventDefault();
 
-    // Lấy dữ liệu form
-    const formData = {
-        TenPhong: document.getElementById('roomName').value.trim(),
-        LoaiPhong: document.getElementById('roomType').value,
-        SucChua: parseInt(document.getElementById('roomSize').value),
-        TrangThai: document.getElementById('roomStatus').value,
-        GhiChu: document.getElementById('roomDescription').value.trim()
-    };
+  const formData = {
+    TenPhong: document.getElementById('roomName').value.trim(),
+    LoaiPhong: document.getElementById('roomType').value,
+    SucChua: parseInt(document.getElementById('roomSize').value),
+    TrangThai: document.getElementById('roomStatus').value,
+    GhiChu: document.getElementById('roomDescription').value.trim()
+  };
 
-    // Validate
-    if (!formData.TenPhong) {
-        showError('Vui lòng nhập tên phòng');
-        return;
-    }
-    if (!formData.LoaiPhong) {
-        showError('Vui lòng chọn loại phòng');
-        return;
-    }
-    if (!formData.SucChua || formData.SucChua <= 0) {
-        showError('Vui lòng nhập sức chứa hợp lệ');
-        return;
+  const roomId = document.getElementById('roomId').value;
+  
+  try {
+    // 🔥 LẤY ẢNH CŨ ĐỂ XOÁ
+    const oldImageUrl = document.getElementById('currentImageUrl').value;
+    console.log('🗑️ Old image URL for deletion:', oldImageUrl);
+
+    // Upload ảnh nếu có
+    if (uploadedImageFile) {
+      Swal.fire({
+        title: 'Đang xử lý ảnh...',
+        text: 'Vui lòng chờ trong giây lát',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      // 🔥 TRUYỀN ẢNH CŨ ĐỂ XOÁ
+      const imageUrl = await uploadImageToDrive(uploadedImageFile, oldImageUrl);
+      formData.LinkAnh = imageUrl;
+      
+      // Cập nhật preview và hidden field
+      document.getElementById('currentImagePreview').src = imageUrl;
+      document.getElementById('currentImageUrl').value = imageUrl;
+    } else if (oldImageUrl) {
+      // Giữ nguyên ảnh cũ nếu không có ảnh mới
+      formData.LinkAnh = oldImageUrl;
     }
 
-    const roomId = document.getElementById('roomId').value;
+    // Gửi request lưu phòng
+    const url = roomId ? `/api/phonghat/${roomId}` : '/api/phonghat';
+    const method = roomId ? 'PUT' : 'POST';
+
+    const response = await fetch(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    });
+
+    const result = await response.json();
     
-    try {
-        // Upload ảnh nếu có
-        if (uploadedImageFile) {
-            Swal.fire({
-                title: 'Đang xử lý ảnh...',
-                text: 'Vui lòng chờ trong giây lát',
-                allowOutsideClick: false,
-                didOpen: () => Swal.showLoading()
-            });
-
-            const imageUrl = await uploadImageToDrive(uploadedImageFile);
-            formData.LinkAnh = imageUrl;
-        } else if (currentRoomImage && currentRoomImage.startsWith('data:image')) {
-            // Nếu là base64 từ chỉnh sửa, giữ nguyên ảnh cũ
-            formData.LinkAnh = currentRoomImage;
-        }
-
-        const url = roomId ? `/api/phonghat/${roomId}` : '/api/phonghat';
-        const method = roomId ? 'PUT' : 'POST';
-
-        const response = await fetch(url, {
-            method: method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData)
-        });
-
-        const result = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(result.error || 'Lỗi server');
-        }
-
-        Swal.fire({
-            icon: 'success',
-            title: 'Thành công!',
-            text: result.message || `Phòng "${formData.TenPhong}" đã được ${roomId ? 'cập nhật' : 'thêm'} thành công!`,
-            timer: 1500,
-            showConfirmButton: false
-        });
-
-        // Reset form và reload
-        setTimeout(() => {
-            resetRoomForm();
-            location.reload();
-        }, 1500);
-
-    } catch (error) {
-        console.error('❌ Lỗi khi lưu phòng:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Lỗi!',
-            text: error.message || 'Không thể lưu thông tin phòng',
-            confirmButtonColor: '#667eea'
-        });
+    if (!response.ok) {
+      throw new Error(result.error || 'Lỗi server');
     }
-}
 
+    Swal.fire({
+      icon: 'success',
+      title: 'Thành công!',
+      text: result.message || `Phòng "${formData.TenPhong}" đã được ${roomId ? 'cập nhật' : 'thêm'} thành công!`,
+      timer: 1500,
+      showConfirmButton: false
+    });
+
+    setTimeout(() => {
+      location.reload();
+    }, 1500);
+
+  } catch (error) {
+    console.error('❌ Lỗi khi lưu phòng:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Lỗi!',
+      text: error.message || 'Không thể lưu thông tin phòng',
+      confirmButtonColor: '#667eea'
+    });
+  }
+}
+ 
+ 
   async function deleteRoom(roomId, roomName) {
     const result = await Swal.fire({
       title: 'Xác nhận xóa?',
