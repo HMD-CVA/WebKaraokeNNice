@@ -5,8 +5,6 @@ import DataModel from './app/model/index.js';
 import { generateCode } from './app/utils/codeGenerator.js'
 
 import multer from 'multer';
-import { google } from 'googleapis';
-import stream from 'stream';
 import path from 'path';
 
 import { v2 as cloudinary } from 'cloudinary';
