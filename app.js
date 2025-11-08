@@ -41,6 +41,26 @@ app.engine('handlebars', engine({
             if (num === null || num === undefined || isNaN(num)) return `0 ${currency}`;
             return `${new Intl.NumberFormat('vi-VN').format(num)} ${currency}`;
         },
+        formatCurrency: (amount) => {
+            if (amount === null || amount === undefined || isNaN(amount)) return '0 VNĐ';
+            return new Intl.NumberFormat('vi-VN').format(amount) + ' VNĐ';
+        },
+        shortCurrency: (num) => {
+            if (num === null || num === undefined || isNaN(num)) return '0';
+            const abs = Math.abs(num);
+            if (abs >= 1_000_000_000) return (num / 1_000_000_000).toFixed(1) + 'B';
+            if (abs >= 1_000_000)     return (num / 1_000_000).toFixed(1) + 'M';
+            if (abs >= 1_000)         return (num / 1_000).toFixed(1) + 'K';
+            return new Intl.NumberFormat('vi-VN').format(num);
+        },
+        percent: (p) => {
+            if (p === null || p === undefined || isNaN(p)) return '—';
+            const sign = p > 0 ? '+' : '';
+            // hiển thị tối đa 1 chữ số thập phân
+            return `${sign}${Number(p).toFixed(Math.abs(p) < 10 ? 1 : 0)}%`;
+        },
+        trendClass: (p) => (p >= 0 ? 'text-success' : 'text-danger'),
+        numberVN: (num) => new Intl.NumberFormat('vi-VN').format(num || 0),
 
         // === PRODUCT & STOCK HELPERS ===
         getStockStatus: (quantity) => {
@@ -323,7 +343,7 @@ app.engine('handlebars', engine({
                 'Khác': 'secondary'
             };
             return colorMap[category] || 'secondary';
-        }
+        },
     }
 }));
 
@@ -373,10 +393,14 @@ app.get('/', async (req, res) => {
         };
         });
 
+        const phonghatHome = phonghats.filter(phong => phong.TrangThai === 'Trống');
+
+
         res.render('home', { 
             layout: 'HomeMain.handlebars',
             phonghats: phonghatsWithPrice,
-            roomTypes: roomTypes
+            roomTypes: roomTypes,
+            phonghatsH: phonghatHome
         });
 
     } catch (error) {
@@ -385,14 +409,411 @@ app.get('/', async (req, res) => {
     }
 });
 
-// Trang admin dashboard
-app.get('/admin', (req, res) => {
-    try {
-        res.render('AD_Dashboard', { layout: 'AdminMain' , dashboardPage: true});
-    } catch (err) {
-        res.status(500).send('Lỗi server!');
-    }
+// Định nghĩa hàm formatCurrency cho server-side
+function formatCurrency(amount) {
+  if (amount === null || amount === undefined || isNaN(amount)) return '0 VNĐ';
+  return new Intl.NumberFormat('vi-VN').format(amount) + ' VNĐ';
+}
+
+// Helper function để format thời gian
+function formatTimeAgo(date) {
+  const now = new Date();
+  const diffMs = now - new Date(date);
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'Vừa xong';
+  if (diffMins < 60) return `${diffMins} phút trước`;
+  if (diffHours < 24) return `${diffHours} giờ trước`;
+  if (diffDays === 1) return '1 ngày trước';
+  return `${diffDays} ngày trước`;
+}
+
+// Thêm các route API mới cho biểu đồ
+app.get('/api/dashboard/charts', async (req, res) => {
+  try {
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    
+    // 1. Doanh thu theo tháng (12 tháng gần nhất)
+    const monthlyRevenue = await DataModel.Data_HoaDon_Model.aggregate([
+      {
+        $match: {
+          TrangThai: 'Đã thanh toán',
+          createdAt: { $gte: new Date(now.getFullYear() - 1, now.getMonth(), 1) }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' }
+          },
+          total: { $sum: '$TongTien' }
+        }
+      },
+      { $sort: { '_id.year': 1, '_id.month': 1 } }
+    ]);
+
+    // 2. Phân loại doanh thu theo loại dịch vụ
+    const revenueByCategory = await DataModel.Data_ChiTietHD_Model.aggregate([
+      {
+        $lookup: {
+          from: 'hoadons',
+          localField: 'MaHoaDon',
+          foreignField: 'MaHoaDon',
+          as: 'hoadon'
+        }
+      },
+      { $unwind: '$hoadon' },
+      { $match: { 'hoadon.TrangThai': 'Đã thanh toán' } },
+      {
+        $group: {
+          _id: '$LoaiDichVu',
+          total: { $sum: '$ThanhTien' }
+        }
+      }
+    ]);
+
+    // 3. Trạng thái phòng
+    const roomStatus = await DataModel.Data_PhongHat_Model.aggregate([
+      {
+        $group: {
+          _id: '$TrangThai',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    res.json({
+      success: true,
+      monthlyRevenue,
+      revenueByCategory,
+      roomStatus
+    });
+  } catch (error) {
+    console.error('Lỗi API charts:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
+
+// Trang admin dashboard
+app.get('/admin', async (req, res) => {
+  try {
+    const now = new Date();
+    const startDate = new Date('2025-11-01'); // Ngày bắt đầu 01/11/2025
+    
+    // 1) Doanh thu theo ngày (từ 01/11/2025 đến nay)
+    const [dailyRevenueAgg, prevPeriodRevenueAgg] = await Promise.all([
+      // Doanh thu từ 01/11/2025 đến nay
+      DataModel.Data_HoaDon_Model.aggregate([
+        { 
+          $match: { 
+            TrangThai: 'Đã thanh toán', 
+            createdAt: { $gte: startDate, $lte: now } 
+          } 
+        },
+        { 
+          $group: { 
+            _id: {
+              year: { $year: '$createdAt' },
+              month: { $month: '$createdAt' },
+              day: { $dayOfMonth: '$createdAt' }
+            },
+            total: { $sum: '$TongTien' },
+            count: { $sum: 1 }
+          } 
+        },
+        { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } }
+      ]),
+      // Doanh thu kỳ trước (01/10/2025 - 31/10/2025) để so sánh
+      DataModel.Data_HoaDon_Model.aggregate([
+        { 
+          $match: { 
+            TrangThai: 'Đã thanh toán',
+            createdAt: { 
+              $gte: new Date('2025-10-01'), 
+              $lte: new Date('2025-10-31') 
+            } 
+          } 
+        },
+        { $group: { _id: null, total: { $sum: '$TongTien' } } }
+      ])
+    ]);
+
+    // Tính tổng doanh thu từ 01/11/2025
+    const revenueThisPeriod = dailyRevenueAgg.reduce((sum, day) => sum + day.total, 0);
+    const revenuePrevPeriod = prevPeriodRevenueAgg[0]?.total || 0;
+    const revenueMoM = revenuePrevPeriod > 0 ? 
+      ((revenueThisPeriod - revenuePrevPeriod) / revenuePrevPeriod) * 100 : 
+      (revenueThisPeriod > 0 ? 100 : 0);
+
+    // 2) Khách hàng theo ngày
+    const [custTotal, custThisPeriod, custPrevPeriod] = await Promise.all([
+      DataModel.Data_KhachHang_Model.estimatedDocumentCount(),
+      DataModel.Data_KhachHang_Model.countDocuments({ 
+        createdAt: { $gte: startDate, $lte: now } 
+      }),
+      DataModel.Data_KhachHang_Model.countDocuments({ 
+        createdAt: { $gte: new Date('2025-10-01'), $lte: new Date('2025-10-31') } 
+      })
+    ]);
+    const custMoM = custPrevPeriod > 0 ? 
+      ((custThisPeriod - custPrevPeriod) / custPrevPeriod) * 100 : 
+      (custThisPeriod > 0 ? 100 : 0);
+
+    // 3) Đơn hàng theo ngày
+    const [ordersThisPeriod, ordersPrevPeriod] = await Promise.all([
+      DataModel.Data_HoaDon_Model.countDocuments({ 
+        TrangThai: 'Đã thanh toán', 
+        createdAt: { $gte: startDate, $lte: now } 
+      }),
+      DataModel.Data_HoaDon_Model.countDocuments({ 
+        TrangThai: 'Đã thanh toán',
+        createdAt: { $gte: new Date('2025-10-01'), $lte: new Date('2025-10-31') } 
+      })
+    ]);
+    const ordersMoM = ordersPrevPeriod > 0 ? 
+      ((ordersThisPeriod - ordersPrevPeriod) / ordersPrevPeriod) * 100 : 
+      (ordersThisPeriod > 0 ? 100 : 0);
+
+    // 4) Phòng hát
+    const [roomsTotal, roomsActive] = await Promise.all([
+      DataModel.Data_PhongHat_Model.estimatedDocumentCount(),
+      DataModel.Data_PhongHat_Model.countDocuments({ TrangThai: 'Đang sử dụng' })
+    ]);
+
+    // 5) Dữ liệu biểu đồ doanh thu theo ngày
+    const dailyRevenueData = await DataModel.Data_HoaDon_Model.aggregate([
+      {
+        $match: {
+          TrangThai: 'Đã thanh toán',
+          createdAt: { $gte: startDate, $lte: now }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' },
+            day: { $dayOfMonth: '$createdAt' }
+          },
+          total: { $sum: '$TongTien' },
+          date: { $first: '$createdAt' }
+        }
+      },
+      { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } }
+    ]);
+
+    // 6) Dữ liệu biểu đồ phân loại doanh thu
+    const revenueByCategoryData = await DataModel.Data_ChiTietHD_Model.aggregate([
+      {
+        $lookup: {
+          from: 'hoadons',
+          localField: 'MaHoaDon',
+          foreignField: 'MaHoaDon',
+          as: 'hoadonInfo'
+        }
+      },
+      { $unwind: '$hoadonInfo' },
+      { 
+        $match: { 
+          'hoadonInfo.TrangThai': 'Đã thanh toán',
+          'hoadonInfo.createdAt': { $gte: startDate, $lte: now }
+        } 
+      },
+      {
+        $group: {
+          _id: '$LoaiDichVu',
+          total: { $sum: '$ThanhTien' }
+        }
+      }
+    ]);
+
+    // 7) Hoạt động gần đây
+    const recentHoaDons = await DataModel.Data_HoaDon_Model.find({
+      createdAt: { $gte: startDate, $lte: now }
+    })
+      .sort({ createdAt: -1 })
+      .limit(4)
+      .lean();
+
+    const activityData = recentHoaDons.map(activity => {
+      let icon = 'shopping-cart';
+      let iconColor = 'success';
+      let title = 'Đơn hàng mới';
+      
+      const formatCurrencyTemp = (num) => {
+        if (num === null || num === undefined || isNaN(num)) return '0 VNĐ';
+        return new Intl.NumberFormat('vi-VN').format(num) + ' VNĐ';
+      };
+
+      let description = `Hóa đơn ${activity.MaHoaDon} - ${formatCurrencyTemp(activity.TongTien || 0)}`;
+
+      if (activity.TrangThai === 'Chưa thanh toán') {
+        icon = 'clock';
+        iconColor = 'warning';
+        title = 'Hóa đơn chờ thanh toán';
+      } else if (activity.TrangThai === 'Đã thanh toán') {
+        icon = 'check-circle';
+        iconColor = 'success';
+        title = 'Hóa đơn đã thanh toán';
+      }
+
+      return {
+        icon,
+        iconColor,
+        title,
+        description,
+        time: formatTimeAgo(activity.createdAt)
+      };
+    });
+
+    // 8) Sản phẩm phổ biến từ 01/11/2025
+    const topProductsAgg = await DataModel.Data_ChiTietHD_Model.aggregate([
+      {
+        $lookup: {
+          from: 'hoadons',
+          localField: 'MaHoaDon',
+          foreignField: 'MaHoaDon',
+          as: 'hoadonInfo'
+        }
+      },
+      { $unwind: '$hoadonInfo' },
+      { 
+        $match: { 
+          'hoadonInfo.TrangThai': 'Đã thanh toán',
+          'hoadonInfo.createdAt': { $gte: startDate, $lte: now },
+          MaHang: { $ne: null }
+        } 
+      },
+      {
+        $group: {
+          _id: '$MaHang',
+          totalSold: { $sum: '$SoLuong' }
+        }
+      },
+      { $sort: { totalSold: -1 } },
+      { $limit: 3 }
+    ]);
+
+    const topProducts = await Promise.all(
+      topProductsAgg.map(async (item) => {
+        const product = await DataModel.Data_MatHang_Model.findOne({ MaHang: item._id }).lean();
+        if (product) {
+          return {
+            ...product,
+            soLuongBan: item.totalSold
+          };
+        }
+        return null;
+      })
+    ).then(products => products.filter(p => p !== null));
+
+    // Dữ liệu mặc định nếu không có sản phẩm
+    const finalTopProducts = topProducts.length > 0 ? topProducts : [
+      {
+        TenHang: "Bia Tiger",
+        LoaiHang: "Đồ uống",
+        DonGia: 125000,
+        LinkAnh: "https://via.placeholder.com/60x60/4361ee/ffffff?text=P1",
+        soLuongBan: 284
+      },
+      {
+        TenHang: "Snack",
+        LoaiHang: "Đồ ăn nhẹ", 
+        DonGia: 25000,
+        LinkAnh: "https://via.placeholder.com/60x60/f72585/ffffff?text=P2",
+        soLuongBan: 542
+      },
+      {
+        TenHang: "Nước suối",
+        LoaiHang: "Đồ uống",
+        DonGia: 15000,
+        LinkAnh: "https://via.placeholder.com/60x60/4cc9f0/ffffff?text=P3",
+        soLuongBan: 892
+      }
+    ];
+
+    // Chuẩn bị dữ liệu biểu đồ
+    const chartData = {
+      dailyRevenue: dailyRevenueData.map(item => ({
+        label: `${item._id.day}/${item._id.month}/${item._id.year}`,
+        value: item.total,
+        date: item.date
+      })),
+      revenueByCategory: revenueByCategoryData.map(item => ({
+        label: item._id,
+        value: item.total
+      })),
+      roomStatus: await getRoomStatusData()
+    };
+
+    // Stats cho cards
+    const stats = {
+      // Doanh thu từ 01/11/2025
+      totalRevenue: revenueThisPeriod,
+      momPercent: revenueMoM,
+      momIsUp: revenueMoM >= 0,
+
+      // Khách hàng từ 01/11/2025
+      totalCustomers: custTotal,
+      customersThisPeriod: custThisPeriod,
+      customersMoM: custMoM,
+      customersIsUp: custMoM >= 0,
+
+      // Đơn hàng từ 01/11/2025
+      ordersThisPeriod: ordersThisPeriod,
+      ordersMoM: ordersMoM,
+      ordersIsUp: ordersMoM >= 0,
+
+      // Phòng
+      roomsTotal,
+      roomsActive,
+
+      // Thông tin period
+      periodStart: '01/11/2025',
+      periodEnd: formatDate(now)
+    };
+
+    res.render('AD_Dashboard', { 
+      layout: 'AdminMain', 
+      dashboardPage: true, 
+      stats,
+      recentActivities: activityData,
+      topProducts: finalTopProducts,
+      chartData: JSON.stringify(chartData)
+    });
+
+  } catch (err) {
+    console.error('Lỗi dashboard:', err);
+    res.status(500).send('Lỗi server!');
+  }
+});
+
+// Helper function để lấy trạng thái phòng
+async function getRoomStatusData() {
+  const roomStatusData = await DataModel.Data_PhongHat_Model.aggregate([
+    {
+      $group: {
+        _id: '$TrangThai',
+        count: { $sum: 1 }
+      }
+    }
+  ]);
+  
+  return roomStatusData.map(item => ({
+    label: item._id,
+    count: item.count
+  }));
+}
+
+// Helper function format date
+function formatDate(date) {
+  return new Date(date).toLocaleDateString('vi-VN');
+}
+
 
 // Admin logout
 app.get('/logout', (req, res) => {
@@ -752,7 +1173,7 @@ app.get('/api/mathang/tonkho', async (req, res) => {
       filter.LoaiHang = loaiHang;
     }
     
-    const mathangs = await MatHang.find(filter)
+    const mathangs = await DataModel.Data_MatHang_Model.find(filter)
       .select('MaHang TenHang LoaiHang DonGia DonViTinh SoLuongTon LinkAnh')
       .sort({ TenHang: 1 });
     
@@ -1970,7 +2391,7 @@ app.put('/banggia/all', async (req, res) => {
                 console.log(`🔄 Xử lý loại phòng: ${loaiPhong} với ${giaData.length} khung giờ`);
                 
                 // Xóa bảng giá cũ
-                const deleteResult = await BangGia.deleteMany({ LoaiPhong: loaiPhong });
+                const deleteResult = await DataModel.Data_BangGiaPhong_Model.deleteMany({ LoaiPhong: loaiPhong });
                 console.log(`🗑️ Đã xóa ${deleteResult.deletedCount} bản ghi cũ của ${loaiPhong}`);
                 
                 // Thêm bảng giá mới

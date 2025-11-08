@@ -2352,3 +2352,75 @@ input:checked + .toggle-slider:before {
   opacity: 0;
   transition: opacity 0.4s ease;
 }
+
+/* ===== PRICE CALCULATION SECTION ===== */
+.price-calculation-section {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    margin-top: 1rem;
+    animation: priceSlideIn 0.5s ease-out;
+}
+
+@keyframes priceSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.calculated-price {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.price-label {
+    color: var(--cyber-cyan);
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.price-amount {
+    color: var(--cyber-yellow);
+    font-weight: 800;
+    font-size: 1.4rem;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.price-note {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.85rem;
+}
+
+.price-note i {
+    color: var(--cyber-cyan);
+    font-size: 0.8rem;
+}
+
+/* ===== INVALID TIME STATE ===== */
+.input-container.invalid input {
+    border-color: #ff6b6b !important;
+    box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.2) !important;
+    background: rgba(255, 107, 107, 0.05) !important;
+}
+
+.price-calculation-section.invalid {
+    border-color: #ff6b6b !important;
+    background: rgba(255, 107, 107, 0.05) !important;
+}
+
+.price-amount.invalid {
+    color: #ff6b6b !important;
+    text-shadow: 0 0 10px rgba(255, 107, 107, 0.5) !important;
+}

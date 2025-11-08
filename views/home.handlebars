@@ -58,7 +58,7 @@
 
       <div class="products-container">
         <div class="products" id="productsGrid">
-          {{#each phonghats}}
+          {{#each phonghatsH}}
           {{> product}}
           {{/each}}
         </div>
@@ -279,57 +279,71 @@
             </div>
           </div>
 
-          <!-- Bước 2: Thời gian đặt -->
+          <!-- Trong phần Bước 2: Thời gian đặt -->
           <div class="form-section" data-step="2">
-            <div class="section-header">
-              <div class="section-icon">
-                <i class="fas fa-clock"></i>
-              </div>
-              <div class="section-title">
-                <h4>Thời gian đặt phòng</h4>
-                <p>Chọn ngày và giờ bắt đầu</p>
-              </div>
-            </div>
-            
-            <!-- 3 trường trên cùng 1 hàng -->
-            <div class="form-row-3col">
-              <!-- Ô nhập số người -->
-              <div class="input-field">
-                <label class="input-label">
-                  <i class="fas fa-users"></i>
-                  Số người *
-                </label>
-                <div class="input-container">
-                  <input type="number" id="numberOfPeople" name="numberOfPeople" min="1" required placeholder="Nhập số người">
-                </div>
-                <div class="input-hint">Tối đa: <span id="maxCapacityHint"></span> người</div>
+              <div class="section-header">
+                  <div class="section-icon">
+                      <i class="fas fa-clock"></i>
+                  </div>
+                  <div class="section-title">
+                      <h4>Thời gian đặt phòng</h4>
+                      <p>Chọn ngày và giờ bắt đầu</p>
+                  </div>
               </div>
               
-              <!-- Chọn ngày -->
-              <div class="input-field">
-                <label class="input-label">
-                  <i class="fas fa-calendar-day"></i>
-                  Ngày đặt phòng *
-                </label>
-                <div class="input-container">
-                  <input type="date" id="bookingDate" name="bookingDate" required>
-                </div>
+              <!-- 3 trường trên cùng 1 hàng -->
+              <div class="form-row-3col">
+                  <!-- Ô nhập số người -->
+                  <div class="input-field">
+                      <label class="input-label">
+                          <i class="fas fa-users"></i>
+                          Số người *
+                      </label>
+                      <div class="input-container">
+                          <input type="number" id="numberOfPeople" name="numberOfPeople" min="1" required placeholder="Nhập số người">
+                      </div>
+                      <div class="input-hint">Tối đa: <span id="maxCapacityHint"></span> người</div>
+                  </div>
+                  
+                  <!-- Chọn ngày -->
+                  <div class="input-field">
+                      <label class="input-label">
+                          <i class="fas fa-calendar-day"></i>
+                          Ngày đặt phòng *
+                      </label>
+                      <div class="input-container">
+                          <input type="date" id="bookingDate" name="bookingDate" required>
+                      </div>
+                  </div>
+                  
+                  <!-- Chọn giờ -->
+                  <div class="input-field">
+                      <label class="input-label">
+                          <i class="fas fa-clock"></i>
+                          Giờ bắt đầu *
+                      </label>
+                      <div class="input-container">
+                          <input type="time" id="bookingTime" name="bookingTime" required>
+                      </div>
+                  </div>
               </div>
-              
-              <!-- Chọn giờ -->
-              <div class="input-field">
-                <label class="input-label">
-                  <i class="fas fa-clock"></i>
-                  Giờ bắt đầu *
-                </label>
-                <div class="input-container">
-                  <input type="time" id="bookingTime" name="bookingTime" required>
-                  </input>
-                </div>
+
+              <!-- THÊM PHẦN HIỂN THỊ GIÁ TÍNH TOÁN -->
+              <div class="price-calculation-section">
+                  <div class="calculated-price">
+                      <span class="price-label">Giá phòng ước tính:</span>
+                      <span class="price-amount" id="calculatedRoomPrice">0 VND</span>
+                  </div>
+                  <div class="price-note">
+                      <i class="fas fa-info-circle"></i>
+                      <span>Giá được tính tự động theo khung giờ bạn chọn</span>
+                  </div>
               </div>
-            </div>
           </div>
 
+          
+          
+          
           <!-- Bước 3: Dịch vụ thêm -->
           <div class="form-section" data-step="3">
             <div class="section-header">

@@ -1213,6 +1213,12 @@ class BookingModal {
         this.currentRoom = null;
         this.hourlyPrice = 0;
         this._originalSubmitState = null;
+
+        this.currentRoomPriceTable = null; // Lưu bảng giá phòng
+        this.calculatedPrice = 0; // Giá đã tính toán
+
+        this.lastValidDateTime = null;
+        this.isDateTimeValid = true;
         
         if (!this.modal) {
             console.error('Không tìm thấy modal booking');
@@ -1245,17 +1251,329 @@ class BookingModal {
             this.form.addEventListener('submit', (e) => this.handleSubmit(e));
         }
         
-        // Set min datetime cho input thời gian
-        // this.setMinDateTime();
-        
-        // Khởi tạo tính toán
-        // this.initCalculation();
         
         // Khởi tạo dịch vụ
+        this.bindDateTimeEvents();
         this.initServices();
+    }
+
+    bindDateTimeEvents() {
+        const bookingDate = document.getElementById('bookingDate');
+        const bookingTime = document.getElementById('bookingTime');
+
+        if (bookingDate && bookingTime) {
+            // Lưu giá trị ban đầu
+            bookingDate.addEventListener('focus', () => {
+                this.lastValidDateTime = {
+                    date: bookingDate.value,
+                    time: bookingTime.value
+                };
+            });
+
+            bookingTime.addEventListener('focus', () => {
+                this.lastValidDateTime = {
+                    date: bookingDate.value,
+                    time: bookingTime.value
+                };
+            });
+
+            // Khi thay đổi, tính toán giá
+            bookingDate.addEventListener('change', () => this.calculateRoomPrice());
+            bookingTime.addEventListener('change', () => this.calculateRoomPrice());
+        }
+    }
+
+    async loadRoomPriceTable(maPhong) {
+        try {
+            console.log(`📊 Đang tải bảng giá cho phòng: ${maPhong}`);
+            
+            const response = await fetch(`/api/hoadon/banggia/${maPhong}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            console.log('📦 Kết quả API bảng giá RAW:', result);
+            let priceData = null;
+
+            if (Array.isArray(result)) {
+                // TRƯỜNG HỢP API TRẢ VỀ MẢNG TRỰC TIẾP
+                priceData = result;
+                console.log('✅ Định dạng: Array trực tiếp - ĐÃ FIX');
+            } else if (result.success && result.data) {
+                // TRƯỜNG HỢP CÓ success và data
+                priceData = result.data;
+                console.log('✅ Định dạng: { success: true, data: array }');
+            } else {
+                console.warn('❌ Định dạng response không xác định:', result);
+                throw new Error('Định dạng response không hợp lệ');
+            }
+
+            // KIỂM TRA DỮ LIỆU
+            if (!priceData || !Array.isArray(priceData)) {
+                throw new Error('Dữ liệu bảng giá không hợp lệ');
+            }
+
+            if (priceData.length === 0) {
+                console.warn('⚠️ Bảng giá trả về mảng rỗng');
+                // KHÔNG throw error, chỉ cảnh báo
+            }
+
+            // CHUẨN HÓA DỮ LIỆU
+            const validatedData = this.validatePriceData(priceData);
+            console.log(`✅ Đã tải ${validatedData.length} mục giá:`, validatedData);
+
+            this.currentRoomPriceTable = validatedData;
+            return validatedData;
+
+
+        } catch (error) {
+            console.error('❌ Lỗi khi tải bảng giá:', error);
+            this.currentRoomPriceTable = null;
+            
+            // Fallback: sử dụng giá cơ bản từ roomData
+            this.showError('Không thể tải bảng giá', 'Sử dụng giá cơ bản của phòng');
+        }
+    }
+
+    validatePriceData(priceData) {
+    return priceData.map((item, index) => {
+            // Đảm bảo có KhungGio và GiaTien với đúng tên thuộc tính
+            const khungGio = item.KhungGio || item.khungGio || item.timeSlot || `08:00-12:00`;
+            const giaTien = item.GiaTien || item.giaTien || item.price || 100000;
+            
+            console.log(`🔍 Item ${index}:`, { khungGio, giaTien, original: item });
+            
+            return {
+                KhungGio: khungGio,
+                GiaTien: parseInt(giaTien),
+                // Giữ các thuộc tính khác nếu có
+                ...item
+            };
+        }).filter(item => item.KhungGio && item.GiaTien); // Lọc các item hợp lệ
+    }
+
+    calculateRoomPriceByTime(thoiGianBatDau, bangGia) {
+        if (!thoiGianBatDau || !bangGia || !Array.isArray(bangGia)) {
+            console.warn('❌ Không có thời gian bắt đầu hoặc bảng giá');
+            return { price: 0, isValid: false };
+        }
+
+        const thoiGian = new Date(thoiGianBatDau);
+        const gioHienTai = thoiGian.getHours();
+        const phutHienTai = thoiGian.getMinutes();
+        const thoiGianHienTai = gioHienTai * 60 + phutHienTai;
+
+        console.log(`🕒 Thời gian bắt đầu: ${gioHienTai}:${phutHienTai.toString().padStart(2, '0')}`);
+        console.log(`📊 Số khung giờ trong bảng giá: ${bangGia.length}`);
+
+        let foundPrice = 0;
+        let foundTimeSlot = '';
+        let hasValidTimeSlot = false;
+
+        for (const gia of bangGia) {
+            if (!gia.KhungGio) continue;
+
+            const [batDauStr, ketThucStr] = gia.KhungGio.split('-');
+            if (!batDauStr || !ketThucStr) continue;
+
+            const [gioBatDau, phutBatDau] = batDauStr.split(':').map(Number);
+            const [gioKetThuc, phutKetThuc] = ketThucStr.split(':').map(Number);
+            
+            let thoiGianBatDauPhut = gioBatDau * 60 + phutBatDau;
+            let thoiGianKetThucPhut = gioKetThuc * 60 + phutKetThuc;
+
+            console.log(`⏰ Kiểm tra khung giờ: ${gia.KhungGio}, Giá: ${gia.GiaTien}`);
+
+            let isMatch = false;
+            const isQuaNgay = thoiGianBatDauPhut >= thoiGianKetThucPhut;
+
+            if (isQuaNgay) {
+                thoiGianKetThucPhut += 1440;
+                
+                const thoiGianHienTaiExtended = thoiGianHienTai < thoiGianBatDauPhut 
+                    ? thoiGianHienTai + 1440 
+                    : thoiGianHienTai;
+                
+                isMatch = (thoiGianHienTaiExtended >= thoiGianBatDauPhut && 
+                          thoiGianHienTaiExtended < thoiGianKetThucPhut);
+                
+            } else {
+                isMatch = (thoiGianHienTai >= thoiGianBatDauPhut && 
+                          thoiGianHienTai < thoiGianKetThucPhut);
+            }
+
+            console.log(`   Kết quả: ${isMatch ? '✅ PHÙ HỢP' : '❌ KHÔNG PHÙ HỢP'}`);
+
+            if (isMatch) {
+                foundPrice = gia.GiaTien || 0;
+                foundTimeSlot = gia.KhungGio;
+                hasValidTimeSlot = true;
+                break;
+            }
+        }
+
+        // XỬ LÝ KHI KHÔNG TÌM THẤY KHUNG GIỜ PHÙ HỢP
+        if (!hasValidTimeSlot) {
+            console.warn('❌ Không tìm thấy khung giờ phù hợp');
+            
+            const khungGioList = bangGia
+                .filter(gia => gia.KhungGio)
+                .map(gia => {
+                    const [batDau, ketThuc] = gia.KhungGio.split('-');
+                    const [gioBatDau, phutBatDau] = batDau.split(':').map(Number);
+                    const [gioKetThuc, phutKetThuc] = ketThuc.split(':').map(Number);
+                    const thoiGianBatDauPhut = gioBatDau * 60 + phutBatDau;
+                    const thoiGianKetThucPhut = gioKetThuc * 60 + phutKetThuc;
+                    const isQuaNgay = thoiGianBatDauPhut >= thoiGianKetThucPhut;
+                    
+                    if (isQuaNgay) {
+                        return `${gia.KhungGio} (qua ngày) - ${this.formatNumber(gia.GiaTien)} VND`;
+                    }
+                    return `${gia.KhungGio} - ${this.formatNumber(gia.GiaTien)} VND`;
+                })
+                .filter(Boolean)
+                .join('<br>');
+
+            // TRẢ VỀ THÔNG TIN KHÔNG HỢP LỆ
+            return {
+                price: 0,
+                isValid: false,
+                message: `Thời gian <strong>${this.formatTimeForDisplay(gioHienTai, phutHienTai)}</strong> không nằm trong khung giờ phục vụ.`,
+                availableSlots: khungGioList
+            };
+        }
+
+        console.log(`💰 Áp dụng khung giờ: ${foundTimeSlot}, Giá: ${this.formatNumber(foundPrice)} VND`);
+        return {
+            price: foundPrice,
+            isValid: true,
+            timeSlot: foundTimeSlot
+        };
+    }
+
+    // THÊM PHƯƠNG THỨC MỚI: Tính toán giá phòng
+    async calculateRoomPrice() {
+        const bookingDate = document.getElementById('bookingDate');
+        const bookingTime = document.getElementById('bookingTime');
+
+        if (!bookingDate || !bookingTime || !bookingDate.value || !bookingTime.value) {
+            this.updateCalculatedPrice(0);
+            return;
+        }
+
+        // Tạo datetime string
+        const thoiGianBatDau = `${bookingDate.value}T${bookingTime.value}`;
         
-        // Khởi tạo character counter
-        // this.initCharCounter();
+        console.log('🕒 Tính giá cho thời gian:', thoiGianBatDau);
+
+        let calculatedPrice = 0;
+        let isValidTime = true;
+        let alertMessage = '';
+        let availableSlots = '';
+
+        // Tính toán giá nếu có bảng giá
+        if (this.currentRoomPriceTable && Array.isArray(this.currentRoomPriceTable)) {
+            const result = this.calculateRoomPriceByTime(thoiGianBatDau, this.currentRoomPriceTable);
+            calculatedPrice = result.price;
+            isValidTime = result.isValid;
+            alertMessage = result.message;
+            availableSlots = result.availableSlots;
+
+            if (!isValidTime) {
+                // HIỂN THỊ CẢNH BÁO VÀ RESET VỀ THỜI GIAN TRƯỚC ĐÓ
+                this.showTimeSlotAlert(alertMessage, availableSlots);
+                this.resetToLastValidDateTime();
+                return;
+            }
+        } else {
+            // Fallback: sử dụng giá cơ bản
+            calculatedPrice = this.hourlyPrice;
+            console.warn('⚠️ Sử dụng giá cơ bản vì không có bảng giá');
+        }
+
+        // Nếu thời gian hợp lệ, cập nhật giá và lưu thời gian hiện tại
+        if (isValidTime && calculatedPrice > 0) {
+            this.calculatedPrice = calculatedPrice;
+            this.updateCalculatedPrice(calculatedPrice);
+            this.lastValidDateTime = {
+                date: bookingDate.value,
+                time: bookingTime.value
+            };
+            this.isDateTimeValid = true;
+        }
+    }
+
+    // THÊM PHƯƠNG THỨC MỚI: Reset về thời gian trước đó
+    resetToLastValidDateTime() {
+        const bookingDate = document.getElementById('bookingDate');
+        const bookingTime = document.getElementById('bookingTime');
+        
+        if (this.lastValidDateTime) {
+            bookingDate.value = this.lastValidDateTime.date;
+            bookingTime.value = this.lastValidDateTime.time;
+            console.log('🔄 Đã reset về thời gian trước đó:', this.lastValidDateTime);
+        } else {
+            // Nếu không có thời gian trước đó, reset về rỗng
+            bookingDate.value = '';
+            bookingTime.value = '';
+            console.log('🔄 Đã reset về thời gian rỗng');
+        }
+        
+        // Reset giá hiển thị
+        this.updateCalculatedPrice(0);
+        this.isDateTimeValid = false;
+    }
+
+    // THÊM PHƯƠNG THỨC MỚI: Hiển thị cảnh báo khung giờ
+    showTimeSlotAlert(message, availableSlots) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Ngoài thời gian phục vụ',
+            html: `${message}<br><br>
+                  <strong>Các khung giờ hiện có:</strong><br>
+                  ${availableSlots}<br><br>
+                  Thời gian đã được reset về giá trị trước đó.`,
+            confirmButtonText: 'Đã hiểu',
+            confirmButtonColor: '#667eea',
+            width: '600px'
+        });
+    }
+
+    // THÊM PHƯƠNG THỨC MỚI: Format number (quan trọng!)
+    formatNumber(amount) {
+        if (typeof amount === 'string') {
+            amount = parseFloat(amount.replace(/[^\d]/g, '')) || 0;
+        }
+        return new Intl.NumberFormat('vi-VN').format(amount);
+    }
+
+    // THÊM PHƯƠNG THỨC MỚI: Format time
+    formatTimeForDisplay(hours, minutes) {
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    }
+
+    // THÊM PHƯƠNG THỨC MỚI: Cập nhật hiển thị giá
+    updateCalculatedPrice(price) {
+        const calculatedPriceElement = document.getElementById('calculatedRoomPrice');
+        if (calculatedPriceElement) {
+            calculatedPriceElement.textContent = `${this.formatNumber(price)} VND`;
+            
+            // Thêm hiệu ứng khi giá thay đổi
+            if (price > 0) {
+                calculatedPriceElement.style.color = 'var(--cyber-yellow)';
+                calculatedPriceElement.style.transform = 'scale(1.05)';
+                setTimeout(() => {
+                    calculatedPriceElement.style.transform = 'scale(1)';
+                }, 300);
+            }
+        }
+    }
+
+    // THÊM PHƯƠNG THỨC MỚI: Format thời gian hiển thị
+    formatTimeForDisplay(hours, minutes) {
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
     }
     
     setMinDateTime() {
@@ -1276,17 +1594,39 @@ class BookingModal {
         return parseInt(numericString) || 0;
     }
     
-    open(roomData = {}) {
-        console.log('Opening modal with data:', roomData);
+    async open(roomData = {}) {
+        console.log('🎯 Opening modal với roomData:', roomData);
         this.currentRoom = roomData;
         this.fillRoomInfo(roomData);
         this.modal.style.display = 'block';
         document.body.style.overflow = 'hidden';
-        
-        // Reset form
+
+        // Reset form và các biến
         if (this.form) {
             this.form.reset();
             this.setMinDateTime();
+        }
+
+        // RESET CÁC BIẾN THỜI GIAN
+        this.lastValidDateTime = null;
+        this.isDateTimeValid = false;
+        this.calculatedPrice = 0;
+        this.updateCalculatedPrice(0);
+
+        // Load bảng giá phòng
+        const maPhong = roomData.roomID || roomData.MaPhong;
+        console.log('🔍 Mã phòng để tải bảng giá:', maPhong);
+        
+        if (maPhong) {
+            try {
+                console.log('🚀 Bắt đầu tải bảng giá...');
+                await this.loadRoomPriceTable(maPhong);
+                console.log('✅ Đã tải xong bảng giá, sẵn sàng tính toán');
+            } catch (error) {
+                console.error('❌ Lỗi trong quá trình tải bảng giá:', error);
+            }
+        } else {
+            console.error('❌ Không có mã phòng để tải bảng giá');
         }
     }
     
@@ -1512,6 +1852,8 @@ class BookingModal {
         const maDatPhong = `DP${Date.now()}${Math.random().toString(36).substr(2, 5)}`.toUpperCase();
         const maKH = `KH${Date.now()}${Math.random().toString(36).substr(2, 5)}`.toUpperCase();
 
+        const giaTienSuDung = this.calculatedPrice > 0 ? this.calculatedPrice : this.hourlyPrice;
+
         return {
             maKH: maKH,
             tenKH: formData.get('customerName'),
@@ -1521,7 +1863,7 @@ class BookingModal {
             maDatPhong: maDatPhong,
             maPhong: this.currentRoom?.roomID || this.currentRoom?.MaPhong || this.currentRoom?.id || '001',
             tenPhong: this.currentRoom?.name || 'Phòng Karaoke',
-            giaTien: this.hourlyPrice,
+            giaTien: giaTienSuDung,
             loaiPhong: this.currentRoom?.type || 'VIP',
 
             thoiGianBatDau: startTime,
