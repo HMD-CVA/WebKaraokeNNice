@@ -15,10 +15,6 @@
             <i class="fas fa-plus"></i>
             <span>Thêm phòng</span>
           </button>
-          {{!-- <button class="btn-primary" onclick="openRoomTypesModal()">
-            <i class="fas fa-tags"></i>
-            <span>Loại phòng</span>
-          </button> --}}
           <button class="btn-primary" onclick="openPriceModal()">
             <i class="fas fa-money-bill"></i>
             <span>Bảng giá</span>
@@ -276,18 +272,12 @@
               <i class="fas fa-sticky-note"></i>
               Ghi chú
             </label>
-            <textarea 
-              id="roomDescription" 
-              class="room-form-textarea" 
-              placeholder="Nhập ghi chú về phòng, thiết bị, đặc điểm đặc biệt..."
-              rows="4"
-              maxlength="500"
-            ></textarea>
+            <textarea id="roomDescription" class="room-form-textarea"
+              placeholder="Nhập ghi chú về phòng, thiết bị, đặc điểm đặc biệt..." rows="4" maxlength="500"></textarea>
             <div class="room-form-hint">
               <span id="charCount">0</span>/500 ký tự
             </div>
           </div>
-
 
           <div class="room-form-section">
             <h3 class="room-section-title">Hình ảnh phòng</h3>
@@ -295,15 +285,23 @@
               <div class="room-form-group room-full-width">
                 <label for="roomImage" class="room-form-label">
                   <i class="fas fa-image"></i>
-                  Ảnh đại diện
+                  Ảnh đại diện phòng
                 </label>
 
-                <input type="hidden" id="currentImageUrl" name="currentImageUrl" value="">
-                
-                <!-- File input -->
-                <input type="file" id="roomImage" class="room-form-input" accept="image/*" onchange="previewRoomImage(this)">
+                <div id="currentImageContainer" style="display: none;">
+                  <div class="current-image-preview">
+                    <img id="currentImagePreview" src="" alt="Ảnh hiện tại">
+                    <button type="button" class="btn-delete-current-image" onclick="deleteRoomImage()">
+                      <i class="fas fa-trash"></i> Xoá ảnh
+                    </button>
+                  </div>
+                </div>
 
-                <img id="currentImagePreview" src="" style="max-width: 200px; display: block; margin: 10px 0;">
+                <input type="hidden" id="currentImageUrl" name="currentImageUrl" value="">
+
+                <!-- File input -->
+                <input type="file" id="roomImage" class="room-form-input" accept="image/*"
+                  onchange="previewRoomImage(this)">
 
                 <!-- Preview container -->
                 <div class="image-preview-container" id="imagePreviewContainer" style="display: none;">
@@ -314,15 +312,13 @@
                     </button>
                   </div>
                 </div>
-                
+
                 <div class="room-form-hint">
                   Chọn ảnh từ máy tính (JPG, PNG, GIF). Kích thước tối đa: 5MB
                 </div>
               </div>
             </div>
           </div>
-
-          
         </form>
       </div>
 
@@ -379,7 +375,6 @@
             <strong>Lưu ý:</strong> Mỗi lần chỉ được thao tác trên 1 loại phòng!
           </div>
         </div>
-
 
         <!-- Usage Guide -->
         <div class="usage-guide">
@@ -440,9 +435,6 @@
 
     </div>
   </div>
-
-
-
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -580,38 +572,57 @@
     });
   }
 
+  let roomModalState = {
+    uploadedImageFile: null,
+    shouldDeleteCurrentImage: false,
+    originalImageUrl: null
+  };
+
   // ===== ROOM MANAGEMENT =====
   function openRoomModal(roomData = null) {
     document.getElementById('modalTitle').textContent = roomData ? 'Chỉnh sửa phòng hát' : 'Thêm phòng hát mới';
     document.getElementById('roomModal').style.display = 'flex';
     document.body.style.overflow = 'hidden';
 
-    uploadedImageFile = null;
-    currentRoomImage = null;
+    // Reset state
+    roomModalState = {
+      uploadedImageFile: null,
+      shouldDeleteCurrentImage: false,
+      originalImageUrl: null
+    };
+
+    // Reset preview ảnh mới
+    removeImagePreview();
 
     if (roomData) {
-        document.getElementById('roomId').value = roomData._id || '';
-        document.getElementById('roomName').value = roomData.TenPhong || '';
-        document.getElementById('roomType').value = roomData.LoaiPhong || '';
-        document.getElementById('roomSize').value = roomData.SucChua || '';
-        document.getElementById('roomStatus').value = roomData.TrangThai || 'Trống';
-        document.getElementById('roomDescription').value = roomData.GhiChu || '';
+      document.getElementById('roomId').value = roomData._id || '';
+      document.getElementById('roomName').value = roomData.TenPhong || '';
+      document.getElementById('roomType').value = roomData.LoaiPhong || '';
+      document.getElementById('roomSize').value = roomData.SucChua || '';
+      document.getElementById('roomStatus').value = roomData.TrangThai || 'Trống';
+      document.getElementById('roomDescription').value = roomData.GhiChu || '';
+      
+      // Xử lý ảnh hiện tại
+      if (roomData.LinkAnh) {
+        document.getElementById('currentImageUrl').value = roomData.LinkAnh;
+        roomModalState.originalImageUrl = roomData.LinkAnh;
         
-        // 🔥 SET ẢNH HIỆN TẠI VÀO HIDDEN FIELD
-        if (roomData.LinkAnh) {
-            document.getElementById('currentImageUrl').value = roomData.LinkAnh;
-            currentRoomImage = roomData.LinkAnh;
-        } else {
-            document.getElementById('currentImageUrl').value = '';
-            document.getElementById('currentImagePreview').src = '';
-        }
-    } else {
-        resetRoomForm();
-        // Reset hidden field khi thêm mới
+        // Hiển thị ảnh hiện tại và nút xoá
+        const currentImageContainer = document.getElementById('currentImageContainer');
+        const currentImagePreview = document.getElementById('currentImagePreview');
+        currentImagePreview.src = roomData.LinkAnh;
+        currentImageContainer.style.display = 'block';
+      } else {
         document.getElementById('currentImageUrl').value = '';
-        document.getElementById('currentImagePreview').src = '';
+        document.getElementById('currentImageContainer').style.display = 'none';
+      }
+    } else {
+      resetRoomForm();
+      document.getElementById('currentImageUrl').value = '';
+      document.getElementById('currentImageContainer').style.display = 'none';
     }
   }
+
 
   function editRoom(id, name, type, size, status, description, image) {
     sessionStorage.setItem('lastActionRoomId', id);
@@ -643,12 +654,12 @@
     openRoomModal(roomData);
 
     if (image) {
-        const previewContainer = document.getElementById('imagePreviewContainer');
-        const preview = document.getElementById('imagePreview');
-        
-        preview.src = image;
-        previewContainer.style.display = 'block';
-        currentRoomImage = image;
+      const previewContainer = document.getElementById('imagePreviewContainer');
+      const preview = document.getElementById('imagePreview');
+
+      preview.src = image;
+      previewContainer.style.display = 'block';
+      currentRoomImage = image;
     }
   }
 
@@ -666,6 +677,11 @@
 
     document.getElementById('roomModal').style.display = 'none';
     document.body.style.overflow = 'auto';
+    roomModalState = {
+      uploadedImageFile: null,
+      shouldDeleteCurrentImage: false,
+      originalImageUrl: null
+    };
     removeImagePreview();
   }
 
@@ -675,15 +691,25 @@
     document.getElementById('roomStatus').value = 'Trống';
     document.getElementById('currentImageUrl').value = '';
     document.getElementById('currentImagePreview').src = '';
-    uploadedImageFile = null;
-    currentRoomImage = null;
+    document.getElementById('currentImageContainer').style.display = 'none';
+    roomModalState = {
+      uploadedImageFile: null,
+      shouldDeleteCurrentImage: false,
+      originalImageUrl: null
+    };
     removeImagePreview();
   }
-  
+
   // ===== IMAGE PREVIEW FUNCTIONS =====
-function previewRoomImage(input) {
+  function previewRoomImage(input) {
     const previewContainer = document.getElementById('imagePreviewContainer');
     const preview = document.getElementById('imagePreview');
+    
+    // Ẩn ảnh hiện tại nếu đang hiển thị
+    const currentImageContainer = document.getElementById('currentImageContainer');
+    if (currentImageContainer.style.display !== 'none') {
+        currentImageContainer.style.display = 'none';
+    }
     
     if (input.files && input.files[0]) {
         const file = input.files[0];
@@ -712,13 +738,13 @@ function previewRoomImage(input) {
             return;
         }
         
-        uploadedImageFile = file;
+        // Lưu file vào state, không upload ngay
+        roomModalState.uploadedImageFile = file;
         
         const reader = new FileReader();
         reader.onload = function(e) {
             preview.src = e.target.result;
             previewContainer.style.display = 'block';
-            currentRoomImage = e.target.result;
         };
         
         reader.onerror = function() {
@@ -729,144 +755,243 @@ function previewRoomImage(input) {
                 confirmButtonColor: '#667eea'
             });
             input.value = '';
-            uploadedImageFile = null;
+            roomModalState.uploadedImageFile = null;
         };
         
         reader.readAsDataURL(file);
     }
-}
-
-function removeImagePreview() {
+  }
+  
+  
+  
+  function removeImagePreview() {
     const previewContainer = document.getElementById('imagePreviewContainer');
     const fileInput = document.getElementById('roomImage');
     
     previewContainer.style.display = 'none';
     fileInput.value = '';
-    uploadedImageFile = null;
-    currentRoomImage = null;
-}
+    roomModalState.uploadedImageFile = null;
+  }
 
-// ===== GOOGLE DRIVE UPLOAD FUNCTION =====
-async function uploadImageToDrive(file, oldImageUrl = null) {
-  try {
-    console.log('🖼️ Starting image upload...', {
-      name: file.name,
-      size: file.size,
-      oldImage: oldImageUrl
-    });
-
+  function deleteRoomImage() {
+    // Chỉ đánh dấu để xoá, không xoá thật cho đến khi lưu
+    roomModalState.shouldDeleteCurrentImage = true;
+    
+    // Ẩn ảnh hiện tại
+    document.getElementById('currentImageContainer').style.display = 'none';
+    document.getElementById('currentImageUrl').value = '';
+    removeImagePreview();
+    
+    // Hiển thị thông báo
     Swal.fire({
-      title: 'Đang upload ảnh...',
+        icon: 'info',
+        title: 'Đã đánh dấu xoá ảnh',
+        text: 'Ảnh sẽ được xoá khi bạn nhấn Lưu thông tin',
+        timer: 1500,
+        showConfirmButton: false
+    });
+  }  
+  
+  
+  async function reloadRoomData(roomId) {
+  try {
+    console.log('🔄 Đang tải lại dữ liệu phòng:', roomId);
+
+    // Hiển thị loading khi đang tải dữ liệu
+    Swal.fire({
+      title: 'Đang tải dữ liệu...',
       text: 'Vui lòng chờ trong giây lát',
       allowOutsideClick: false,
       didOpen: () => Swal.showLoading()
     });
 
-    const formData = new FormData();
-    formData.append('image', file);
-    
-    // 🔥 GỬI THÔNG TIN ẢNH CŨ ĐỂ SERVER XOÁ
-    if (oldImageUrl) {
-      formData.append('oldImageUrl', oldImageUrl);
-    }
-
-    const response = await fetch('/api/upload/image', {
-      method: 'POST',
-      body: formData
-    });
-
-    const result = await response.json();
-    
+    // Gọi API lấy thông tin phòng
+    const response = await fetch(`/api/phonghat/${roomId}`);
     if (!response.ok) {
-      throw new Error(result.error || `Upload failed with status ${response.status}`);
+      throw new Error('Không thể tải dữ liệu phòng');
     }
 
+    const roomData = await response.json();
+    
+    // Đóng loading
     Swal.close();
-    
-    if (result.success && result.directLink) {
-      console.log('✅ Upload successful, directLink:', result.directLink);
-      return result.directLink;
-    } else {
-      throw new Error(result.error || 'Không thể lấy link ảnh');
-    }
-    
+
+    // Mở modal với dữ liệu mới
+    openRoomModal(roomData);
+
   } catch (error) {
-    Swal.close();
-    console.error('❌ Upload error:', error);
-    
-    await Swal.fire({
+    console.error('❌ Lỗi khi tải lại dữ liệu:', error);
+    Swal.fire({
       icon: 'error',
-      title: 'Lỗi upload ảnh',
-      text: error.message,
+      title: 'Lỗi!',
+      text: 'Không thể tải lại dữ liệu phòng',
       confirmButtonColor: '#667eea'
     });
     
+    // Vẫn mở modal (dù có lỗi)
+    openRoomModal();
+  }
+}
+  
+  async function updateRoomImage(roomId, imageUrl) {
+  try {
+    const response = await fetch(`/api/phonghat/${roomId}/image`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        LinkAnh: imageUrl
+        // Chỉ gửi trường LinkAnh, các trường khác không thay đổi
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Cập nhật ảnh phòng thất bại');
+    }
+
+    const result = await response.json();
+    console.log('✅ Đã cập nhật ảnh phòng trong DB');
+    return result;
+
+  } catch (error) {
+    console.error('❌ Lỗi cập nhật ảnh phòng:', error);
     throw error;
   }
 }
+  
+  
+  
+  async function deleteImageOnServer(imageUrl) {
+    try {
+      console.log('🗑️ Đang xoá ảnh:', imageUrl);
+
+      const response = await fetch('/api/upload/image', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ imageUrl })
+      });
+
+      if (!response.ok) {
+        const errorResult = await response.json();
+        throw new Error(errorResult.error || `Xoá ảnh thất bại với status ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Xoá ảnh thành công');
+      return result;
+
+    } catch (error) {
+      console.error('❌ Lỗi xoá ảnh:', error);
+      throw new Error('Không thể kết nối đến server để xoá ảnh');
+    }
+  }
+
+  // ===== GOOGLE DRIVE UPLOAD FUNCTION =====
+  async function uploadImageToDrive(file, oldImageUrl = null) {
+    try {
+      console.log('🖼️ Starting image upload...', {
+        name: file.name,
+        size: file.size,
+        oldImage: oldImageUrl
+      });
+
+      const formData = new FormData();
+      formData.append('image', file);
+
+      // Gửi thông tin ảnh cũ để server xoá
+      if (oldImageUrl) {
+        formData.append('oldImageUrl', oldImageUrl);
+      }
+
+      const response = await fetch('/api/upload/image', {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || `Upload failed with status ${response.status}`);
+      }
+
+      if (result.success && result.directLink) {
+        console.log('✅ Upload successful, directLink:', result.directLink);
+        return result.directLink;
+      } else {
+        throw new Error(result.error || 'Không thể lấy link ảnh');
+      }
+
+    } catch (error) {
+      console.error('❌ Upload error:', error);
+      throw error;
+    }
+  }
 
   function updateImagePreview(imageData) {
     const preview = document.getElementById('imagePreview');
     if (imageData && imageData.trim() !== '') {
-        preview.innerHTML = `<img src="${imageData}" alt="Preview"; preview.innerHTML = '<div class=\"room-preview-placeholder\"><i class=\"fas fa-image\"></i><p>Không thể tải ảnh</p></div>';">`;
+      preview.innerHTML = `<img src="${imageData}" alt="Preview"; preview.innerHTML = '<div class=\"room-preview-placeholder\"><i class=\"fas fa-image\"></i><p>Không thể tải ảnh</p></div>';">`;
     } else {
-        preview.innerHTML = '<div class="room-preview-placeholder"><i class="fas fa-image"></i><p>Preview sẽ hiển thị ở đây</p></div>';
+      preview.innerHTML = '<div class="room-preview-placeholder"><i class="fas fa-image"></i><p>Preview sẽ hiển thị ở đây</p></div>';
     }
   }
 
   function handleImageUpload(input) {
     const file = input.files[0];
     if (file) {
-        // Kiểm tra loại file
-        if (!file.type.match('image.*')) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Lỗi',
-                text: 'Vui lòng chọn file ảnh (JPG, PNG, GIF)',
-                confirmButtonColor: '#667eea'
-            });
-            input.value = '';
-            return;
-        }
+      // Kiểm tra loại file
+      if (!file.type.match('image.*')) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi',
+          text: 'Vui lòng chọn file ảnh (JPG, PNG, GIF)',
+          confirmButtonColor: '#667eea'
+        });
+        input.value = '';
+        return;
+      }
 
-        // Kiểm tra kích thước file (tối đa 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Lỗi',
-                text: 'Kích thước ảnh không được vượt quá 5MB',
-                confirmButtonColor: '#667eea'
-            });
-            input.value = '';
-            return;
-        }
+      // Kiểm tra kích thước file (tối đa 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi',
+          text: 'Kích thước ảnh không được vượt quá 5MB',
+          confirmButtonColor: '#667eea'
+        });
+        input.value = '';
+        return;
+      }
 
-        uploadedImageFile = file;
-        const reader = new FileReader();
-        
-        reader.onload = function(e) {
-            currentRoomImage = e.target.result;
-              updateImagePreview(currentRoomImage);
-        };
-        
-        reader.onerror = function() {
-            Swal.fire({
-                icon: 'error',
-                title: 'Lỗi',
-                text: 'Không thể đọc file ảnh',
-                confirmButtonColor: '#667eea'
-            });
-            input.value = '';
-            uploadedImageFile = null;
-        };
-        
-        reader.readAsDataURL(file);
-    } else {
+      uploadedImageFile = file;
+      const reader = new FileReader();
+
+      reader.onload = function (e) {
+        currentRoomImage = e.target.result;
+        updateImagePreview(currentRoomImage);
+      };
+
+      reader.onerror = function () {
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi',
+          text: 'Không thể đọc file ảnh',
+          confirmButtonColor: '#667eea'
+        });
+        input.value = '';
         uploadedImageFile = null;
-        currentRoomImage = null;
-        updateImagePreview('');
+      };
+
+      reader.readAsDataURL(file);
+    } else {
+      uploadedImageFile = null;
+      currentRoomImage = null;
+      updateImagePreview('');
     }
-} 
+  }
 
   function clearImagePreview() {
     document.getElementById('roomImage').value = '';
@@ -876,83 +1001,99 @@ async function uploadImageToDrive(file, oldImageUrl = null) {
   }
 
   async function saveRoom(event) {
-  event.preventDefault();
+    event.preventDefault();
 
-  const formData = {
-    TenPhong: document.getElementById('roomName').value.trim(),
-    LoaiPhong: document.getElementById('roomType').value,
-    SucChua: parseInt(document.getElementById('roomSize').value),
-    TrangThai: document.getElementById('roomStatus').value,
-    GhiChu: document.getElementById('roomDescription').value.trim()
-  };
+    const formData = {
+      TenPhong: document.getElementById('roomName').value.trim(),
+      LoaiPhong: document.getElementById('roomType').value,
+      SucChua: parseInt(document.getElementById('roomSize').value),
+      TrangThai: document.getElementById('roomStatus').value,
+      GhiChu: document.getElementById('roomDescription').value.trim()
+    };
 
-  const roomId = document.getElementById('roomId').value;
-  
-  try {
-    // 🔥 LẤY ẢNH CŨ ĐỂ XOÁ
-    const oldImageUrl = document.getElementById('currentImageUrl').value;
-    console.log('🗑️ Old image URL for deletion:', oldImageUrl);
+    const roomId = document.getElementById('roomId').value;
+    
+    try {
+      // Xử lý ảnh khi lưu
+      let finalImageUrl = '';
+      
+      // Nếu có upload ảnh mới
+      if (roomModalState.uploadedImageFile) {
+        Swal.fire({
+          title: 'Đang upload ảnh...',
+          text: 'Vui lòng chờ trong giây lát',
+          allowOutsideClick: false,
+          didOpen: () => Swal.showLoading()
+        });
 
-    // Upload ảnh nếu có
-    if (uploadedImageFile) {
-      Swal.fire({
-        title: 'Đang xử lý ảnh...',
-        text: 'Vui lòng chờ trong giây lát',
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading()
+        // Upload ảnh mới, truyền ảnh cũ để xoá nếu có
+        const oldImageUrl = roomModalState.originalImageUrl || '';
+        finalImageUrl = await uploadImageToDrive(roomModalState.uploadedImageFile, oldImageUrl);
+        
+        Swal.close();
+      } 
+      // Nếu không có ảnh mới nhưng có đánh dấu xoá ảnh
+      else if (roomModalState.shouldDeleteCurrentImage && roomModalState.originalImageUrl) {
+        // Xoá ảnh cũ trên server
+        Swal.fire({
+          title: 'Đang xoá ảnh...',
+          text: 'Vui lòng chờ trong giây lát',
+          allowOutsideClick: false,
+          didOpen: () => Swal.showLoading()
+        });
+
+        await deleteImageOnServer(roomModalState.originalImageUrl);
+        finalImageUrl = ''; // Ảnh đã bị xoá
+        Swal.close();
+      }
+      // Nếu không có thay đổi gì về ảnh
+      else {
+        finalImageUrl = roomModalState.originalImageUrl || '';
+      }
+
+      // Thêm đường dẫn ảnh vào form data
+      formData.LinkAnh = finalImageUrl;
+
+      // Gửi request lưu phòng
+      const url = roomId ? `/api/phonghat/${roomId}` : '/api/phonghat';
+      const method = roomId ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
       });
 
-      // 🔥 TRUYỀN ẢNH CŨ ĐỂ XOÁ
-      const imageUrl = await uploadImageToDrive(uploadedImageFile, oldImageUrl);
-      formData.LinkAnh = imageUrl;
+      const result = await response.json();
       
-      // Cập nhật preview và hidden field
-      document.getElementById('currentImageUrl').value = imageUrl;
-    } else if (oldImageUrl) {
-      // Giữ nguyên ảnh cũ nếu không có ảnh mới
-      formData.LinkAnh = oldImageUrl;
+      if (!response.ok) {
+        throw new Error(result.error || 'Lỗi server');
+      }
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Thành công!',
+        text: result.message || `Phòng "${formData.TenPhong}" đã được ${roomId ? 'cập nhật' : 'thêm'} thành công!`,
+        timer: 1500,
+        showConfirmButton: false
+      });
+
+      setTimeout(() => {
+        location.reload();
+      }, 1500);
+
+    } catch (error) {
+      console.error('❌ Lỗi khi lưu phòng:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi!',
+        text: error.message || 'Không thể lưu thông tin phòng',
+        confirmButtonColor: '#667eea'
+      });
     }
-
-    // Gửi request lưu phòng
-    const url = roomId ? `/api/phonghat/${roomId}` : '/api/phonghat';
-    const method = roomId ? 'PUT' : 'POST';
-
-    const response = await fetch(url, {
-      method: method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
-    });
-
-    const result = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(result.error || 'Lỗi server');
-    }
-
-    Swal.fire({
-      icon: 'success',
-      title: 'Thành công!',
-      text: result.message || `Phòng "${formData.TenPhong}" đã được ${roomId ? 'cập nhật' : 'thêm'} thành công!`,
-      timer: 1500,
-      showConfirmButton: false
-    });
-
-    setTimeout(() => {
-      location.reload();
-    }, 1500);
-
-  } catch (error) {
-    console.error('❌ Lỗi khi lưu phòng:', error);
-    Swal.fire({
-      icon: 'error',
-      title: 'Lỗi!',
-      text: error.message || 'Không thể lưu thông tin phòng',
-      confirmButtonColor: '#667eea'
-    });
   }
-}
- 
- 
+
+
   async function deleteRoom(roomId, roomName) {
     const result = await Swal.fire({
       title: 'Xác nhận xóa?',
@@ -6402,8 +6543,9 @@ async function uploadImageToDrive(file, oldImageUrl = null) {
   .room-modal-body::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
   }
-/* ===== FILE INPUT STYLES ===== */
-.room-form-input[type="file"] {
+
+  /* ===== FILE INPUT STYLES ===== */
+  .room-form-input[type="file"] {
     padding: 12px 16px;
     border: 2px solid #e2e8f0;
     border-radius: 10px;
@@ -6412,16 +6554,16 @@ async function uploadImageToDrive(file, oldImageUrl = null) {
     background: white;
     color: #1e293b;
     cursor: pointer;
-}
+  }
 
-.room-form-input[type="file"]:focus {
+  .room-form-input[type="file"]:focus {
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     background: #fafbff;
-}
+  }
 
-.room-form-input[type="file"]::file-selector-button {
+  .room-form-input[type="file"]::file-selector-button {
     background: linear-gradient(135deg, #667eea, #764ba2);
     color: white;
     border: none;
@@ -6431,115 +6573,177 @@ async function uploadImageToDrive(file, oldImageUrl = null) {
     font-weight: 600;
     margin-right: 12px;
     transition: all 0.3s ease;
-}
+  }
 
-.room-form-input[type="file"]::file-selector-button:hover {
+  .room-form-input[type="file"]::file-selector-button:hover {
     background: linear-gradient(135deg, #5a67d8, #6b46c1);
     transform: translateY(-1px);
-}
+  }
 
-/* ===== IMAGE PREVIEW STYLES ===== */
-.room-image-preview img {
+  /* ===== IMAGE PREVIEW STYLES ===== */
+  .room-image-preview img {
     max-width: 100%;
     max-height: 300px;
     border-radius: 8px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     object-fit: cover;
-}
+  }
 
-.room-preview-placeholder {
+  .room-preview-placeholder {
     color: #6b7280;
     text-align: center;
-}
+  }
 
-.room-preview-placeholder i {
+  .room-preview-placeholder i {
     font-size: 3rem;
     margin-bottom: 12px;
     opacity: 0.5;
-}
+  }
 
-.room-preview-placeholder p {
+  .room-preview-placeholder p {
     margin: 0;
     font-size: 1rem;
-}
-/* ===== IMAGE PREVIEW STYLES ===== */
-.image-preview-container {
-  margin-top: 15px;
-  animation: fadeIn 0.3s ease;
+  }
+
+  /* ===== IMAGE PREVIEW STYLES ===== */
+  .image-preview-container {
+    margin-top: 15px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .image-preview {
+    position: relative;
+    display: inline-block;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 2px solid #e2e8f0;
+  }
+
+  .image-preview img {
+    max-width: 300px;
+    max-height: 200px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .btn-remove-preview {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(229, 62, 62, 0.9);
+    color: white;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+  }
+
+  .btn-remove-preview:hover {
+    background: rgba(229, 62, 62, 1);
+    transform: scale(1.1);
+  }
+
+  /* File input styling */
+  .room-form-input[type="file"] {
+    padding: 12px 16px;
+    border: 2px dashed #cbd5e0;
+    background: #f8fafc;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .room-form-input[type="file"]:hover {
+    border-color: #667eea;
+    background: #f0f4ff;
+  }
+
+  .room-form-input[type="file"]::file-selector-button {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    margin-right: 12px;
+    transition: all 0.3s ease;
+  }
+
+  .room-form-input[type="file"]::file-selector-button:hover {
+    background: linear-gradient(135deg, #5a67d8, #6b46c1);
+    transform: translateY(-1px);
+  }
+
+  .current-image-preview {
+    position: relative;
+    display: inline-block;
+    margin: 10px 0;
+  }
+
+  .current-image-preview img {
+    max-width: 200px;
+    border-radius: 8px;
+    border: 2px solid #e2e8f0;
+  }
+
+  .btn-delete-current-image {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(229, 62, 62, 0.9);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.2s;
+  }
+
+  .btn-delete-current-image:hover {
+    background: #c53030;
+  }
+/* Thêm hiệu ứng cho nút xoá khi loading */
+.btn-delete-current-image:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.image-preview {
+/* Loading indicator cho ảnh */
+.current-image-preview.loading {
+  opacity: 0.7;
   position: relative;
-  display: inline-block;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  border: 2px solid #e2e8f0;
 }
 
-.image-preview img {
-  max-width: 300px;
-  max-height: 200px;
-  object-fit: cover;
-  display: block;
-}
-
-.btn-remove-preview {
+.current-image-preview.loading::after {
+  content: 'Đang xoá...';
   position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(229, 62, 62, 0.9);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.7);
   color: white;
-  border: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-}
-
-.btn-remove-preview:hover {
-  background: rgba(229, 62, 62, 1);
-  transform: scale(1.1);
-}
-
-/* File input styling */
-.room-form-input[type="file"] {
-  padding: 12px 16px;
-  border: 2px dashed #cbd5e0;
-  background: #f8fafc;
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.room-form-input[type="file"]:hover {
-  border-color: #667eea;
-  background: #f0f4ff;
-}
-
-.room-form-input[type="file"]::file-selector-button {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  margin-right: 12px;
-  transition: all 0.3s ease;
-}
-
-.room-form-input[type="file"]::file-selector-button:hover {
-  background: linear-gradient(135deg, #5a67d8, #6b46c1);
-  transform: translateY(-1px);
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
 }
 </style>

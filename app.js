@@ -615,6 +615,37 @@ router.delete('/api/images/cleanup', async (req, res) => {
   }
 });
 
+// Thêm route này sau các route upload ảnh hiện tại
+router.delete('/api/upload/image', async (req, res) => {
+  try {
+    const { imageUrl } = req.body;
+
+    if (!imageUrl) {
+      return res.status(400).json({
+        success: false,
+        error: 'Thiếu URL ảnh'
+      });
+    }
+
+    console.log('🗑️ Nhận yêu cầu xoá ảnh:', imageUrl);
+
+    // Gọi hàm xoá ảnh cũ (đã có sẵn trong code)
+    await deleteOldImage(imageUrl);
+
+    res.json({
+      success: true,
+      message: 'Đã xoá ảnh thành công'
+    });
+
+  } catch (error) {
+    console.error('❌ Lỗi xoá ảnh:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Lỗi khi xoá ảnh: ' + error.message
+    });
+  }
+});
+
 
 
 
@@ -3626,54 +3657,53 @@ app.delete('/api/delete/hoadon/:maHoaDon', async (req, res) => {
 });
 
 
-// API để xóa ảnh của phòng mà không xóa phòng
-app.put('/api/phonghat/:id/remove-image', async (req, res) => {
+// PUT /api/phonghat/:id/image - Cập nhật chỉ trường ảnh của phòng
+app.put('/api/phonghat/:id/image', async (req, res) => {
   try {
-    const roomId = req.params.id;
-    const { oldImageUrl } = req.body;
+    const { id } = req.params;
+    const { LinkAnh } = req.body;
 
-    console.log(`🗑️ Removing image from room ${roomId}`, { oldImageUrl });
+    console.log('🔄 Cập nhật ảnh phòng:', { id, LinkAnh });
 
-    // Tìm phòng
-    const room = await DataModel.PhongHat.findById(roomId);
-    if (!room) {
+    // Chỉ cập nhật trường LinkAnh
+    const phong = await DataModel.Data_PhongHat_Model.findByIdAndUpdate(
+      id,
+      { 
+        LinkAnh: LinkAnh,
+        updatedAt: new Date()
+      },
+      { 
+        new: true, 
+        runValidators: true,
+        // Chỉ cập nhật trường LinkAnh, không ảnh hưởng trường khác
+        fields: { LinkAnh: 1 } 
+      }
+    );
+
+    if (!phong) {
       return res.status(404).json({
         success: false,
-        error: 'Phòng không tồn tại'
+        error: 'Không tìm thấy phòng'
       });
     }
 
-    // 🔥 XÓA ẢNH CŨ TRÊN SERVER NẾU CÓ
-    if (oldImageUrl) {
-      try {
-        await deleteImageFromStorage(oldImageUrl);
-        console.log('✅ Đã xóa ảnh cũ:', oldImageUrl);
-      } catch (deleteError) {
-        console.warn('⚠️ Không thể xóa ảnh cũ:', deleteError.message);
-        // Vẫn tiếp tục cập nhật phòng dù không xóa được ảnh
-      }
-    }
-
-    // Cập nhật phòng - xóa ảnh
-    room.LinkAnh = '';
-    await room.save();
-
     res.json({
       success: true,
-      message: 'Đã xóa ảnh khỏi phòng thành công',
-      room: room
+      message: 'Cập nhật ảnh phòng thành công',
+      data: {
+        _id: phong._id,
+        LinkAnh: phong.LinkAnh
+      }
     });
 
   } catch (error) {
-    console.error('❌ Lỗi khi xóa ảnh khỏi phòng:', error);
+    console.error('❌ Lỗi cập nhật ảnh phòng:', error);
     res.status(500).json({
       success: false,
-      error: 'Lỗi server khi xóa ảnh: ' + error.message
+      error: 'Lỗi server khi cập nhật ảnh phòng'
     });
   }
 });
-
-
 
 
 ///////////////////////////////
