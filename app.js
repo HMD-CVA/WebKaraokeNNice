@@ -546,71 +546,71 @@ app.use(router);
 
 
 // API xóa ảnh từ Google Drive
-router.delete('/image/:fileId', async (req, res) => {
-  try {
-    const { fileId } = req.params;
+// router.delete('/image/:fileId', async (req, res) => {
+//   try {
+//     const { fileId } = req.params;
 
-    const auth = new google.auth.GoogleAuth({
-      keyFile: path.join(process.cwd(), 'service-account-key.json'),
-      scopes: ['https://www.googleapis.com/auth/drive.file'],
-    });
+//     const auth = new google.auth.GoogleAuth({
+//       keyFile: path.join(process.cwd(), 'service-account-key.json'),
+//       scopes: ['https://www.googleapis.com/auth/drive.file'],
+//     });
 
-    const drive = google.drive({ version: 'v3', auth });
+//     const drive = google.drive({ version: 'v3', auth });
 
-    await drive.files.delete({
-      fileId: fileId
-    });
+//     await drive.files.delete({
+//       fileId: fileId
+//     });
 
-    res.json({
-      success: true,
-      message: 'Đã xóa ảnh thành công'
-    });
+//     res.json({
+//       success: true,
+//       message: 'Đã xóa ảnh thành công'
+//     });
 
-  } catch (error) {
-    console.error('❌ Delete error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Lỗi khi xóa ảnh: ' + error.message
-    });
-  }
-});
+//   } catch (error) {
+//     console.error('❌ Delete error:', error);
+//     res.status(500).json({
+//       success: false,
+//       error: 'Lỗi khi xóa ảnh: ' + error.message
+//     });
+//   }
+// });
 
 // API lấy danh sách ảnh (optional)
-router.get('/images', async (req, res) => {
-  try {
-    const auth = new google.auth.GoogleAuth({
-      keyFile: path.join(process.cwd(), 'service-account-key.json'),
-      scopes: ['https://www.googleapis.com/auth/drive.readonly'],
-    });
+// router.get('/images', async (req, res) => {
+//   try {
+//     const auth = new google.auth.GoogleAuth({
+//       keyFile: path.join(process.cwd(), 'service-account-key.json'),
+//       scopes: ['https://www.googleapis.com/auth/drive.readonly'],
+//     });
 
-    const drive = google.drive({ version: 'v3', auth });
+//     const drive = google.drive({ version: 'v3', auth });
 
-    const response = await drive.files.list({
-      q: `'${process.env.GOOGLE_DRIVE_FOLDER_ID}' in parents and mimeType contains 'image/'`,
-      fields: 'files(id, name, webViewLink, createdTime)',
-      orderBy: 'createdTime desc'
-    });
+//     const response = await drive.files.list({
+//       q: `'${process.env.GOOGLE_DRIVE_FOLDER_ID}' in parents and mimeType contains 'image/'`,
+//       fields: 'files(id, name, webViewLink, createdTime)',
+//       orderBy: 'createdTime desc'
+//     });
 
-    const files = response.data.files.map(file => ({
-      id: file.id,
-      name: file.name,
-      url: `https://drive.google.com/uc?export=view&id=${file.id}`,
-      createdTime: file.createdTime
-    }));
+//     const files = response.data.files.map(file => ({
+//       id: file.id,
+//       name: file.name,
+//       url: `https://drive.google.com/uc?export=view&id=${file.id}`,
+//       createdTime: file.createdTime
+//     }));
 
-    res.json({
-      success: true,
-      files: files
-    });
+//     res.json({
+//       success: true,
+//       files: files
+//     });
 
-  } catch (error) {
-    console.error('❌ List images error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Lỗi khi lấy danh sách ảnh'
-    });
-  }
-});
+//   } catch (error) {
+//     console.error('❌ List images error:', error);
+//     res.status(500).json({
+//       success: false,
+//       error: 'Lỗi khi lấy danh sách ảnh'
+//     });
+//   }
+// });
 
 
 
