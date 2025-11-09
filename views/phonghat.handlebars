@@ -39,10 +39,9 @@
         </select>
         <select class="filter-select" id="statusFilter" onchange="filterRooms()">
           <option value="">Tất cả trạng thái</option>
-          <option value="Trống">🟢 Còn trống</option>
-          <option value="Đang sử dụng">🔴 Đang sử dụng</option>
-          <option value="Đã đặt trước">🟡 Đã đặt trước</option>
-          <option value="Đang bận">Đang bận</option>
+          {{#each roomStatus}}
+            <option value="{{this}}">{{this}}</option>
+          {{/each}}
         </select>
         <button class="clear-filters" onclick="clearFilters()">
           <i class="fas fa-times"></i>
@@ -258,9 +257,9 @@
                   <span class="room-required">*</span>Trạng thái
                 </label>
                 <select id="roomStatus" class="room-form-select" required>
-                  <option value="Trống">🟢 Còn trống</option>
-                  <option value="Đang sử dụng">🔴 Đang sử dụng</option>
-                  <option value="Đã đặt trước">🟡 Đã đặt trước</option>
+                  {{#each roomStatus}}
+                    <option value="{{this}}">{{this}}</option>
+                  {{/each}}             
                 </select>
                 <div class="room-form-hint">Trạng thái hiện tại của phòng</div>
               </div>
@@ -440,2777 +439,2777 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-  // ===== CONFIGURATION & STATE =====
-  const CONFIG = {
-    roomsPerPage: 4,
-    searchDebounceTime: 300
-  };
+// ===== CONFIGURATION & STATE =====
+const CONFIG = {
+  roomsPerPage: 4,
+  searchDebounceTime: 300
+};
 
-  let appState = {
-    activeModal: null,
-    modalData: {},
-    filters: { search: '', type: '', status: '' },
-    pagination: { currentPage: 1 }
-  };
+let appState = {
+  activeModal: null,
+  modalData: {},
+  filters: { search: '', type: '', status: '' },
+  pagination: { currentPage: 1 }
+};
 
-  let allRooms = [];
-  let filteredRooms = [];
-  let currentPage = 1;
-  let searchTimeout;
-  let currentEditingLoaiPhong = null;
-  let hasUnsavedChanges = false;
-  let currentLoaiPhong = null;
-  let priceData = [];
-  let isNewRoomType = false;
-  let pendingRoomType = null;
-  let hasPriceItems = false;
-  let previousLoaiPhong = null;
-  let pendingLoaiPhongChange = null;
-  let pendingPriceData = null;
-  let newRoomName = new Map();
+let allRooms = [];
+let filteredRooms = [];
+let currentPage = 1;
+let searchTimeout;
+let currentEditingLoaiPhong = null;
+let hasUnsavedChanges = false;
+let currentLoaiPhong = null;
+let priceData = [];
+let isNewRoomType = false;
+let pendingRoomType = null;
+let hasPriceItems = false;
+let previousLoaiPhong = null;
+let pendingLoaiPhongChange = null;
+let pendingPriceData = null;
+let newRoomName = new Map();
 
-  // ===== UTILITY FUNCTIONS =====
-  function formatNumber(price) {
-    return new Intl.NumberFormat('vi-VN').format(price);
-  }
+// ===== UTILITY FUNCTIONS =====
+function formatNumber(price) {
+  return new Intl.NumberFormat('vi-VN').format(price);
+}
 
-  function formatTimeInput(timeStr) {
-    if (!timeStr) return '';
+function formatTimeInput(timeStr) {
+  if (!timeStr) return '';
 
-    if (timeStr.includes(':') && /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(timeStr)) {
-      return timeStr;
-    }
-
-    const numbers = timeStr.replace(/[^0-9]/g, '');
-    if (numbers.length === 0) return '';
-
-    let hours = numbers.slice(0, 2);
-    let minutes = numbers.slice(2, 4);
-
-    if (hours) {
-      const hourNum = parseInt(hours);
-      if (hourNum > 23) {
-        hours = '23';
-      } else if (hourNum < 10 && hours.length === 1) {
-        hours = '0' + hours;
-      } else {
-        hours = hours.padStart(2, '0');
-      }
-    }
-
-    if (minutes) {
-      const minuteNum = parseInt(minutes);
-      if (minuteNum > 59) {
-        minutes = minutes;
-      } else {
-        minutes = minutes.padStart(2, '0');
-      }
-    }
-
-    if (minutes) {
-      return `${hours}:${minutes}`;
-    } else if (hours) {
-      return `${hours}:00`;
-    }
-
+  if (timeStr.includes(':') && /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(timeStr)) {
     return timeStr;
   }
 
-  function validateTimeFormat(time) {
-    return /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(time);
-  }
+  const numbers = timeStr.replace(/[^0-9]/g, '');
+  if (numbers.length === 0) return '';
 
-  function isTimeRangeOverlapping(start1, end1, start2, end2) {
-    const toMinutes = (timeStr) => {
-      const [hours, minutes] = timeStr.split(':').map(Number);
-      return hours * 60 + minutes;
-    };
+  let hours = numbers.slice(0, 2);
+  let minutes = numbers.slice(2, 4);
 
-    const s1 = toMinutes(start1);
-    const e1 = toMinutes(end1);
-    const s2 = toMinutes(start2);
-    const e2 = toMinutes(end2);
-
-    const adjustEndTime = (start, end) => {
-      return end < start ? end + 24 * 60 : end;
-    };
-
-    const adjustedE1 = adjustEndTime(s1, e1);
-    const adjustedE2 = adjustEndTime(s2, e2);
-
-    const maxStart = Math.max(s1, s2);
-    const minEnd = Math.min(adjustedE1, adjustedE2);
-
-    return maxStart < minEnd;
-  }
-
-  function isTimeDifferenceValid(startTime, endTime) {
-    if (!startTime || !endTime) return false;
-
-    const toMinutes = (timeStr) => {
-      const [hours, minutes] = timeStr.split(':').map(Number);
-      return hours * 60 + minutes;
-    };
-
-    let startMinutes = toMinutes(startTime);
-    let endMinutes = toMinutes(endTime);
-
-    if (endMinutes < startMinutes) {
-      endMinutes += 24 * 60;
+  if (hours) {
+    const hourNum = parseInt(hours);
+    if (hourNum > 23) {
+      hours = '23';
+    } else if (hourNum < 10 && hours.length === 1) {
+      hours = '0' + hours;
+    } else {
+      hours = hours.padStart(2, '0');
     }
-
-    const differenceInMinutes = endMinutes - startMinutes;
-    return differenceInMinutes >= 60;
   }
 
-  function showError(message) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Thiếu thông tin',
-      text: message,
-      confirmButtonColor: '#667eea'
-    });
+  if (minutes) {
+    const minuteNum = parseInt(minutes);
+    if (minuteNum > 59) {
+      minutes = minutes;
+    } else {
+      minutes = minutes.padStart(2, '0');
+    }
   }
 
-  let roomModalState = {
+  if (minutes) {
+    return `${hours}:${minutes}`;
+  } else if (hours) {
+    return `${hours}:00`;
+  }
+
+  return timeStr;
+}
+
+function validateTimeFormat(time) {
+  return /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(time);
+}
+
+function isTimeRangeOverlapping(start1, end1, start2, end2) {
+  const toMinutes = (timeStr) => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  const s1 = toMinutes(start1);
+  const e1 = toMinutes(end1);
+  const s2 = toMinutes(start2);
+  const e2 = toMinutes(end2);
+
+  const adjustEndTime = (start, end) => {
+    return end < start ? end + 24 * 60 : end;
+  };
+
+  const adjustedE1 = adjustEndTime(s1, e1);
+  const adjustedE2 = adjustEndTime(s2, e2);
+
+  const maxStart = Math.max(s1, s2);
+  const minEnd = Math.min(adjustedE1, adjustedE2);
+
+  return maxStart < minEnd;
+}
+
+function isTimeDifferenceValid(startTime, endTime) {
+  if (!startTime || !endTime) return false;
+
+  const toMinutes = (timeStr) => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  let startMinutes = toMinutes(startTime);
+  let endMinutes = toMinutes(endTime);
+
+  if (endMinutes < startMinutes) {
+    endMinutes += 24 * 60;
+  }
+
+  const differenceInMinutes = endMinutes - startMinutes;
+  return differenceInMinutes >= 60;
+}
+
+function showError(message) {
+  Swal.fire({
+    icon: 'warning',
+    title: 'Thiếu thông tin',
+    text: message,
+    confirmButtonColor: '#667eea'
+  });
+}
+
+let roomModalState = {
+  uploadedImageFile: null,
+  shouldDeleteCurrentImage: false,
+  originalImageUrl: null
+};
+
+// ===== ROOM MANAGEMENT =====
+function openRoomModal(roomData = null) {
+  document.getElementById('modalTitle').textContent = roomData ? 'Chỉnh sửa phòng hát' : 'Thêm phòng hát mới';
+  document.getElementById('roomModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+
+  // Reset state
+  roomModalState = {
     uploadedImageFile: null,
     shouldDeleteCurrentImage: false,
     originalImageUrl: null
   };
 
-  // ===== ROOM MANAGEMENT =====
-  function openRoomModal(roomData = null) {
-    document.getElementById('modalTitle').textContent = roomData ? 'Chỉnh sửa phòng hát' : 'Thêm phòng hát mới';
-    document.getElementById('roomModal').style.display = 'flex';
-    document.body.style.overflow = 'hidden';
+  // Reset preview ảnh mới
+  removeImagePreview();
 
-    // Reset state
-    roomModalState = {
-      uploadedImageFile: null,
-      shouldDeleteCurrentImage: false,
-      originalImageUrl: null
-    };
-
-    // Reset preview ảnh mới
-    removeImagePreview();
-
-    if (roomData) {
-      document.getElementById('roomId').value = roomData._id || '';
-      document.getElementById('roomName').value = roomData.TenPhong || '';
-      document.getElementById('roomType').value = roomData.LoaiPhong || '';
-      document.getElementById('roomSize').value = roomData.SucChua || '';
-      document.getElementById('roomStatus').value = roomData.TrangThai || 'Trống';
-      document.getElementById('roomDescription').value = roomData.GhiChu || '';
+  if (roomData) {
+    document.getElementById('roomId').value = roomData._id || '';
+    document.getElementById('roomName').value = roomData.TenPhong || '';
+    document.getElementById('roomType').value = roomData.LoaiPhong || '';
+    document.getElementById('roomSize').value = roomData.SucChua || '';
+    document.getElementById('roomStatus').value = roomData.TrangThai || 'Trống';
+    document.getElementById('roomDescription').value = roomData.GhiChu || '';
+    
+    // Xử lý ảnh hiện tại
+    if (roomData.LinkAnh) {
+      document.getElementById('currentImageUrl').value = roomData.LinkAnh;
+      roomModalState.originalImageUrl = roomData.LinkAnh;
       
-      // Xử lý ảnh hiện tại
-      if (roomData.LinkAnh) {
-        document.getElementById('currentImageUrl').value = roomData.LinkAnh;
-        roomModalState.originalImageUrl = roomData.LinkAnh;
-        
-        // Hiển thị ảnh hiện tại và nút xoá
-        const currentImageContainer = document.getElementById('currentImageContainer');
-        const currentImagePreview = document.getElementById('currentImagePreview');
-        currentImagePreview.src = roomData.LinkAnh;
-        currentImageContainer.style.display = 'block';
-      } else {
-        document.getElementById('currentImageUrl').value = '';
-        document.getElementById('currentImageContainer').style.display = 'none';
-      }
+      // Hiển thị ảnh hiện tại và nút xoá
+      const currentImageContainer = document.getElementById('currentImageContainer');
+      const currentImagePreview = document.getElementById('currentImagePreview');
+      currentImagePreview.src = roomData.LinkAnh;
+      currentImageContainer.style.display = 'block';
     } else {
-      resetRoomForm();
       document.getElementById('currentImageUrl').value = '';
       document.getElementById('currentImageContainer').style.display = 'none';
     }
+  } else {
+    resetRoomForm();
+    document.getElementById('currentImageUrl').value = '';
+    document.getElementById('currentImageContainer').style.display = 'none';
   }
+}
 
 
-  function editRoom(id, name, type, size, status, description, image) {
-    sessionStorage.setItem('lastActionRoomId', id);
-    sessionStorage.setItem('lastActionType', 'room');
+function editRoom(id, name, type, size, status, description, image) {
+  sessionStorage.setItem('lastActionRoomId', id);
+  sessionStorage.setItem('lastActionType', 'room');
 
-    const currentFilters = {
+  const currentFilters = {
+    search: document.getElementById('searchInput').value,
+    type: document.getElementById('typeFilter').value,
+    status: document.getElementById('statusFilter').value
+  };
+  sessionStorage.setItem('currentFilters', JSON.stringify(currentFilters));
+
+  const currentState = {
+    page: currentPage,
+    filters: currentFilters,
+    timestamp: Date.now()
+  };
+  sessionStorage.setItem('karaokeAppStateBeforeReload', JSON.stringify(currentState));
+
+  const roomData = {
+    _id: id,
+    TenPhong: name,
+    LoaiPhong: type,
+    SucChua: size,
+    TrangThai: status,
+    GhiChu: description,
+    LinkAnh: image
+  };
+  openRoomModal(roomData);
+
+  if (image) {
+    const previewContainer = document.getElementById('imagePreviewContainer');
+    const preview = document.getElementById('imagePreview');
+
+    preview.src = image;
+    previewContainer.style.display = 'block';
+    currentRoomImage = image;
+  }
+}
+
+function closeRoomModal() {
+  const currentState = {
+    page: currentPage,
+    filters: {
       search: document.getElementById('searchInput').value,
       type: document.getElementById('typeFilter').value,
       status: document.getElementById('statusFilter').value
-    };
-    sessionStorage.setItem('currentFilters', JSON.stringify(currentFilters));
+    },
+    timestamp: Date.now()
+  };
+  sessionStorage.setItem('karaokeAppStateBeforeReload', JSON.stringify(currentState));
 
-    const currentState = {
-      page: currentPage,
-      filters: currentFilters,
-      timestamp: Date.now()
-    };
-    sessionStorage.setItem('karaokeAppStateBeforeReload', JSON.stringify(currentState));
+  document.getElementById('roomModal').style.display = 'none';
+  document.body.style.overflow = 'auto';
+  roomModalState = {
+    uploadedImageFile: null,
+    shouldDeleteCurrentImage: false,
+    originalImageUrl: null
+  };
+  removeImagePreview();
+}
 
-    const roomData = {
-      _id: id,
-      TenPhong: name,
-      LoaiPhong: type,
-      SucChua: size,
-      TrangThai: status,
-      GhiChu: description,
-      LinkAnh: image
-    };
-    openRoomModal(roomData);
+function resetRoomForm() {
+  document.getElementById('roomForm').reset();
+  document.getElementById('roomId').value = '';
+  document.getElementById('roomStatus').value = 'Trống';
+  document.getElementById('currentImageUrl').value = '';
+  document.getElementById('currentImagePreview').src = '';
+  document.getElementById('currentImageContainer').style.display = 'none';
+  roomModalState = {
+    uploadedImageFile: null,
+    shouldDeleteCurrentImage: false,
+    originalImageUrl: null
+  };
+  removeImagePreview();
+}
 
-    if (image) {
-      const previewContainer = document.getElementById('imagePreviewContainer');
-      const preview = document.getElementById('imagePreview');
-
-      preview.src = image;
-      previewContainer.style.display = 'block';
-      currentRoomImage = image;
-    }
-  }
-
-  function closeRoomModal() {
-    const currentState = {
-      page: currentPage,
-      filters: {
-        search: document.getElementById('searchInput').value,
-        type: document.getElementById('typeFilter').value,
-        status: document.getElementById('statusFilter').value
-      },
-      timestamp: Date.now()
-    };
-    sessionStorage.setItem('karaokeAppStateBeforeReload', JSON.stringify(currentState));
-
-    document.getElementById('roomModal').style.display = 'none';
-    document.body.style.overflow = 'auto';
-    roomModalState = {
-      uploadedImageFile: null,
-      shouldDeleteCurrentImage: false,
-      originalImageUrl: null
-    };
-    removeImagePreview();
-  }
-
-  function resetRoomForm() {
-    document.getElementById('roomForm').reset();
-    document.getElementById('roomId').value = '';
-    document.getElementById('roomStatus').value = 'Trống';
-    document.getElementById('currentImageUrl').value = '';
-    document.getElementById('currentImagePreview').src = '';
-    document.getElementById('currentImageContainer').style.display = 'none';
-    roomModalState = {
-      uploadedImageFile: null,
-      shouldDeleteCurrentImage: false,
-      originalImageUrl: null
-    };
-    removeImagePreview();
-  }
-
-  // ===== IMAGE PREVIEW FUNCTIONS =====
-  function previewRoomImage(input) {
-    const previewContainer = document.getElementById('imagePreviewContainer');
-    const preview = document.getElementById('imagePreview');
-    
-    // Ẩn ảnh hiện tại nếu đang hiển thị
-    const currentImageContainer = document.getElementById('currentImageContainer');
-    if (currentImageContainer.style.display !== 'none') {
-        currentImageContainer.style.display = 'none';
-    }
-    
-    if (input.files && input.files[0]) {
-        const file = input.files[0];
-        
-        // Validate file type
-        if (!file.type.match('image.*')) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Lỗi',
-                text: 'Vui lòng chọn file ảnh (JPG, PNG, GIF)',
-                confirmButtonColor: '#667eea'
-            });
-            input.value = '';
-            return;
-        }
-        
-        // Validate file size (5MB max)
-        if (file.size > 5 * 1024 * 1024) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Lỗi',
-                text: 'Kích thước ảnh không được vượt quá 5MB',
-                confirmButtonColor: '#667eea'
-            });
-            input.value = '';
-            return;
-        }
-        
-        // Lưu file vào state, không upload ngay
-        roomModalState.uploadedImageFile = file;
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            preview.src = e.target.result;
-            previewContainer.style.display = 'block';
-        };
-        
-        reader.onerror = function() {
-            Swal.fire({
-                icon: 'error',
-                title: 'Lỗi',
-                text: 'Không thể đọc file ảnh',
-                confirmButtonColor: '#667eea'
-            });
-            input.value = '';
-            roomModalState.uploadedImageFile = null;
-        };
-        
-        reader.readAsDataURL(file);
-    }
+// ===== IMAGE PREVIEW FUNCTIONS =====
+function previewRoomImage(input) {
+  const previewContainer = document.getElementById('imagePreviewContainer');
+  const preview = document.getElementById('imagePreview');
+  
+  // Ẩn ảnh hiện tại nếu đang hiển thị
+  const currentImageContainer = document.getElementById('currentImageContainer');
+  if (currentImageContainer.style.display !== 'none') {
+      currentImageContainer.style.display = 'none';
   }
   
-  
-  
-  function removeImagePreview() {
-    const previewContainer = document.getElementById('imagePreviewContainer');
-    const fileInput = document.getElementById('roomImage');
-    
-    previewContainer.style.display = 'none';
-    fileInput.value = '';
-    roomModalState.uploadedImageFile = null;
-  }
-
-  function deleteRoomImage() {
-    // Chỉ đánh dấu để xoá, không xoá thật cho đến khi lưu
-    roomModalState.shouldDeleteCurrentImage = true;
-    
-    // Ẩn ảnh hiện tại
-    document.getElementById('currentImageContainer').style.display = 'none';
-    document.getElementById('currentImageUrl').value = '';
-    removeImagePreview();
-    
-    // Hiển thị thông báo
-    Swal.fire({
-        icon: 'info',
-        title: 'Đã đánh dấu xoá ảnh',
-        text: 'Ảnh sẽ được xoá khi bạn nhấn Lưu thông tin',
-        timer: 1500,
-        showConfirmButton: false
-    });
-  }  
-  
-  
-  async function reloadRoomData(roomId) {
-  try {
-    console.log('🔄 Đang tải lại dữ liệu phòng:', roomId);
-
-    // Hiển thị loading khi đang tải dữ liệu
-    Swal.fire({
-      title: 'Đang tải dữ liệu...',
-      text: 'Vui lòng chờ trong giây lát',
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading()
-    });
-
-    // Gọi API lấy thông tin phòng
-    const response = await fetch(`/api/phonghat/${roomId}`);
-    if (!response.ok) {
-      throw new Error('Không thể tải dữ liệu phòng');
-    }
-
-    const roomData = await response.json();
-    
-    // Đóng loading
-    Swal.close();
-
-    // Mở modal với dữ liệu mới
-    openRoomModal(roomData);
-
-  } catch (error) {
-    console.error('❌ Lỗi khi tải lại dữ liệu:', error);
-    Swal.fire({
-      icon: 'error',
-      title: 'Lỗi!',
-      text: 'Không thể tải lại dữ liệu phòng',
-      confirmButtonColor: '#667eea'
-    });
-    
-    // Vẫn mở modal (dù có lỗi)
-    openRoomModal();
+  if (input.files && input.files[0]) {
+      const file = input.files[0];
+      
+      // Validate file type
+      if (!file.type.match('image.*')) {
+          Swal.fire({
+              icon: 'error',
+              title: 'Lỗi',
+              text: 'Vui lòng chọn file ảnh (JPG, PNG, GIF)',
+              confirmButtonColor: '#667eea'
+          });
+          input.value = '';
+          return;
+      }
+      
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+          Swal.fire({
+              icon: 'error',
+              title: 'Lỗi',
+              text: 'Kích thước ảnh không được vượt quá 5MB',
+              confirmButtonColor: '#667eea'
+          });
+          input.value = '';
+          return;
+      }
+      
+      // Lưu file vào state, không upload ngay
+      roomModalState.uploadedImageFile = file;
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+          preview.src = e.target.result;
+          previewContainer.style.display = 'block';
+      };
+      
+      reader.onerror = function() {
+          Swal.fire({
+              icon: 'error',
+              title: 'Lỗi',
+              text: 'Không thể đọc file ảnh',
+              confirmButtonColor: '#667eea'
+          });
+          input.value = '';
+          roomModalState.uploadedImageFile = null;
+      };
+      
+      reader.readAsDataURL(file);
   }
 }
+
+
+
+function removeImagePreview() {
+  const previewContainer = document.getElementById('imagePreviewContainer');
+  const fileInput = document.getElementById('roomImage');
   
-  async function updateRoomImage(roomId, imageUrl) {
+  previewContainer.style.display = 'none';
+  fileInput.value = '';
+  roomModalState.uploadedImageFile = null;
+}
+
+function deleteRoomImage() {
+  // Chỉ đánh dấu để xoá, không xoá thật cho đến khi lưu
+  roomModalState.shouldDeleteCurrentImage = true;
+  
+  // Ẩn ảnh hiện tại
+  document.getElementById('currentImageContainer').style.display = 'none';
+  document.getElementById('currentImageUrl').value = '';
+  removeImagePreview();
+  
+  // Hiển thị thông báo
+  Swal.fire({
+      icon: 'info',
+      title: 'Đã đánh dấu xoá ảnh',
+      text: 'Ảnh sẽ được xoá khi bạn nhấn Lưu thông tin',
+      timer: 1500,
+      showConfirmButton: false
+  });
+}  
+
+
+async function reloadRoomData(roomId) {
+try {
+  console.log('🔄 Đang tải lại dữ liệu phòng:', roomId);
+
+  // Hiển thị loading khi đang tải dữ liệu
+  Swal.fire({
+    title: 'Đang tải dữ liệu...',
+    text: 'Vui lòng chờ trong giây lát',
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  });
+
+  // Gọi API lấy thông tin phòng
+  const response = await fetch(`/api/phonghat/${roomId}`);
+  if (!response.ok) {
+    throw new Error('Không thể tải dữ liệu phòng');
+  }
+
+  const roomData = await response.json();
+  
+  // Đóng loading
+  Swal.close();
+
+  // Mở modal với dữ liệu mới
+  openRoomModal(roomData);
+
+} catch (error) {
+  console.error('❌ Lỗi khi tải lại dữ liệu:', error);
+  Swal.fire({
+    icon: 'error',
+    title: 'Lỗi!',
+    text: 'Không thể tải lại dữ liệu phòng',
+    confirmButtonColor: '#667eea'
+  });
+  
+  // Vẫn mở modal (dù có lỗi)
+  openRoomModal();
+}
+}
+
+async function updateRoomImage(roomId, imageUrl) {
+try {
+  const response = await fetch(`/api/phonghat/${roomId}/image`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      LinkAnh: imageUrl
+      // Chỉ gửi trường LinkAnh, các trường khác không thay đổi
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error('Cập nhật ảnh phòng thất bại');
+  }
+
+  const result = await response.json();
+  console.log('✅ Đã cập nhật ảnh phòng trong DB');
+  return result;
+
+} catch (error) {
+  console.error('❌ Lỗi cập nhật ảnh phòng:', error);
+  throw error;
+}
+}
+
+
+
+async function deleteImageOnServer(imageUrl) {
   try {
-    const response = await fetch(`/api/phonghat/${roomId}/image`, {
-      method: 'PUT',
+    console.log('🗑️ Đang xoá ảnh:', imageUrl);
+
+    const response = await fetch('/api/upload/image', {
+      method: 'DELETE',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        LinkAnh: imageUrl
-        // Chỉ gửi trường LinkAnh, các trường khác không thay đổi
-      })
+      body: JSON.stringify({ imageUrl })
     });
 
     if (!response.ok) {
-      throw new Error('Cập nhật ảnh phòng thất bại');
+      const errorResult = await response.json();
+      throw new Error(errorResult.error || `Xoá ảnh thất bại với status ${response.status}`);
     }
 
     const result = await response.json();
-    console.log('✅ Đã cập nhật ảnh phòng trong DB');
+    console.log('✅ Xoá ảnh thành công');
     return result;
 
   } catch (error) {
-    console.error('❌ Lỗi cập nhật ảnh phòng:', error);
+    console.error('❌ Lỗi xoá ảnh:', error);
+    throw new Error('Không thể kết nối đến server để xoá ảnh');
+  }
+}
+
+// ===== GOOGLE DRIVE UPLOAD FUNCTION =====
+async function uploadImageToDrive(file, oldImageUrl = null) {
+  try {
+    console.log('🖼️ Starting image upload...', {
+      name: file.name,
+      size: file.size,
+      oldImage: oldImageUrl
+    });
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    // Gửi thông tin ảnh cũ để server xoá
+    if (oldImageUrl) {
+      formData.append('oldImageUrl', oldImageUrl);
+    }
+
+    const response = await fetch('/api/upload/image', {
+      method: 'POST',
+      body: formData
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || `Upload failed with status ${response.status}`);
+    }
+
+    if (result.success && result.directLink) {
+      console.log('✅ Upload successful, directLink:', result.directLink);
+      return result.directLink;
+    } else {
+      throw new Error(result.error || 'Không thể lấy link ảnh');
+    }
+
+  } catch (error) {
+    console.error('❌ Upload error:', error);
     throw error;
   }
 }
-  
-  
-  
-  async function deleteImageOnServer(imageUrl) {
-    try {
-      console.log('🗑️ Đang xoá ảnh:', imageUrl);
 
-      const response = await fetch('/api/upload/image', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ imageUrl })
-      });
-
-      if (!response.ok) {
-        const errorResult = await response.json();
-        throw new Error(errorResult.error || `Xoá ảnh thất bại với status ${response.status}`);
-      }
-
-      const result = await response.json();
-      console.log('✅ Xoá ảnh thành công');
-      return result;
-
-    } catch (error) {
-      console.error('❌ Lỗi xoá ảnh:', error);
-      throw new Error('Không thể kết nối đến server để xoá ảnh');
-    }
+function updateImagePreview(imageData) {
+  const preview = document.getElementById('imagePreview');
+  if (imageData && imageData.trim() !== '') {
+    preview.innerHTML = `<img src="${imageData}" alt="Preview"; preview.innerHTML = '<div class=\"room-preview-placeholder\"><i class=\"fas fa-image\"></i><p>Không thể tải ảnh</p></div>';">`;
+  } else {
+    preview.innerHTML = '<div class="room-preview-placeholder"><i class="fas fa-image"></i><p>Preview sẽ hiển thị ở đây</p></div>';
   }
+}
 
-  // ===== GOOGLE DRIVE UPLOAD FUNCTION =====
-  async function uploadImageToDrive(file, oldImageUrl = null) {
-    try {
-      console.log('🖼️ Starting image upload...', {
-        name: file.name,
-        size: file.size,
-        oldImage: oldImageUrl
+function handleImageUpload(input) {
+  const file = input.files[0];
+  if (file) {
+    // Kiểm tra loại file
+    if (!file.type.match('image.*')) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Vui lòng chọn file ảnh (JPG, PNG, GIF)',
+        confirmButtonColor: '#667eea'
       });
+      input.value = '';
+      return;
+    }
 
-      const formData = new FormData();
-      formData.append('image', file);
-
-      // Gửi thông tin ảnh cũ để server xoá
-      if (oldImageUrl) {
-        formData.append('oldImageUrl', oldImageUrl);
-      }
-
-      const response = await fetch('/api/upload/image', {
-        method: 'POST',
-        body: formData
+    // Kiểm tra kích thước file (tối đa 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Kích thước ảnh không được vượt quá 5MB',
+        confirmButtonColor: '#667eea'
       });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || `Upload failed with status ${response.status}`);
-      }
-
-      if (result.success && result.directLink) {
-        console.log('✅ Upload successful, directLink:', result.directLink);
-        return result.directLink;
-      } else {
-        throw new Error(result.error || 'Không thể lấy link ảnh');
-      }
-
-    } catch (error) {
-      console.error('❌ Upload error:', error);
-      throw error;
+      input.value = '';
+      return;
     }
-  }
 
-  function updateImagePreview(imageData) {
-    const preview = document.getElementById('imagePreview');
-    if (imageData && imageData.trim() !== '') {
-      preview.innerHTML = `<img src="${imageData}" alt="Preview"; preview.innerHTML = '<div class=\"room-preview-placeholder\"><i class=\"fas fa-image\"></i><p>Không thể tải ảnh</p></div>';">`;
-    } else {
-      preview.innerHTML = '<div class="room-preview-placeholder"><i class="fas fa-image"></i><p>Preview sẽ hiển thị ở đây</p></div>';
-    }
-  }
+    uploadedImageFile = file;
+    const reader = new FileReader();
 
-  function handleImageUpload(input) {
-    const file = input.files[0];
-    if (file) {
-      // Kiểm tra loại file
-      if (!file.type.match('image.*')) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Lỗi',
-          text: 'Vui lòng chọn file ảnh (JPG, PNG, GIF)',
-          confirmButtonColor: '#667eea'
-        });
-        input.value = '';
-        return;
-      }
+    reader.onload = function (e) {
+      currentRoomImage = e.target.result;
+      updateImagePreview(currentRoomImage);
+    };
 
-      // Kiểm tra kích thước file (tối đa 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Lỗi',
-          text: 'Kích thước ảnh không được vượt quá 5MB',
-          confirmButtonColor: '#667eea'
-        });
-        input.value = '';
-        return;
-      }
-
-      uploadedImageFile = file;
-      const reader = new FileReader();
-
-      reader.onload = function (e) {
-        currentRoomImage = e.target.result;
-        updateImagePreview(currentRoomImage);
-      };
-
-      reader.onerror = function () {
-        Swal.fire({
-          icon: 'error',
-          title: 'Lỗi',
-          text: 'Không thể đọc file ảnh',
-          confirmButtonColor: '#667eea'
-        });
-        input.value = '';
-        uploadedImageFile = null;
-      };
-
-      reader.readAsDataURL(file);
-    } else {
+    reader.onerror = function () {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Không thể đọc file ảnh',
+        confirmButtonColor: '#667eea'
+      });
+      input.value = '';
       uploadedImageFile = null;
-      currentRoomImage = null;
-      updateImagePreview('');
-    }
-  }
+    };
 
-  function clearImagePreview() {
-    document.getElementById('roomImage').value = '';
+    reader.readAsDataURL(file);
+  } else {
     uploadedImageFile = null;
     currentRoomImage = null;
     updateImagePreview('');
   }
+}
 
-  async function saveRoom(event) {
-    event.preventDefault();
+function clearImagePreview() {
+  document.getElementById('roomImage').value = '';
+  uploadedImageFile = null;
+  currentRoomImage = null;
+  updateImagePreview('');
+}
 
-    const formData = {
-      TenPhong: document.getElementById('roomName').value.trim(),
-      LoaiPhong: document.getElementById('roomType').value,
-      SucChua: parseInt(document.getElementById('roomSize').value),
-      TrangThai: document.getElementById('roomStatus').value,
-      GhiChu: document.getElementById('roomDescription').value.trim()
-    };
+async function saveRoom(event) {
+  event.preventDefault();
 
-    const roomId = document.getElementById('roomId').value;
+  const formData = {
+    TenPhong: document.getElementById('roomName').value.trim(),
+    LoaiPhong: document.getElementById('roomType').value,
+    SucChua: parseInt(document.getElementById('roomSize').value),
+    TrangThai: document.getElementById('roomStatus').value,
+    GhiChu: document.getElementById('roomDescription').value.trim()
+  };
+
+  const roomId = document.getElementById('roomId').value;
+  
+  try {
+    // Xử lý ảnh khi lưu
+    let finalImageUrl = '';
     
-    try {
-      // Xử lý ảnh khi lưu
-      let finalImageUrl = '';
-      
-      // Nếu có upload ảnh mới
-      if (roomModalState.uploadedImageFile) {
-        Swal.fire({
-          title: 'Đang upload ảnh...',
-          text: 'Vui lòng chờ trong giây lát',
-          allowOutsideClick: false,
-          didOpen: () => Swal.showLoading()
-        });
-
-        // Upload ảnh mới, truyền ảnh cũ để xoá nếu có
-        const oldImageUrl = roomModalState.originalImageUrl || '';
-        finalImageUrl = await uploadImageToDrive(roomModalState.uploadedImageFile, oldImageUrl);
-        
-        Swal.close();
-      } 
-      // Nếu không có ảnh mới nhưng có đánh dấu xoá ảnh
-      else if (roomModalState.shouldDeleteCurrentImage && roomModalState.originalImageUrl) {
-        // Xoá ảnh cũ trên server
-        Swal.fire({
-          title: 'Đang xoá ảnh...',
-          text: 'Vui lòng chờ trong giây lát',
-          allowOutsideClick: false,
-          didOpen: () => Swal.showLoading()
-        });
-
-        await deleteImageOnServer(roomModalState.originalImageUrl);
-        finalImageUrl = ''; // Ảnh đã bị xoá
-        Swal.close();
-      }
-      // Nếu không có thay đổi gì về ảnh
-      else {
-        finalImageUrl = roomModalState.originalImageUrl || '';
-      }
-
-      // Thêm đường dẫn ảnh vào form data
-      formData.LinkAnh = finalImageUrl;
-
-      // Gửi request lưu phòng
-      const url = roomId ? `/api/phonghat/${roomId}` : '/api/phonghat';
-      const method = roomId ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method: method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Lỗi server');
-      }
-
+    // Nếu có upload ảnh mới
+    if (roomModalState.uploadedImageFile) {
       Swal.fire({
-        icon: 'success',
-        title: 'Thành công!',
-        text: result.message || `Phòng "${formData.TenPhong}" đã được ${roomId ? 'cập nhật' : 'thêm'} thành công!`,
-        timer: 1500,
-        showConfirmButton: false
-      });
-
-      setTimeout(() => {
-        location.reload();
-      }, 1500);
-
-    } catch (error) {
-      console.error('❌ Lỗi khi lưu phòng:', error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Lỗi!',
-        text: error.message || 'Không thể lưu thông tin phòng',
-        confirmButtonColor: '#667eea'
-      });
-    }
-  }
-
-
-  async function deleteRoom(roomId, roomName) {
-    const result = await Swal.fire({
-      title: 'Xác nhận xóa?',
-      html: `Bạn có chắc muốn xóa phòng <strong>${roomName}</strong>?`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#e53e3e',
-      cancelButtonColor: '#667eea',
-      confirmButtonText: 'Xóa',
-      cancelButtonText: 'Hủy'
-    });
-
-    if (result.isConfirmed) {
-      try {
-        const response = await fetch(`/api/phonghat/${roomId}`, { method: 'DELETE' });
-        if (!response.ok) throw new Error('Lỗi khi xóa phòng');
-
-        await Swal.fire({
-          icon: 'success',
-          title: 'Đã xóa!',
-          text: 'Phòng hát đã được xóa thành công',
-          timer: 1500,
-          showConfirmButton: false
-        });
-
-        location.reload();
-      } catch (error) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Lỗi!',
-          text: 'Phòng hát đang được sử dụng hoặc bận!'
-        });
-      }
-    }
-  }
-
-  // ===== ROOM TYPE MANAGEMENT =====
-  async function addNewRoomType() {
-    const { value: roomType } = await Swal.fire({
-      title: 'Thêm loại phòng mới',
-      input: 'text',
-      inputLabel: 'Tên loại phòng',
-      inputPlaceholder: 'Nhập tên loại phòng mới...',
-      showCancelButton: true,
-      confirmButtonText: 'Thêm mới',
-      cancelButtonText: 'Hủy',
-      inputValidator: (value) => {
-        if (!value) return 'Vui lòng nhập tên loại phòng!';
-      }
-    });
-
-    if (roomType) {
-      const trimmedRoomType = roomType.trim();
-
-      try {
-        Swal.fire({
-          title: 'Đang thêm loại phòng...',
-          text: 'Vui lòng chờ trong giây lát',
-          allowOutsideClick: false,
-          didOpen: () => Swal.showLoading()
-        });
-
-        if (await checkRoomTypeInUse(trimmedRoomType)) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Thất bại',
-            text: `Loại phòng "${trimmedRoomType}" đã được thêm trước đó!`,
-            showConfirmButton: true
-          });
-          return;
-        }
-
-        const defaultPriceEntry = {
-          KhungGio: '00:00-00:00',
-          GiaTien: 000000
-        };
-        newRoomName.set(trimmedRoomType, [defaultPriceEntry]);
-
-        await updateRoomTypeInUI(trimmedRoomType, 'add');
-
-        document.getElementById('bangGiaLoaiPhong').value = trimmedRoomType;
-        displayBangGiaFromTemp(trimmedRoomType);
-
-        Swal.fire({
-          icon: 'success',
-          title: 'Thành công!',
-          text: `Đã thêm loại phòng "${trimmedRoomType}" thành công!`,
-          timer: 1500,
-          showConfirmButton: false
-        });
-
-        isNewRoomType = true;
-        pendingRoomType = trimmedRoomType;
-        hasPriceItems = true;
-
-      } catch (error) {
-        Swal.close();
-        console.error('❌ Lỗi khi thêm loại phòng:', error);
-
-        Swal.fire({
-          icon: 'error',
-          title: 'Lỗi!',
-          text: error.message || 'Không thể thêm loại phòng mới',
-          confirmButtonColor: '#667eea'
-        });
-      }
-    }
-  }
-
-  function displayBangGiaFromTemp(loaiPhong) {
-    const bangGiaList = document.querySelector('.bang-gia-list');
-    const tempData = newRoomName.get(loaiPhong) || [];
-
-    currentEditingLoaiPhong = loaiPhong;
-
-    bangGiaList.innerHTML = '';
-
-    if (tempData.length === 0) {
-      displayEmptyStateWithAddButton(loaiPhong);
-      return;
-    }
-
-    tempData.forEach((gia, index) => {
-      const [startTime = '', endTime = ''] = gia.KhungGio ? gia.KhungGio.split('-') : ['08:00', '17:00'];
-      const giaTien = gia.GiaTien || 0;
-      const priceItem = createPriceItem(
-        `${startTime}-${endTime}`,
-        giaTien,
-        gia.MaGia || ''
-      );
-      bangGiaList.appendChild(priceItem);
-    });
-
-    addPriceItemSection();
-
-    setTimeout(() => {
-      const firstInput = bangGiaList.querySelector('.start-time-input');
-      if (firstInput) {
-        firstInput.focus();
-      }
-    }, 300);
-  }
-
-  async function editRoomType() {
-    const selectElement = document.getElementById('bangGiaLoaiPhong');
-    let currentRoomType = selectElement.value;
-
-    if (!currentRoomType) {
-      await Swal.fire({
-        icon: 'warning',
-        title: 'Chưa chọn loại phòng',
-        text: 'Vui lòng chọn loại phòng muốn sửa',
-        confirmButtonColor: '#667eea'
-      });
-      return;
-    }
-
-    const { value: newRoomType } = await Swal.fire({
-      title: 'Sửa loại phòng',
-      input: 'text',
-      inputLabel: 'Tên loại phòng mới',
-      inputValue: currentRoomType,
-      inputPlaceholder: 'Nhập tên loại phòng mới...',
-      showCancelButton: true,
-      confirmButtonText: 'Cập nhật',
-      cancelButtonText: 'Hủy',
-      inputValidator: (value) => {
-        if (!value) {
-          return 'Vui lòng nhập tên loại phòng!';
-        }
-        if (value === currentRoomType) {
-          return 'Tên loại phòng không thay đổi!';
-        }
-      }
-    });
-
-    if (!newRoomType) {
-      return;
-    }
-
-    if (await checkRoomTypeInDB(currentRoomType)) {
-      console.log('Có trong DB (OldRoom)');
-      if (newRoomType) {
-        await saveRoomType(newRoomType.trim(), 'edit', currentRoomType);
-      }
-    } else {
-      console.log('K có trong DB (NewRoom)');
-      if (newRoomName.has(currentRoomType)) {
-        const roomData = newRoomName.get(currentRoomType);
-        newRoomName.delete(currentRoomType);
-        newRoomName.set(newRoomType, roomData);
-      }
-      await updateRoomTypeInUI(newRoomType, 'edit', currentRoomType);
-      await Swal.fire({
-        icon: 'success',
-        title: 'Thành công!',
-        text: `Đã cập nhật loại phòng "${currentRoomType}" thành "${newRoomType}" (Tạm thời)!`,
-        timer: 2000,
-        showConfirmButton: false
-      });
-      selectElement.value = newRoomType;
-      currentRoomType = newRoomType;
-    }
-  }
-
-  async function deleteRoomType() {
-    const selectElement = document.getElementById('bangGiaLoaiPhong');
-    const currentRoomType = selectElement.value;
-
-    if (!currentRoomType) {
-      await Swal.fire({
-        icon: 'warning',
-        title: 'Chưa chọn loại phòng',
-        text: 'Vui lòng chọn loại phòng muốn xoá',
-        confirmButtonColor: '#667eea'
-      });
-      return;
-    }
-
-    await checkAndDeleteEmptyRoomType(currentRoomType);
-  }
-
-  async function checkRoomTypeInDB(roomType) {
-    try {
-      const response = await fetch(`/api/loaiphong/check-loai-phong/${roomType}`);
-      if (response.ok) {
-        const rooms = await response.json();
-        return rooms.isUsed;
-      }
-      return false;
-    } catch (error) {
-      console.error('❌ Lỗi khi kiểm tra loại phòng:', error);
-      return true;
-    }
-  }
-
-  async function checkRoomTypeInUse(roomType) {
-    try {
-      const response = await fetch(`/api/phonghat/check-loai-phong/${roomType}`);
-      if (response.ok) {
-        const rooms = await response.json();
-        return rooms.isUsed;
-      }
-      return false;
-    } catch (error) {
-      console.error('❌ Lỗi khi kiểm tra loại phòng:', error);
-      return true;
-    }
-  }
-
-  async function updateRoomTypeInUI(newRoomType, action, oldRoomType = null) {
-    const selectElements = [
-      document.getElementById('bangGiaLoaiPhong'),
-      document.getElementById('roomType'),
-      document.getElementById('typeFilter')
-    ];
-
-    selectElements.forEach(select => {
-      if (!select) return;
-
-      switch (action) {
-        case 'add':
-          const newOption = document.createElement('option');
-          newOption.value = newRoomType;
-          newOption.textContent = newRoomType;
-          select.appendChild(newOption);
-          break;
-
-        case 'edit':
-          const optionToUpdate = select.querySelector(`option[value="${oldRoomType}"]`);
-          if (optionToUpdate) {
-            optionToUpdate.value = newRoomType;
-            optionToUpdate.textContent = newRoomType;
-
-            if (select.value === oldRoomType) {
-              select.value = newRoomType;
-            }
-          }
-          break;
-
-        case 'delete':
-          const optionToDelete = select.querySelector(`option[value="${newRoomType}"]`);
-          if (optionToDelete) {
-            optionToDelete.remove();
-          }
-          break;
-      }
-    });
-  }
-
-  async function toggleStatus(roomId, currentStatus) {
-    const statusMap = {
-      'Trống': { next: 'Đã đặt trước', text: '🟢 Trống' },
-      'Đã đặt trước': { next: 'Đang sử dụng', text: '🟡 Đã đặt' },
-      'Đang sử dụng': { next: 'Trống', text: '🔴 Bận' }
-    };
-
-    const currentStatusInfo = statusMap[currentStatus];
-    const nextStatusInfo = statusMap[currentStatusInfo.next];
-
-    const result = await Swal.fire({
-      title: 'Đổi trạng thái?',
-      html: `Chuyển từ <strong>${currentStatusInfo.text}</strong> sang <strong>${nextStatusInfo.text}</strong>?`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#667eea',
-      cancelButtonColor: '#a0aec0',
-      confirmButtonText: 'Đồng ý',
-      cancelButtonText: 'Hủy'
-    });
-
-    if (result.isConfirmed) {
-      try {
-        const response = await fetch(`/api/phonghat/${roomId}/status`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ TrangThai: currentStatusInfo.next })
-        });
-
-        if (!response.ok) throw new Error('Lỗi khi cập nhật trạng thái');
-
-        await Swal.fire({
-          icon: 'success',
-          title: 'Đã cập nhật!',
-          text: 'Trạng thái phòng đã được thay đổi',
-          timer: 1500,
-          showConfirmButton: false
-        });
-
-        location.reload();
-      } catch (error) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Lỗi!',
-          text: 'Không thể cập nhật trạng thái'
-        });
-      }
-    }
-  }
-
-  // ===== FILTER & SEARCH =====
-  function filterRooms() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const typeFilter = document.getElementById('typeFilter').value;
-    const statusFilter = document.getElementById('statusFilter').value;
-
-    filteredRooms = allRooms.filter(card => {
-      const name = card.getAttribute('data-name').toLowerCase();
-      const type = card.getAttribute('data-type');
-      const status = card.getAttribute('data-status');
-
-      const matchesSearch = !searchTerm || name.includes(searchTerm);
-      const matchesType = !typeFilter || type === typeFilter;
-      const matchesStatus = !statusFilter || status === statusFilter;
-
-      return matchesSearch && matchesType && matchesStatus;
-    });
-
-    const totalPages = Math.ceil(filteredRooms.length / CONFIG.roomsPerPage);
-    if (currentPage > totalPages && totalPages > 0) {
-      currentPage = totalPages;
-    } else if (totalPages === 0) {
-      currentPage = 1;
-    }
-
-    showCurrentPage();
-    updatePaginationInfo();
-    togglePaginationVisibility();
-    toggleEmptyState(filteredRooms.length === 0);
-  }
-
-  function clearFilters() {
-    document.getElementById('searchInput').value = '';
-    document.getElementById('typeFilter').value = '';
-    document.getElementById('statusFilter').value = '';
-
-    filteredRooms = [...allRooms];
-    currentPage = 1;
-
-    showCurrentPage();
-    updatePaginationInfo();
-    togglePaginationVisibility();
-    toggleEmptyState(false);
-  }
-
-  function toggleEmptyState(show) {
-    const emptyState = document.getElementById('emptyState');
-    const roomsGrid = document.getElementById('roomsGrid');
-    const paginationContainer = document.getElementById('paginationContainer');
-
-    if (!emptyState || !roomsGrid) return;
-
-    if (show) {
-      roomsGrid.style.display = 'none';
-      emptyState.style.display = 'block';
-      if (paginationContainer) paginationContainer.classList.add('hidden');
-    } else {
-      roomsGrid.style.display = 'grid';
-      emptyState.style.display = 'none';
-      togglePaginationVisibility();
-    }
-  }
-
-  function setupRealTimeSearch() {
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-      searchInput.addEventListener('input', function () {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-          filterRooms();
-        }, CONFIG.searchDebounceTime);
-      });
-    }
-  }
-
-  // ===== PAGINATION =====
-  function showCurrentPage() {
-    allRooms.forEach(room => {
-      room.style.display = 'none';
-    });
-
-    const startIndex = (currentPage - 1) * CONFIG.roomsPerPage;
-    const endIndex = startIndex + CONFIG.roomsPerPage;
-
-    for (let i = startIndex; i < endIndex && i < filteredRooms.length; i++) {
-      if (filteredRooms[i]) {
-        filteredRooms[i].style.display = 'block';
-      }
-    }
-
-    updatePaginationInfo();
-  }
-
-  function updatePaginationInfo() {
-    const currentRange = document.getElementById('currentRange');
-    const totalRoomsCount = document.getElementById('totalRoomsCount');
-
-    if (!currentRange || !totalRoomsCount) return;
-
-    const totalFilteredRooms = filteredRooms.length;
-    const totalPages = Math.ceil(totalFilteredRooms / CONFIG.roomsPerPage);
-
-    const start = totalFilteredRooms === 0 ? 0 : (currentPage - 1) * CONFIG.roomsPerPage + 1;
-    const end = Math.min(currentPage * CONFIG.roomsPerPage, totalFilteredRooms);
-
-    currentRange.textContent = totalFilteredRooms === 0 ? '0-0' : `${start}-${end}`;
-    totalRoomsCount.textContent = totalFilteredRooms;
-
-    updatePaginationControls(totalPages);
-  }
-
-  function updatePaginationControls(totalPages) {
-    const paginationPages = document.getElementById('paginationPages');
-    const prevBtn = document.querySelector('.pagination-prev');
-    const nextBtn = document.querySelector('.pagination-next');
-
-    if (!paginationPages) return;
-
-    if (prevBtn) prevBtn.disabled = currentPage === 1;
-    if (nextBtn) nextBtn.disabled = currentPage === totalPages || totalPages === 0;
-
-    paginationPages.innerHTML = '';
-    if (totalPages <= 1) return;
-
-    addPageButton(1, paginationPages, totalPages);
-
-    if (currentPage > 3) {
-      addEllipsis(paginationPages);
-    }
-
-    const startPage = Math.max(2, currentPage - 1);
-    const endPage = Math.min(totalPages - 1, currentPage + 1);
-
-    for (let i = startPage; i <= endPage; i++) {
-      if (i !== 1 && i !== totalPages) {
-        addPageButton(i, paginationPages, totalPages);
-      }
-    }
-
-    if (currentPage < totalPages - 2) {
-      addEllipsis(paginationPages);
-    }
-
-    if (totalPages > 1) {
-      addPageButton(totalPages, paginationPages, totalPages);
-    }
-  }
-
-  function addPageButton(pageNumber, container, totalPages) {
-    const pageBtn = document.createElement('button');
-    pageBtn.className = `pagination-page ${pageNumber === currentPage ? 'active' : ''}`;
-    pageBtn.textContent = pageNumber;
-    pageBtn.onclick = () => goToPage(pageNumber);
-    container.appendChild(pageBtn);
-  }
-
-  function addEllipsis(container) {
-    const ellipsis = document.createElement('span');
-    ellipsis.className = 'pagination-ellipsis';
-    ellipsis.textContent = '...';
-    container.appendChild(ellipsis);
-  }
-
-  function goToPage(page) {
-    const totalPages = Math.ceil(filteredRooms.length / CONFIG.roomsPerPage);
-    if (page < 1 || page > totalPages || totalPages === 0) return;
-
-    currentPage = page;
-    showCurrentPage();
-  }
-
-  function changePage(direction) {
-    const totalPages = Math.ceil(filteredRooms.length / CONFIG.roomsPerPage);
-    const newPage = currentPage + direction;
-
-    if (newPage < 1 || newPage > totalPages || totalPages === 0) return;
-
-    currentPage = newPage;
-    showCurrentPage();
-  }
-
-  function togglePaginationVisibility() {
-    const paginationContainer = document.getElementById('paginationContainer');
-    if (!paginationContainer) return;
-
-    const shouldShow = filteredRooms.length > CONFIG.roomsPerPage;
-
-    if (shouldShow) {
-      paginationContainer.classList.remove('hidden');
-      paginationContainer.style.display = 'flex';
-    } else {
-      paginationContainer.classList.add('hidden');
-      paginationContainer.style.display = 'none';
-    }
-  }
-
-  // ===== BANG GIA MANAGEMENT =====
-  function addBangGia(loaiPhong) {
-    const modalState = {
-      loaiPhong: loaiPhong,
-      isModalOpen: true,
-      timestamp: Date.now(),
-      action: 'manualOpen'
-    };
-    sessionStorage.setItem('bangGiaModalState', JSON.stringify(modalState));
-
-    openPriceModal(loaiPhong);
-  }
-
-  function editBangGia(loaiPhong, bangGia) {
-    const modalState = {
-      loaiPhong: loaiPhong,
-      isModalOpen: true,
-      timestamp: Date.now(),
-      action: 'manualOpen'
-    };
-    sessionStorage.setItem('bangGiaModalState', JSON.stringify(modalState));
-
-    openPriceModal(loaiPhong);
-  }
-
-  function openPriceModal(loaiPhong = null) {
-    if (!isNewRoomType) {
-      resetBangGiaModalState();
-    }
-
-    currentLoaiPhong = loaiPhong;
-    const currentState = {
-      page: currentPage,
-      filters: {
-        search: document.getElementById('searchInput').value,
-        type: document.getElementById('typeFilter').value,
-        status: document.getElementById('statusFilter').value
-      },
-      timestamp: Date.now()
-    };
-    sessionStorage.setItem('karaokeAppStateBeforeModal', JSON.stringify(currentState));
-
-    document.getElementById('bangGiaModalTitle').textContent = 'Quản lý bảng giá theo loại phòng';
-    document.getElementById('bangGiaModal').style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-    currentLoaiPhong = loaiPhong;
-
-    previousLoaiPhong = loaiPhong;
-    pendingLoaiPhongChange = null;
-
-
-    if (loaiPhong) {
-      document.getElementById('bangGiaLoaiPhong').value = loaiPhong;
-      loadBangGiaForRoomType(loaiPhong);
-    } else {
-      resetBangGiaModal();
-    }
-    setupBangGiaSelectListener();
-  }
-
-  function setupBangGiaSelectListener() {
-    const selectElement = document.getElementById('bangGiaLoaiPhong');
-    if (selectElement) {
-      selectElement.removeEventListener('change', handleBangGiaSelectChange);
-      selectElement.addEventListener('change', handleBangGiaSelectChange);
-    }
-  }
-
-  async function handleBangGiaSelectChange(event) {
-    const newLoaiPhong = event.target.value;
-
-    if (hasUnsavedChanges) {
-      pendingLoaiPhongChange = newLoaiPhong;
-
-      const result = await Swal.fire({
-        title: 'Thay đổi chưa lưu',
-        html: `Bạn có thay đổi chưa lưu cho loại phòng <strong>"${previousLoaiPhong}"</strong>.<br>Các thao tác thay đổi sẽ bị <strong>hoàn tác</strong> nếu bạn không lưu!</br><br>Bạn muốn làm gì?`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Hủy thay đổi',
-        cancelButtonText: 'Ở lại',
-        confirmButtonColor: '#e53e3e',
-        cancelButtonColor: '#667eea',
-        reverseButtons: true,
-        customClass: {
-          popup: 'unsaved-changes-popup'
-        }
-      });
-
-      if (result.isConfirmed) {
-        hasUnsavedChanges = false;
-        previousLoaiPhong = newLoaiPhong;
-        loadBangGiaForRoomType(newLoaiPhong);
-        pendingLoaiPhongChange = null;
-      } else {
-        event.target.value = previousLoaiPhong;
-        if (newRoomName.has(previousLoaiPhong)) {
-          const tempPriceData = newRoomName.get(previousLoaiPhong);
-          displayBangGia(tempPriceData, previousLoaiPhong);
-          return;
-        }
-        pendingLoaiPhongChange = null;
-      }
-    } else {
-      previousLoaiPhong = newLoaiPhong;
-      loadBangGiaForRoomType(newLoaiPhong);
-    }
-  }
-
-  async function closeBangGiaModal() {
-    const result = await Swal.fire({
-      title: 'Bạn có chắc chắn muốn thoát ?',
-      html: `Tất cả các thao tác <strong>chưa ấn "Lưu"</strong> sẽ không được lưu!`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#e53e3e',
-      cancelButtonColor: '#667eea',
-      confirmButtonText: 'Thoát',
-      cancelButtonText: 'Tiếp tục',
-      reverseButtons: true
-    });
-
-    if (result.isConfirmed) {
-      await deletePendingRoomType();
-    } else {
-      return;
-    }
-
-    const currentState = {
-      page: currentPage,
-      filters: {
-        search: document.getElementById('searchInput').value,
-        type: document.getElementById('typeFilter').value,
-        status: document.getElementById('statusFilter').value
-      },
-      timestamp: Date.now()
-    };
-    sessionStorage.setItem('karaokeAppStateBeforeReload', JSON.stringify(currentState));
-
-    document.getElementById('bangGiaModal').style.display = 'none';
-    document.body.style.overflow = 'auto';
-    resetBangGiaModalState();
-    setTimeout(() => {
-      location.reload();
-    }, 100);
-  }
-
-  async function deletePendingRoomType() {
-    if (!pendingRoomType) return;
-
-    try {
-      Swal.fire({
-        title: 'Đang xóa loại phòng...',
+        title: 'Đang upload ảnh...',
         text: 'Vui lòng chờ trong giây lát',
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading()
       });
 
-      const response = await fetch(`/api/banggiaphong/${pendingRoomType}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          TenLoaiPhong: pendingRoomType,
-        })
+      // Upload ảnh mới, truyền ảnh cũ để xoá nếu có
+      const oldImageUrl = roomModalState.originalImageUrl || '';
+      finalImageUrl = await uploadImageToDrive(roomModalState.uploadedImageFile, oldImageUrl);
+      
+      Swal.close();
+    } 
+    // Nếu không có ảnh mới nhưng có đánh dấu xoá ảnh
+    else if (roomModalState.shouldDeleteCurrentImage && roomModalState.originalImageUrl) {
+      // Xoá ảnh cũ trên server
+      Swal.fire({
+        title: 'Đang xoá ảnh...',
+        text: 'Vui lòng chờ trong giây lát',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Lỗi khi xóa loại phòng');
-      }
+      await deleteImageOnServer(roomModalState.originalImageUrl);
+      finalImageUrl = ''; // Ảnh đã bị xoá
+      Swal.close();
+    }
+    // Nếu không có thay đổi gì về ảnh
+    else {
+      finalImageUrl = roomModalState.originalImageUrl || '';
+    }
 
-      const result = await response.json();
+    // Thêm đường dẫn ảnh vào form data
+    formData.LinkAnh = finalImageUrl;
 
-      await updateRoomTypeInUI(pendingRoomType, 'delete');
+    // Gửi request lưu phòng
+    const url = roomId ? `/api/phonghat/${roomId}` : '/api/phonghat';
+    const method = roomId ? 'PUT' : 'POST';
 
-      Swal.fire({
+    const response = await fetch(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Lỗi server');
+    }
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Thành công!',
+      text: result.message || `Phòng "${formData.TenPhong}" đã được ${roomId ? 'cập nhật' : 'thêm'} thành công!`,
+      timer: 1500,
+      showConfirmButton: false
+    });
+
+    setTimeout(() => {
+      location.reload();
+    }, 1500);
+
+  } catch (error) {
+    console.error('❌ Lỗi khi lưu phòng:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Lỗi!',
+      text: error.message || 'Không thể lưu thông tin phòng',
+      confirmButtonColor: '#667eea'
+    });
+  }
+}
+
+
+async function deleteRoom(roomId, roomName) {
+  const result = await Swal.fire({
+    title: 'Xác nhận xóa?',
+    html: `Bạn có chắc muốn xóa phòng <strong>${roomName}</strong>?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#e53e3e',
+    cancelButtonColor: '#667eea',
+    confirmButtonText: 'Xóa',
+    cancelButtonText: 'Hủy'
+  });
+
+  if (result.isConfirmed) {
+    try {
+      const response = await fetch(`/api/phonghat/${roomId}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Lỗi khi xóa phòng');
+
+      await Swal.fire({
         icon: 'success',
         title: 'Đã xóa!',
-        text: result.message || `Đã xóa loại phòng "${pendingRoomType}"`,
+        text: 'Phòng hát đã được xóa thành công',
         timer: 1500,
         showConfirmButton: false
       });
 
+      location.reload();
     } catch (error) {
-      console.error('❌ Lỗi khi xóa loại phòng:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi!',
+        text: 'Phòng hát đang được sử dụng hoặc bận!'
+      });
+    }
+  }
+}
+
+// ===== ROOM TYPE MANAGEMENT =====
+async function addNewRoomType() {
+  const { value: roomType } = await Swal.fire({
+    title: 'Thêm loại phòng mới',
+    input: 'text',
+    inputLabel: 'Tên loại phòng',
+    inputPlaceholder: 'Nhập tên loại phòng mới...',
+    showCancelButton: true,
+    confirmButtonText: 'Thêm mới',
+    cancelButtonText: 'Hủy',
+    inputValidator: (value) => {
+      if (!value) return 'Vui lòng nhập tên loại phòng!';
+    }
+  });
+
+  if (roomType) {
+    const trimmedRoomType = roomType.trim();
+
+    try {
+      Swal.fire({
+        title: 'Đang thêm loại phòng...',
+        text: 'Vui lòng chờ trong giây lát',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      if (await checkRoomTypeInUse(trimmedRoomType)) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Thất bại',
+          text: `Loại phòng "${trimmedRoomType}" đã được thêm trước đó!`,
+          showConfirmButton: true
+        });
+        return;
+      }
+
+      const defaultPriceEntry = {
+        KhungGio: '00:00-00:00',
+        GiaTien: 000000
+      };
+      newRoomName.set(trimmedRoomType, [defaultPriceEntry]);
+
+      await updateRoomTypeInUI(trimmedRoomType, 'add');
+
+      document.getElementById('bangGiaLoaiPhong').value = trimmedRoomType;
+      displayBangGiaFromTemp(trimmedRoomType);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Thành công!',
+        text: `Đã thêm loại phòng "${trimmedRoomType}" thành công!`,
+        timer: 1500,
+        showConfirmButton: false
+      });
+
+      isNewRoomType = true;
+      pendingRoomType = trimmedRoomType;
+      hasPriceItems = true;
+
+    } catch (error) {
+      Swal.close();
+      console.error('❌ Lỗi khi thêm loại phòng:', error);
 
       Swal.fire({
         icon: 'error',
         title: 'Lỗi!',
-        text: error.message || 'Không thể xóa loại phòng',
+        text: error.message || 'Không thể thêm loại phòng mới',
         confirmButtonColor: '#667eea'
       });
-    } finally {
-      resetBangGiaModalState();
-      document.getElementById('bangGiaModal').style.display = 'none';
-      document.body.style.overflow = 'auto';
+    }
+  }
+}
+
+function displayBangGiaFromTemp(loaiPhong) {
+  const bangGiaList = document.querySelector('.bang-gia-list');
+  const tempData = newRoomName.get(loaiPhong) || [];
+
+  currentEditingLoaiPhong = loaiPhong;
+
+  bangGiaList.innerHTML = '';
+
+  if (tempData.length === 0) {
+    displayEmptyStateWithAddButton(loaiPhong);
+    return;
+  }
+
+  tempData.forEach((gia, index) => {
+    const [startTime = '', endTime = ''] = gia.KhungGio ? gia.KhungGio.split('-') : ['08:00', '17:00'];
+    const giaTien = gia.GiaTien || 0;
+    const priceItem = createPriceItem(
+      `${startTime}-${endTime}`,
+      giaTien,
+      gia.MaGia || ''
+    );
+    bangGiaList.appendChild(priceItem);
+  });
+
+  addPriceItemSection();
+
+  setTimeout(() => {
+    const firstInput = bangGiaList.querySelector('.start-time-input');
+    if (firstInput) {
+      firstInput.focus();
+    }
+  }, 300);
+}
+
+async function editRoomType() {
+  const selectElement = document.getElementById('bangGiaLoaiPhong');
+  let currentRoomType = selectElement.value;
+
+  if (!currentRoomType) {
+    await Swal.fire({
+      icon: 'warning',
+      title: 'Chưa chọn loại phòng',
+      text: 'Vui lòng chọn loại phòng muốn sửa',
+      confirmButtonColor: '#667eea'
+    });
+    return;
+  }
+
+  const { value: newRoomType } = await Swal.fire({
+    title: 'Sửa loại phòng',
+    input: 'text',
+    inputLabel: 'Tên loại phòng mới',
+    inputValue: currentRoomType,
+    inputPlaceholder: 'Nhập tên loại phòng mới...',
+    showCancelButton: true,
+    confirmButtonText: 'Cập nhật',
+    cancelButtonText: 'Hủy',
+    inputValidator: (value) => {
+      if (!value) {
+        return 'Vui lòng nhập tên loại phòng!';
+      }
+      if (value === currentRoomType) {
+        return 'Tên loại phòng không thay đổi!';
+      }
+    }
+  });
+
+  if (!newRoomType) {
+    return;
+  }
+
+  if (await checkRoomTypeInDB(currentRoomType)) {
+    console.log('Có trong DB (OldRoom)');
+    if (newRoomType) {
+      await saveRoomType(newRoomType.trim(), 'edit', currentRoomType);
+    }
+  } else {
+    console.log('K có trong DB (NewRoom)');
+    if (newRoomName.has(currentRoomType)) {
+      const roomData = newRoomName.get(currentRoomType);
+      newRoomName.delete(currentRoomType);
+      newRoomName.set(newRoomType, roomData);
+    }
+    await updateRoomTypeInUI(newRoomType, 'edit', currentRoomType);
+    await Swal.fire({
+      icon: 'success',
+      title: 'Thành công!',
+      text: `Đã cập nhật loại phòng "${currentRoomType}" thành "${newRoomType}" (Tạm thời)!`,
+      timer: 2000,
+      showConfirmButton: false
+    });
+    selectElement.value = newRoomType;
+    currentRoomType = newRoomType;
+  }
+}
+
+async function deleteRoomType() {
+  const selectElement = document.getElementById('bangGiaLoaiPhong');
+  const currentRoomType = selectElement.value;
+
+  if (!currentRoomType) {
+    await Swal.fire({
+      icon: 'warning',
+      title: 'Chưa chọn loại phòng',
+      text: 'Vui lòng chọn loại phòng muốn xoá',
+      confirmButtonColor: '#667eea'
+    });
+    return;
+  }
+
+  await checkAndDeleteEmptyRoomType(currentRoomType);
+}
+
+async function checkRoomTypeInDB(roomType) {
+  try {
+    const response = await fetch(`/api/loaiphong/check-loai-phong/${roomType}`);
+    if (response.ok) {
+      const rooms = await response.json();
+      return rooms.isUsed;
+    }
+    return false;
+  } catch (error) {
+    console.error('❌ Lỗi khi kiểm tra loại phòng:', error);
+    return true;
+  }
+}
+
+async function checkRoomTypeInUse(roomType) {
+  try {
+    const response = await fetch(`/api/phonghat/check-loai-phong/${roomType}`);
+    if (response.ok) {
+      const rooms = await response.json();
+      return rooms.isUsed;
+    }
+    return false;
+  } catch (error) {
+    console.error('❌ Lỗi khi kiểm tra loại phòng:', error);
+    return true;
+  }
+}
+
+async function updateRoomTypeInUI(newRoomType, action, oldRoomType = null) {
+  const selectElements = [
+    document.getElementById('bangGiaLoaiPhong'),
+    document.getElementById('roomType'),
+    document.getElementById('typeFilter')
+  ];
+
+  selectElements.forEach(select => {
+    if (!select) return;
+
+    switch (action) {
+      case 'add':
+        const newOption = document.createElement('option');
+        newOption.value = newRoomType;
+        newOption.textContent = newRoomType;
+        select.appendChild(newOption);
+        break;
+
+      case 'edit':
+        const optionToUpdate = select.querySelector(`option[value="${oldRoomType}"]`);
+        if (optionToUpdate) {
+          optionToUpdate.value = newRoomType;
+          optionToUpdate.textContent = newRoomType;
+
+          if (select.value === oldRoomType) {
+            select.value = newRoomType;
+          }
+        }
+        break;
+
+      case 'delete':
+        const optionToDelete = select.querySelector(`option[value="${newRoomType}"]`);
+        if (optionToDelete) {
+          optionToDelete.remove();
+        }
+        break;
+    }
+  });
+}
+
+async function toggleStatus(roomId, currentStatus) {
+  const statusMap = {
+    'Trống': { next: 'Đã đặt trước', text: '🟢 Trống' },
+    'Đã đặt trước': { next: 'Đang sử dụng', text: '🟡 Đã đặt' },
+    'Đang sử dụng': { next: 'Trống', text: '🔴 Bận' }
+  };
+
+  const currentStatusInfo = statusMap[currentStatus];
+  const nextStatusInfo = statusMap[currentStatusInfo.next];
+
+  const result = await Swal.fire({
+    title: 'Đổi trạng thái?',
+    html: `Chuyển từ <strong>${currentStatusInfo.text}</strong> sang <strong>${nextStatusInfo.text}</strong>?`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#667eea',
+    cancelButtonColor: '#a0aec0',
+    confirmButtonText: 'Đồng ý',
+    cancelButtonText: 'Hủy'
+  });
+
+  if (result.isConfirmed) {
+    try {
+      const response = await fetch(`/api/phonghat/${roomId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ TrangThai: currentStatusInfo.next })
+      });
+
+      if (!response.ok) throw new Error('Lỗi khi cập nhật trạng thái');
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Đã cập nhật!',
+        text: 'Trạng thái phòng đã được thay đổi',
+        timer: 1500,
+        showConfirmButton: false
+      });
+
+      location.reload();
+    } catch (error) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi!',
+        text: 'Không thể cập nhật trạng thái'
+      });
+    }
+  }
+}
+
+// ===== FILTER & SEARCH =====
+function filterRooms() {
+  const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+  const typeFilter = document.getElementById('typeFilter').value;
+  const statusFilter = document.getElementById('statusFilter').value;
+
+  filteredRooms = allRooms.filter(card => {
+    const name = card.getAttribute('data-name').toLowerCase();
+    const type = card.getAttribute('data-type');
+    const status = card.getAttribute('data-status');
+
+    const matchesSearch = !searchTerm || name.includes(searchTerm);
+    const matchesType = !typeFilter || type === typeFilter;
+    const matchesStatus = !statusFilter || status === statusFilter;
+
+    return matchesSearch && matchesType && matchesStatus;
+  });
+
+  const totalPages = Math.ceil(filteredRooms.length / CONFIG.roomsPerPage);
+  if (currentPage > totalPages && totalPages > 0) {
+    currentPage = totalPages;
+  } else if (totalPages === 0) {
+    currentPage = 1;
+  }
+
+  showCurrentPage();
+  updatePaginationInfo();
+  togglePaginationVisibility();
+  toggleEmptyState(filteredRooms.length === 0);
+}
+
+function clearFilters() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('typeFilter').value = '';
+  document.getElementById('statusFilter').value = '';
+
+  filteredRooms = [...allRooms];
+  currentPage = 1;
+
+  showCurrentPage();
+  updatePaginationInfo();
+  togglePaginationVisibility();
+  toggleEmptyState(false);
+}
+
+function toggleEmptyState(show) {
+  const emptyState = document.getElementById('emptyState');
+  const roomsGrid = document.getElementById('roomsGrid');
+  const paginationContainer = document.getElementById('paginationContainer');
+
+  if (!emptyState || !roomsGrid) return;
+
+  if (show) {
+    roomsGrid.style.display = 'none';
+    emptyState.style.display = 'block';
+    if (paginationContainer) paginationContainer.classList.add('hidden');
+  } else {
+    roomsGrid.style.display = 'grid';
+    emptyState.style.display = 'none';
+    togglePaginationVisibility();
+  }
+}
+
+function setupRealTimeSearch() {
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    searchInput.addEventListener('input', function () {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        filterRooms();
+      }, CONFIG.searchDebounceTime);
+    });
+  }
+}
+
+// ===== PAGINATION =====
+function showCurrentPage() {
+  allRooms.forEach(room => {
+    room.style.display = 'none';
+  });
+
+  const startIndex = (currentPage - 1) * CONFIG.roomsPerPage;
+  const endIndex = startIndex + CONFIG.roomsPerPage;
+
+  for (let i = startIndex; i < endIndex && i < filteredRooms.length; i++) {
+    if (filteredRooms[i]) {
+      filteredRooms[i].style.display = 'block';
     }
   }
 
-  function resetBangGiaModalState() {
-    isNewRoomType = false;
-    pendingRoomType = null;
-    hasPriceItems = false;
-    hasUnsavedChanges = false;
-    currentLoaiPhong = null;
-    previousLoaiPhong = null;
-    pendingLoaiPhongChange = null;
-    pendingPriceData = null;
+  updatePaginationInfo();
+}
+
+function updatePaginationInfo() {
+  const currentRange = document.getElementById('currentRange');
+  const totalRoomsCount = document.getElementById('totalRoomsCount');
+
+  if (!currentRange || !totalRoomsCount) return;
+
+  const totalFilteredRooms = filteredRooms.length;
+  const totalPages = Math.ceil(totalFilteredRooms / CONFIG.roomsPerPage);
+
+  const start = totalFilteredRooms === 0 ? 0 : (currentPage - 1) * CONFIG.roomsPerPage + 1;
+  const end = Math.min(currentPage * CONFIG.roomsPerPage, totalFilteredRooms);
+
+  currentRange.textContent = totalFilteredRooms === 0 ? '0-0' : `${start}-${end}`;
+  totalRoomsCount.textContent = totalFilteredRooms;
+
+  updatePaginationControls(totalPages);
+}
+
+function updatePaginationControls(totalPages) {
+  const paginationPages = document.getElementById('paginationPages');
+  const prevBtn = document.querySelector('.pagination-prev');
+  const nextBtn = document.querySelector('.pagination-next');
+
+  if (!paginationPages) return;
+
+  if (prevBtn) prevBtn.disabled = currentPage === 1;
+  if (nextBtn) nextBtn.disabled = currentPage === totalPages || totalPages === 0;
+
+  paginationPages.innerHTML = '';
+  if (totalPages <= 1) return;
+
+  addPageButton(1, paginationPages, totalPages);
+
+  if (currentPage > 3) {
+    addEllipsis(paginationPages);
   }
 
-  function resetBangGiaModal() {
-    document.getElementById('bangGiaLoaiPhong').value = '';
-    currentEditingLoaiPhong = null;
+  const startPage = Math.max(2, currentPage - 1);
+  const endPage = Math.min(totalPages - 1, currentPage + 1);
 
-    const bangGiaList = document.querySelector('.bang-gia-list');
+  for (let i = startPage; i <= endPage; i++) {
+    if (i !== 1 && i !== totalPages) {
+      addPageButton(i, paginationPages, totalPages);
+    }
+  }
+
+  if (currentPage < totalPages - 2) {
+    addEllipsis(paginationPages);
+  }
+
+  if (totalPages > 1) {
+    addPageButton(totalPages, paginationPages, totalPages);
+  }
+}
+
+function addPageButton(pageNumber, container, totalPages) {
+  const pageBtn = document.createElement('button');
+  pageBtn.className = `pagination-page ${pageNumber === currentPage ? 'active' : ''}`;
+  pageBtn.textContent = pageNumber;
+  pageBtn.onclick = () => goToPage(pageNumber);
+  container.appendChild(pageBtn);
+}
+
+function addEllipsis(container) {
+  const ellipsis = document.createElement('span');
+  ellipsis.className = 'pagination-ellipsis';
+  ellipsis.textContent = '...';
+  container.appendChild(ellipsis);
+}
+
+function goToPage(page) {
+  const totalPages = Math.ceil(filteredRooms.length / CONFIG.roomsPerPage);
+  if (page < 1 || page > totalPages || totalPages === 0) return;
+
+  currentPage = page;
+  showCurrentPage();
+}
+
+function changePage(direction) {
+  const totalPages = Math.ceil(filteredRooms.length / CONFIG.roomsPerPage);
+  const newPage = currentPage + direction;
+
+  if (newPage < 1 || newPage > totalPages || totalPages === 0) return;
+
+  currentPage = newPage;
+  showCurrentPage();
+}
+
+function togglePaginationVisibility() {
+  const paginationContainer = document.getElementById('paginationContainer');
+  if (!paginationContainer) return;
+
+  const shouldShow = filteredRooms.length > CONFIG.roomsPerPage;
+
+  if (shouldShow) {
+    paginationContainer.classList.remove('hidden');
+    paginationContainer.style.display = 'flex';
+  } else {
+    paginationContainer.classList.add('hidden');
+    paginationContainer.style.display = 'none';
+  }
+}
+
+// ===== BANG GIA MANAGEMENT =====
+function addBangGia(loaiPhong) {
+  const modalState = {
+    loaiPhong: loaiPhong,
+    isModalOpen: true,
+    timestamp: Date.now(),
+    action: 'manualOpen'
+  };
+  sessionStorage.setItem('bangGiaModalState', JSON.stringify(modalState));
+
+  openPriceModal(loaiPhong);
+}
+
+function editBangGia(loaiPhong, bangGia) {
+  const modalState = {
+    loaiPhong: loaiPhong,
+    isModalOpen: true,
+    timestamp: Date.now(),
+    action: 'manualOpen'
+  };
+  sessionStorage.setItem('bangGiaModalState', JSON.stringify(modalState));
+
+  openPriceModal(loaiPhong);
+}
+
+function openPriceModal(loaiPhong = null) {
+  if (!isNewRoomType) {
+    resetBangGiaModalState();
+  }
+
+  currentLoaiPhong = loaiPhong;
+  const currentState = {
+    page: currentPage,
+    filters: {
+      search: document.getElementById('searchInput').value,
+      type: document.getElementById('typeFilter').value,
+      status: document.getElementById('statusFilter').value
+    },
+    timestamp: Date.now()
+  };
+  sessionStorage.setItem('karaokeAppStateBeforeModal', JSON.stringify(currentState));
+
+  document.getElementById('bangGiaModalTitle').textContent = 'Quản lý bảng giá theo loại phòng';
+  document.getElementById('bangGiaModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  currentLoaiPhong = loaiPhong;
+
+  previousLoaiPhong = loaiPhong;
+  pendingLoaiPhongChange = null;
+
+
+  if (loaiPhong) {
+    document.getElementById('bangGiaLoaiPhong').value = loaiPhong;
+    loadBangGiaForRoomType(loaiPhong);
+  } else {
+    resetBangGiaModal();
+  }
+  setupBangGiaSelectListener();
+}
+
+function setupBangGiaSelectListener() {
+  const selectElement = document.getElementById('bangGiaLoaiPhong');
+  if (selectElement) {
+    selectElement.removeEventListener('change', handleBangGiaSelectChange);
+    selectElement.addEventListener('change', handleBangGiaSelectChange);
+  }
+}
+
+async function handleBangGiaSelectChange(event) {
+  const newLoaiPhong = event.target.value;
+
+  if (hasUnsavedChanges) {
+    pendingLoaiPhongChange = newLoaiPhong;
+
+    const result = await Swal.fire({
+      title: 'Thay đổi chưa lưu',
+      html: `Bạn có thay đổi chưa lưu cho loại phòng <strong>"${previousLoaiPhong}"</strong>.<br>Các thao tác thay đổi sẽ bị <strong>hoàn tác</strong> nếu bạn không lưu!</br><br>Bạn muốn làm gì?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Hủy thay đổi',
+      cancelButtonText: 'Ở lại',
+      confirmButtonColor: '#e53e3e',
+      cancelButtonColor: '#667eea',
+      reverseButtons: true,
+      customClass: {
+        popup: 'unsaved-changes-popup'
+      }
+    });
+
+    if (result.isConfirmed) {
+      hasUnsavedChanges = false;
+      previousLoaiPhong = newLoaiPhong;
+      loadBangGiaForRoomType(newLoaiPhong);
+      pendingLoaiPhongChange = null;
+    } else {
+      event.target.value = previousLoaiPhong;
+      if (newRoomName.has(previousLoaiPhong)) {
+        const tempPriceData = newRoomName.get(previousLoaiPhong);
+        displayBangGia(tempPriceData, previousLoaiPhong);
+        return;
+      }
+      pendingLoaiPhongChange = null;
+    }
+  } else {
+    previousLoaiPhong = newLoaiPhong;
+    loadBangGiaForRoomType(newLoaiPhong);
+  }
+}
+
+async function closeBangGiaModal() {
+  const result = await Swal.fire({
+    title: 'Bạn có chắc chắn muốn thoát ?',
+    html: `Tất cả các thao tác <strong>chưa ấn "Lưu"</strong> sẽ không được lưu!`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#e53e3e',
+    cancelButtonColor: '#667eea',
+    confirmButtonText: 'Thoát',
+    cancelButtonText: 'Tiếp tục',
+    reverseButtons: true
+  });
+
+  if (result.isConfirmed) {
+    await deletePendingRoomType();
+  } else {
+    return;
+  }
+
+  const currentState = {
+    page: currentPage,
+    filters: {
+      search: document.getElementById('searchInput').value,
+      type: document.getElementById('typeFilter').value,
+      status: document.getElementById('statusFilter').value
+    },
+    timestamp: Date.now()
+  };
+  sessionStorage.setItem('karaokeAppStateBeforeReload', JSON.stringify(currentState));
+
+  document.getElementById('bangGiaModal').style.display = 'none';
+  document.body.style.overflow = 'auto';
+  resetBangGiaModalState();
+  setTimeout(() => {
+    location.reload();
+  }, 100);
+}
+
+async function deletePendingRoomType() {
+  if (!pendingRoomType) return;
+
+  try {
+    Swal.fire({
+      title: 'Đang xóa loại phòng...',
+      text: 'Vui lòng chờ trong giây lát',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
+
+    const response = await fetch(`/api/banggiaphong/${pendingRoomType}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        TenLoaiPhong: pendingRoomType,
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Lỗi khi xóa loại phòng');
+    }
+
+    const result = await response.json();
+
+    await updateRoomTypeInUI(pendingRoomType, 'delete');
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Đã xóa!',
+      text: result.message || `Đã xóa loại phòng "${pendingRoomType}"`,
+      timer: 1500,
+      showConfirmButton: false
+    });
+
+  } catch (error) {
+    console.error('❌ Lỗi khi xóa loại phòng:', error);
+
+    Swal.fire({
+      icon: 'error',
+      title: 'Lỗi!',
+      text: error.message || 'Không thể xóa loại phòng',
+      confirmButtonColor: '#667eea'
+    });
+  } finally {
+    resetBangGiaModalState();
+    document.getElementById('bangGiaModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+  }
+}
+
+function resetBangGiaModalState() {
+  isNewRoomType = false;
+  pendingRoomType = null;
+  hasPriceItems = false;
+  hasUnsavedChanges = false;
+  currentLoaiPhong = null;
+  previousLoaiPhong = null;
+  pendingLoaiPhongChange = null;
+  pendingPriceData = null;
+}
+
+function resetBangGiaModal() {
+  document.getElementById('bangGiaLoaiPhong').value = '';
+  currentEditingLoaiPhong = null;
+
+  const bangGiaList = document.querySelector('.bang-gia-list');
+  bangGiaList.innerHTML = `
+    <div class="text-center text-muted p-4">
+      <i class="fas fa-door-open fa-2x mb-3"></i>
+      <p>Vui lòng chọn loại phòng để hiển thị bảng giá</p>
+    </div>
+  `;
+
+  const guideContent = document.getElementById('guideContent');
+  if (guideContent) guideContent.classList.add('collapsed');
+}
+
+function loadBangGiaForRoomType(loaiPhong) {
+  const bangGiaList = document.querySelector('.bang-gia-list');
+
+  if (!loaiPhong) {
     bangGiaList.innerHTML = `
       <div class="text-center text-muted p-4">
         <i class="fas fa-door-open fa-2x mb-3"></i>
         <p>Vui lòng chọn loại phòng để hiển thị bảng giá</p>
       </div>
     `;
-
-    const guideContent = document.getElementById('guideContent');
-    if (guideContent) guideContent.classList.add('collapsed');
+    currentEditingLoaiPhong = null;
+    return;
   }
 
-  function loadBangGiaForRoomType(loaiPhong) {
-    const bangGiaList = document.querySelector('.bang-gia-list');
+  currentEditingLoaiPhong = loaiPhong;
 
-    if (!loaiPhong) {
-      bangGiaList.innerHTML = `
-        <div class="text-center text-muted p-4">
-          <i class="fas fa-door-open fa-2x mb-3"></i>
-          <p>Vui lòng chọn loại phòng để hiển thị bảng giá</p>
-        </div>
-      `;
-      currentEditingLoaiPhong = null;
-      return;
-    }
-
-    currentEditingLoaiPhong = loaiPhong;
-
-    bangGiaList.innerHTML = `
-      <div class="text-center p-4">
-        <div class="spinner-border text-primary mb-3" role="status">
-          <span class="visually-hidden">Loading...</span>
-        </div>
-        <p>Đang tải bảng giá cho ${loaiPhong}...</p>
+  bangGiaList.innerHTML = `
+    <div class="text-center p-4">
+      <div class="spinner-border text-primary mb-3" role="status">
+        <span class="visually-hidden">Loading...</span>
       </div>
-    `;
+      <p>Đang tải bảng giá cho ${loaiPhong}...</p>
+    </div>
+  `;
 
-    fetch(`/api/banggia/${loaiPhong}`)
-      .then(response => {
-        if (!response.ok) throw new Error('Không thể tải bảng giá');
-        return response.json();
-      })
-      .then(data => {
-        displayBangGia(data, loaiPhong);
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        const bangGiaForType = window.bangGiaData ?
-          window.bangGiaData.filter(gia => gia.LoaiPhong === loaiPhong) : [];
-        displayBangGia(bangGiaForType, loaiPhong);
-      });
-  }
-
-  function displayBangGia(bangGiaData, loaiPhong) {
-    const bangGiaList = document.querySelector('.bang-gia-list');
-
-    if (!bangGiaData || bangGiaData.length === 0) {
-      displayEmptyBangGia(loaiPhong);
-      return;
-    }
-
-    bangGiaList.innerHTML = '';
-
-    bangGiaData.forEach((gia, index) => {
-      const [startTime, endTime] = gia.KhungGio.split('-');
-      const priceItem = createPriceItem(
-        `${startTime}-${endTime}`,
-        gia.GiaTien,
-        gia.MaGia
-      );
-      bangGiaList.appendChild(priceItem);
+  fetch(`/api/banggia/${loaiPhong}`)
+    .then(response => {
+      if (!response.ok) throw new Error('Không thể tải bảng giá');
+      return response.json();
+    })
+    .then(data => {
+      displayBangGia(data, loaiPhong);
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      const bangGiaForType = window.bangGiaData ?
+        window.bangGiaData.filter(gia => gia.LoaiPhong === loaiPhong) : [];
+      displayBangGia(bangGiaForType, loaiPhong);
     });
+}
 
-    addPriceItemSection();
+function displayBangGia(bangGiaData, loaiPhong) {
+  const bangGiaList = document.querySelector('.bang-gia-list');
+
+  if (!bangGiaData || bangGiaData.length === 0) {
+    displayEmptyBangGia(loaiPhong);
+    return;
   }
 
-  function displayEmptyBangGia(loaiPhong) {
-    const bangGiaList = document.querySelector('.bang-gia-list');
-    bangGiaList.innerHTML = `
-      <div class="empty-banggia-state">
-        <div class="empty-icon">💰</div>
-        <h4>Chưa có bảng giá cho ${loaiPhong}</h4>
-        <p>Thêm khung giờ và giá tiền cho loại phòng này</p>
-      </div>
-    `;
-  }
+  bangGiaList.innerHTML = '';
 
-  function displayEmptyStateWithAddButton(loaiPhong) {
-    const bangGiaList = document.querySelector('.bang-gia-list');
-    bangGiaList.innerHTML = `
-      <div class="empty-banggia-state">
-        <div class="empty-icon">💰</div>
-        <h4>Chưa có bảng giá cho ${loaiPhong}</h4>
-        <p>Thêm khung giờ và giá tiền cho loại phòng này</p>
-        <button class="btn-add-first-price" onclick="addPriceItem()">
-          <i class="fas fa-plus"></i> Thêm khung giờ đầu tiên
-        </button>
-      </div>
-    `;
-  }
-
-  // ===== PRICE ITEM MANAGEMENT =====
-  function createPriceItem(khungGio = '', giaTien = '', maGia = '') {
-    const [startTime = '', endTime = ''] = khungGio.split('-');
-
-    const div = document.createElement('div');
-    div.className = 'price-item';
-    div.innerHTML = `
-      <div class="time-input-group">
-        <label class="form-label">Khung giờ (24h)</label>
-        <div class="time-input-wrapper">
-          <input type="time" class="start-time-input form-control" 
-                 value="${startTime}" step="300" required>
-          <span class="time-separator">→</span>
-          <input type="time" class="end-time-input form-control" 
-                 value="${endTime}" step="300" required>
-        </div>
-        <div class="time-format-helper">
-          <span class="format-example">HH:MM</span>
-          <span>24 giờ</span>
-        </div>
-      </div>
-      
-      <div class="price-input-group">
-        <label class="form-label">Giá tiền (VNĐ)</label>
-        <div class="price-input-wrapper">
-          <input type="number" class="gia-tien-input form-control" 
-                 placeholder="100000" value="${giaTien}" min="1000" required>
-          <span class="currency-symbol">VNĐ</span>
-        </div>
-      </div>
-      
-      <div class="remove-btn-wrapper">
-        <button type="button" class="btn-remove-price" onclick="removePriceItem(this)">
-          <i class="fas fa-trash"></i>
-        </button>
-      </div>
-      
-      <input type="hidden" class="ma-gia-input" value="${maGia}">
-    `;
-
-    const startTimeInput = div.querySelector('.start-time-input');
-    const endTimeInput = div.querySelector('.end-time-input');
-    const giaTienInput = div.querySelector('.gia-tien-input');
-
-    setupTimeInputValidation(startTimeInput, true);
-    setupTimeInputValidation(endTimeInput, false);
-    setupGiaTienValidation(giaTienInput);
-
-    startTimeInput.addEventListener('change', handleInputPriceChange);
-    endTimeInput.addEventListener('change', handleInputPriceChange);
-    giaTienInput.addEventListener('input', handleInputPriceChange);
-
-    return div;
-  }
-
-  function resetAllPriceItemErrors() {
-    document.querySelectorAll('.price-item').forEach(item => {
-      resetTimeInputError(item.querySelector('.start-time-input'));
-      resetTimeInputError(item.querySelector('.end-time-input'));
-      const formGroups = item.querySelectorAll('.time-input-group');
-      formGroups.forEach(group => {
-        const existingError = group.querySelector('.time-error-message');
-        if (existingError) existingError.remove();
-      });
-    });
-  }
-
-  function addPriceItemSection() {
-    const bangGiaList = document.querySelector('.bang-gia-list');
-    const existingSection = bangGiaList.querySelector('.add-price-section');
-
-    if (!existingSection) {
-      const addSection = document.createElement('div');
-      addSection.className = 'add-price-section';
-      bangGiaList.appendChild(addSection);
-    }
-  }
-
-  async function handleInputPriceChange() {
-    const errorBanner = document.getElementById('priceErrorBanner');
-    const priceErrorMessage = document.getElementById('priceErrorMessage');
-
-    resetAllPriceItemErrors();
-
-    const duplicates = checkAllTimeRangesForDuplicates();
-
-    const priceItems = document.querySelectorAll('.price-item');
-    let hasFormatError = false;
-
-    priceItems.forEach(item => {
-      const startTimeInput = item.querySelector('.start-time-input');
-      const endTimeInput = item.querySelector('.end-time-input');
-
-      validateTimeRangeVisual(startTimeInput);
-      validateTimeRangeVisual(endTimeInput);
-
-      if (startTimeInput.closest('.time-input-group').querySelector('.time-error-message') ||
-        endTimeInput.closest('.time-input-group').querySelector('.time-error-message')) {
-        hasFormatError = true;
-      }
-    });
-
-    if (duplicates.length > 0 || hasFormatError) {
-      errorBanner.classList.remove('hidden');
-
-      if (duplicates.length > 0) {
-        priceErrorMessage.textContent = 'Phát hiện khung giờ bị trùng lặp. Vui lòng kiểm tra các mục màu đỏ!';
-      } else if (hasFormatError) {
-        priceErrorMessage.textContent = 'Có lỗi định dạng giờ (HH:MM) hoặc logic (giờ vượt quá 24:00).';
-      }
-
-      return;
-    }
-
-    errorBanner.classList.add('hidden');
-    syncPriceDataToMap();
-  }
-
-  function addPriceItem(khungGio = '', giaTien = '', maGia = '') {
-    const bangGiaList = document.querySelector('.bang-gia-list');
-
-    if (bangGiaList.querySelector('.empty-banggia-state') ||
-      bangGiaList.querySelector('.text-center.text-muted') ||
-      bangGiaList.querySelector('.text-center.p-4')) {
-      bangGiaList.innerHTML = '';
-    }
-
-    const existingSection = bangGiaList.querySelector('.add-price-section');
-    if (existingSection) existingSection.remove();
-
-    const priceItem = createPriceItem(khungGio, giaTien, maGia);
+  bangGiaData.forEach((gia, index) => {
+    const [startTime, endTime] = gia.KhungGio.split('-');
+    const priceItem = createPriceItem(
+      `${startTime}-${endTime}`,
+      gia.GiaTien,
+      gia.MaGia
+    );
     bangGiaList.appendChild(priceItem);
-    addPriceItemSection();
+  });
 
-    if (currentEditingLoaiPhong && currentEditingLoaiPhong === pendingRoomType) {
-      const allPriceItemsInDOM = document.querySelectorAll('.price-item');
-      const currentPriceData = [];
-      allPriceItemsInDOM.forEach(item => {
-        const start = item.querySelector('.start-time-input').value.trim();
-        const end = item.querySelector('.end-time-input').value.trim();
-        const price = item.querySelector('.gia-tien-input').value;
+  addPriceItemSection();
+}
 
-        currentPriceData.push({
-          KhungGio: `${start}-${end}`,
-          GiaTien: price,
-          MaGia: maGia
-        });
-      });
-    }
-  }
+function displayEmptyBangGia(loaiPhong) {
+  const bangGiaList = document.querySelector('.bang-gia-list');
+  bangGiaList.innerHTML = `
+    <div class="empty-banggia-state">
+      <div class="empty-icon">💰</div>
+      <h4>Chưa có bảng giá cho ${loaiPhong}</h4>
+      <p>Thêm khung giờ và giá tiền cho loại phòng này</p>
+    </div>
+  `;
+}
 
-  function removePriceItem(button) {
-    const priceItem = button.closest('.price-item');
-    const allPriceItems = document.querySelectorAll('.price-item');
+function displayEmptyStateWithAddButton(loaiPhong) {
+  const bangGiaList = document.querySelector('.bang-gia-list');
+  bangGiaList.innerHTML = `
+    <div class="empty-banggia-state">
+      <div class="empty-icon">💰</div>
+      <h4>Chưa có bảng giá cho ${loaiPhong}</h4>
+      <p>Thêm khung giờ và giá tiền cho loại phòng này</p>
+      <button class="btn-add-first-price" onclick="addPriceItem()">
+        <i class="fas fa-plus"></i> Thêm khung giờ đầu tiên
+      </button>
+    </div>
+  `;
+}
 
-    if (allPriceItems.length <= 1) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Không thể xóa',
-        text: 'Phải có ít nhất một khung giờ!',
-        confirmButtonColor: '#667eea'
-      });
-      return;
-    }
-    priceItem.remove();
-    addPriceItemSection();
-    syncPriceDataToMap();
-  }
+// ===== PRICE ITEM MANAGEMENT =====
+function createPriceItem(khungGio = '', giaTien = '', maGia = '') {
+  const [startTime = '', endTime = ''] = khungGio.split('-');
 
-  // ===== TIME VALIDATION FUNCTIONS =====
-  function setupTimeInputValidation(timeInput, isStartTime = true) {
-    timeInput.addEventListener('blur', async (e) => {
-      const formattedTime = formatTimeInput(e.target.value);
-      e.target.value = formattedTime;
-      await validateTimeRangeWithAlert(timeInput);
+  const div = document.createElement('div');
+  div.className = 'price-item';
+  div.innerHTML = `
+    <div class="time-input-group">
+      <label class="form-label">Khung giờ (24h)</label>
+      <div class="time-input-wrapper">
+        <input type="time" class="start-time-input form-control" 
+                value="${startTime}" step="300" required>
+        <span class="time-separator">→</span>
+        <input type="time" class="end-time-input form-control" 
+                value="${endTime}" step="300" required>
+      </div>
+      <div class="time-format-helper">
+        <span class="format-example">HH:MM</span>
+        <span>24 giờ</span>
+      </div>
+    </div>
+    
+    <div class="price-input-group">
+      <label class="form-label">Giá tiền (VNĐ)</label>
+      <div class="price-input-wrapper">
+        <input type="number" class="gia-tien-input form-control" 
+                placeholder="100000" value="${giaTien}" min="1000" required>
+        <span class="currency-symbol">VNĐ</span>
+      </div>
+    </div>
+    
+    <div class="remove-btn-wrapper">
+      <button type="button" class="btn-remove-price" onclick="removePriceItem(this)">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>
+    
+    <input type="hidden" class="ma-gia-input" value="${maGia}">
+  `;
+
+  const startTimeInput = div.querySelector('.start-time-input');
+  const endTimeInput = div.querySelector('.end-time-input');
+  const giaTienInput = div.querySelector('.gia-tien-input');
+
+  setupTimeInputValidation(startTimeInput, true);
+  setupTimeInputValidation(endTimeInput, false);
+  setupGiaTienValidation(giaTienInput);
+
+  startTimeInput.addEventListener('change', handleInputPriceChange);
+  endTimeInput.addEventListener('change', handleInputPriceChange);
+  giaTienInput.addEventListener('input', handleInputPriceChange);
+
+  return div;
+}
+
+function resetAllPriceItemErrors() {
+  document.querySelectorAll('.price-item').forEach(item => {
+    resetTimeInputError(item.querySelector('.start-time-input'));
+    resetTimeInputError(item.querySelector('.end-time-input'));
+    const formGroups = item.querySelectorAll('.time-input-group');
+    formGroups.forEach(group => {
+      const existingError = group.querySelector('.time-error-message');
+      if (existingError) existingError.remove();
     });
+  });
+}
 
-    timeInput.addEventListener('input', (e) => {
-      setTimeout(() => validateTimeRangeVisual(timeInput), 100);
-    });
+function addPriceItemSection() {
+  const bangGiaList = document.querySelector('.bang-gia-list');
+  const existingSection = bangGiaList.querySelector('.add-price-section');
+
+  if (!existingSection) {
+    const addSection = document.createElement('div');
+    addSection.className = 'add-price-section';
+    bangGiaList.appendChild(addSection);
   }
+}
 
-  function setupGiaTienValidation(giaTienInput) {
-    giaTienInput.addEventListener('blur', async (e) => {
-      await validateTimeRangeWithAlert(giaTienInput);
-    });
+async function handleInputPriceChange() {
+  const errorBanner = document.getElementById('priceErrorBanner');
+  const priceErrorMessage = document.getElementById('priceErrorMessage');
 
-    giaTienInput.addEventListener('input', (e) => {
-      setTimeout(() => validateTimeRangeVisual(giaTienInput), 100);
-    });
-  }
+  resetAllPriceItemErrors();
 
-  async function validateTimeRangeWithAlert(changedInput) {
-    const priceItem = changedInput.closest('.price-item');
-    if (!priceItem) return true;
+  const duplicates = checkAllTimeRangesForDuplicates();
 
-    const startTimeInput = priceItem.querySelector('.start-time-input');
-    const endTimeInput = priceItem.querySelector('.end-time-input');
-    const giaTienInput = priceItem.querySelector('.gia-tien-input');
+  const priceItems = document.querySelectorAll('.price-item');
+  let hasFormatError = false;
 
-    const startTime = startTimeInput.value.trim();
-    const endTime = endTimeInput.value.trim();
-    const giaTien = giaTienInput ? giaTienInput.value.trim() : '';
+  priceItems.forEach(item => {
+    const startTimeInput = item.querySelector('.start-time-input');
+    const endTimeInput = item.querySelector('.end-time-input');
 
-    resetTimeInputError(startTimeInput);
-    resetTimeInputError(endTimeInput);
-    if (giaTienInput) resetGiaTienError(giaTienInput);
+    validateTimeRangeVisual(startTimeInput);
+    validateTimeRangeVisual(endTimeInput);
 
-    let isValid = true;
-
-    if (!startTime || !endTime) return true;
-
-    if (!validateTimeFormat(startTime)) {
-      showTimeInputError(startTimeInput, 'Định dạng HH:MM không hợp lệ');
-      isValid = false;
+    if (startTimeInput.closest('.time-input-group').querySelector('.time-error-message') ||
+      endTimeInput.closest('.time-input-group').querySelector('.time-error-message')) {
+      hasFormatError = true;
     }
+  });
 
-    if (!validateTimeFormat(endTime)) {
-      showTimeInputError(endTimeInput, 'Định dạng HH:MM không hợp lệ');
-      isValid = false;
-    }
+  if (duplicates.length > 0 || hasFormatError) {
+    errorBanner.classList.remove('hidden');
 
-    if (startTime === endTime) {
-      showTimeInputError(startTimeInput, 'Giờ bắt đầu không được trùng giờ kết thúc');
-      showTimeInputError(endTimeInput, 'Giờ kết thúc không được trùng giờ bắt đầu');
-      isValid = false;
-    }
-
-    if (!isTimeDifferenceValid(startTime, endTime)) {
-      showTimeInputError(startTimeInput, 'Khung giờ phải có thời lượng ít nhất 1 giờ');
-      showTimeInputError(endTimeInput, 'Khung giờ phải có thời lượng ít nhất 1 giờ');
-      isValid = false;
-    }
-
-    if (giaTienInput && giaTien) {
-      const giaTienNum = parseInt(giaTien);
-      if (giaTienNum === 0) {
-        showGiaTienError(giaTienInput, 'Giá tiền không thể bằng 0');
-        isValid = false;
-      }
-
-      if (giaTienNum < 1000) {
-        showGiaTienError(giaTienInput, 'Giá tiền tối thiểu là 1,000 VNĐ');
-        isValid = false;
-      }
-    }
-
-    const startMinutes = parseInt(startTime.split(':')[1]);
-    const endMinutes = parseInt(endTime.split(':')[1]);
-
-    if (startMinutes > 59) {
-      showTimeInputError(startTimeInput, 'Phút không được lớn hơn 59');
-      isValid = false;
-    }
-
-    if (endMinutes > 59) {
-      showTimeInputError(endTimeInput, 'Phút không được lớn hơn 59');
-      isValid = false;
-    }
-
-    if (startTime >= '24:00' || endTime > '24:00') {
-      showTimeInputError(startTimeInput, 'Giờ không được vượt quá 24:00');
-      showTimeInputError(endTimeInput, 'Giờ không được vượt quá 24:00');
-      isValid = false;
-    }
-
-    if (isValid) {
-      showTimeInputSuccess(startTimeInput);
-      showTimeInputSuccess(endTimeInput);
-      if (giaTienInput && giaTien && parseInt(giaTien) >= 1000) {
-        showGiaTienSuccess(giaTienInput);
-      }
-    }
-
-    return true;
-  }
-
-  function validateTimeRangeVisual(changedInput) {
-    const priceItem = changedInput.closest('.price-item');
-    if (!priceItem) return;
-
-    const startTimeInput = priceItem.querySelector('.start-time-input');
-    const endTimeInput = priceItem.querySelector('.end-time-input');
-    const giaTienInput = priceItem.querySelector('.gia-tien-input');
-    const startTime = startTimeInput.value.trim();
-    const endTime = endTimeInput.value.trim();
-    const giaTien = giaTienInput ? giaTienInput.value.trim() : '';
-    if (giaTienInput) resetGiaTienError(giaTienInput);
-
-    resetTimeInputError(startTimeInput);
-    resetTimeInputError(endTimeInput);
-    if (giaTienInput) resetGiaTienError(giaTienInput);
-
-    if (!startTime || !endTime) return;
-
-    if (!validateTimeFormat(startTime)) {
-      showTimeInputError(startTimeInput, 'Định dạng HH:MM không hợp lệ');
-      return;
-    }
-
-    if (!validateTimeFormat(endTime)) {
-      showTimeInputError(endTimeInput, 'Định dạng HH:MM không hợp lệ');
-      return;
-    }
-
-    if (startTime >= '24:00' || endTime > '24:00') {
-      showTimeInputError(startTimeInput, 'Giờ không được vượt quá 24:00');
-      showTimeInputError(endTimeInput, 'Giờ không được vượt quá 24:00');
-      return;
-    }
-
-    if (startTime === endTime) {
-      showTimeInputError(startTimeInput, 'Giờ bắt đầu không được trùng giờ kết thúc');
-      showTimeInputError(endTimeInput, 'Giờ kết thúc không được trùng giờ bắt đầu');
-      return;
-    }
-
-    if (!isTimeDifferenceValid(startTime, endTime)) {
-      showTimeInputError(startTimeInput, 'Khung giờ phải có thời lượng ít nhất 1 giờ');
-      showTimeInputError(endTimeInput, 'Khung giờ phải có thời lượng ít nhất 1 giờ');
-      return;
-    }
-
-    if (giaTienInput && giaTien) {
-      const giaTienNum = parseInt(giaTien);
-      if (giaTienNum === 0) {
-        showGiaTienError(giaTienInput, 'Giá tiền không thể bằng 0');
-        return;
-      }
-
-      if (giaTienNum < 1000) {
-        showGiaTienError(giaTienInput, 'Giá tiền tối thiểu là 1,000 VNĐ');
-        return;
-      }
-
-      if (giaTienNum >= 1000) {
-        showGiaTienSuccess(giaTienInput);
-      }
-    }
-
-    showTimeInputSuccess(startTimeInput);
-    showTimeInputSuccess(endTimeInput);
-  }
-
-  function checkAllTimeRangesForDuplicates() {
-    const priceItems = document.querySelectorAll('.price-item');
-    const duplicates = [];
-
-    priceItems.forEach(item => {
-      const startTimeInput = item.querySelector('.start-time-input');
-      const endTimeInput = item.querySelector('.end-time-input');
-      resetTimeInputError(startTimeInput);
-      resetTimeInputError(endTimeInput);
-      item.classList.remove('error-highlight');
-    });
-
-    for (let i = 0; i < priceItems.length; i++) {
-      const item1 = priceItems[i];
-      const startTime1 = item1.querySelector('.start-time-input').value.trim();
-      const endTime1 = item1.querySelector('.end-time-input').value.trim();
-
-      if (!startTime1 || !endTime1) continue;
-
-      for (let j = i + 1; j < priceItems.length; j++) {
-        const item2 = priceItems[j];
-        const startTime2 = item2.querySelector('.start-time-input').value.trim();
-        const endTime2 = item2.querySelector('.end-time-input').value.trim();
-
-        if (!startTime2 || !endTime2) continue;
-
-        if (startTime1 === startTime2 && endTime1 === endTime2) {
-          duplicates.push({
-            type: 'complete',
-            item1: item1,
-            item2: item2,
-            timeRange: `${startTime1}-${endTime1}`,
-            message: `Khung giờ ${startTime1}-${endTime1} bị trùng hoàn toàn`
-          });
-        } else if (isTimeRangeOverlapping(startTime1, endTime1, startTime2, endTime2)) {
-          duplicates.push({
-            type: 'overlap',
-            item1: item1,
-            item2: item2,
-            timeRange1: `${startTime1}-${endTime1}`,
-            timeRange2: `${startTime2}-${endTime2}`,
-            message: `Khung giờ ${startTime1}-${endTime1} trùng lắp với ${startTime2}-${endTime2}`
-          });
-        }
-      }
-    }
-
-    markPriceItemsAsError(duplicates);
-
-    return duplicates;
-  }
-
-  function markPriceItemsAsError(duplicates) {
-    document.querySelectorAll('.price-item').forEach(item => {
-      const startInput = item.querySelector('.start-time-input');
-      const endInput = item.querySelector('.end-time-input');
-      resetTimeInputError(startInput);
-      resetTimeInputError(endInput);
-      item.classList.remove('error-highlight');
-    });
-
-    duplicates.forEach(dup => {
-      [dup.item1, dup.item2].forEach(item => {
-        if (item) {
-          item.classList.add('error-highlight');
-          const startInput = item.querySelector('.start-time-input');
-          const endInput = item.querySelector('.end-time-input');
-
-          if (startInput) {
-            startInput.classList.add('error-state');
-            startInput.style.borderColor = '#e53e3e';
-            startInput.style.boxShadow = '0 0 0 3px rgba(229, 62, 62, 0.2)';
-          }
-
-          if (endInput) {
-            endInput.classList.add('error-state');
-            endInput.style.borderColor = '#e53e3e';
-            endInput.style.boxShadow = '0 0 0 3px rgba(229, 62, 62, 0.2)';
-          }
-        }
-      });
-    });
-  }
-
-  async function validateAllTimeRangesBeforeSave() {
-    const priceItems = document.querySelectorAll('.price-item');
-    let allValid = true;
-    let errorMessage = '';
-
-    for (const item of priceItems) {
-      const startTimeInput = item.querySelector('.start-time-input');
-      const endTimeInput = item.querySelector('.end-time-input');
-      const giaTienInput = item.querySelector('.gia-tien-input');
-      const startTime = startTimeInput.value.trim();
-      const endTime = endTimeInput.value.trim();
-      const giaTien = giaTienInput ? giaTienInput.value.trim() : '';
-
-      if (!startTime || !endTime || !giaTien) {
-        allValid = false;
-        errorMessage = 'Vui lòng điền đầy đủ tất cả khung giờ';
-        break;
-      }
-
-      if (!validateTimeFormat(startTime) || !validateTimeFormat(endTime)) {
-        allValid = false;
-        errorMessage = 'Có khung giờ không đúng định dạng HH:MM';
-        break;
-      }
-      if (startTime === endTime) {
-        allValid = false;
-        errorMessage = `Khung giờ ${startTime}-${endTime} có giờ bắt đầu và kết thúc trùng nhau`;
-        break;
-      }
-
-      if (!isTimeDifferenceValid(startTime, endTime)) {
-        allValid = false;
-        errorMessage = `Khung giờ ${startTime}-${endTime} có thời lượng ít hơn 1 giờ`;
-        break;
-      }
-
-      const giaTienNum = parseInt(giaTien);
-      if (giaTienNum === 0) {
-        allValid = false;
-        errorMessage = `Giá tiền không thể bằng 0 (khung giờ ${startTime}-${endTime})`;
-        break;
-      }
-
-      if (giaTienNum < 1000) {
-        allValid = false;
-        errorMessage = `Giá tiền phải từ 1,000 VNĐ trở lên (khung giờ ${startTime}-${endTime})`;
-        break;
-      }
-    }
-
-    if (!allValid) {
-      await Swal.fire({
-        icon: 'error',
-        title: 'Lỗi dữ liệu',
-        html: `
-          <div style="text-align: left;">
-            <p style="margin-bottom: 10px;">${errorMessage}</p>
-            <ul style="text-align: left; margin-left: 20px; color: #718096;">
-              <li>Định dạng: HH:MM (24h)</li>
-              <li>Giờ không vượt quá 24:00</li>
-              <li>Điền đầy đủ tất cả khung giờ</li>
-            </ul>
-          </div>
-        `,
-        confirmButtonColor: '#667eea',
-        confirmButtonText: 'Đã hiểu'
-      });
-      return false;
-    }
-
-    const duplicates = checkAllTimeRangesForDuplicates();
     if (duplicates.length > 0) {
-      allValid = false;
-      const duplicateMessages = duplicates.map(dup => dup.message).join('<br>');
-
-      await Swal.fire({
-        icon: 'error',
-        title: 'Lỗi trùng khung giờ',
-        html: `
-          <div style="text-align: left;">
-            <p style="margin-bottom: 15px; color: #e53e3e; font-weight: 600;">Phát hiện các khung giờ bị trùng:</p>
-            <div style="background: #fff5f5; padding: 15px; border-radius: 8px; border-left: 4px solid #e53e3e;">
-              ${duplicateMessages}
-            </div>
-            <p style="margin-top: 15px; color: #718096; font-size: 0.9rem;">
-              Vui lòng sửa các khung giờ bị trùng trước khi lưu.
-            </p>
-          </div>
-        `,
-        confirmButtonColor: '#667eea',
-        confirmButtonText: 'Đã hiểu'
-      });
+      priceErrorMessage.textContent = 'Phát hiện khung giờ bị trùng lặp. Vui lòng kiểm tra các mục màu đỏ!';
+    } else if (hasFormatError) {
+      priceErrorMessage.textContent = 'Có lỗi định dạng giờ (HH:MM) hoặc logic (giờ vượt quá 24:00).';
     }
 
-    return allValid;
+    return;
   }
 
-  function showTimeInputError(input, message) {
-    const formGroup = input.closest('.time-input-group');
+  errorBanner.classList.add('hidden');
+  syncPriceDataToMap();
+}
 
-    input.style.borderColor = '#e53e3e';
-    input.style.boxShadow = '0 0 0 3px rgba(229, 62, 62, 0.1)';
-    input.classList.add('error-state');
+function addPriceItem(khungGio = '', giaTien = '', maGia = '') {
+  const bangGiaList = document.querySelector('.bang-gia-list');
 
-    const existingError = formGroup.querySelector('.time-error-message');
-    if (existingError) existingError.remove();
-
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'time-error-message';
-    errorDiv.style.color = '#e53e3e';
-    errorDiv.style.fontSize = '0.75rem';
-    errorDiv.style.marginTop = '4px';
-    errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
-    formGroup.appendChild(errorDiv);
+  if (bangGiaList.querySelector('.empty-banggia-state') ||
+    bangGiaList.querySelector('.text-center.text-muted') ||
+    bangGiaList.querySelector('.text-center.p-4')) {
+    bangGiaList.innerHTML = '';
   }
 
-  function showTimeInputSuccess(input) {
-    const formGroup = input.closest('.time-input-group');
-    input.style.borderColor = '#48bb78';
-    input.style.boxShadow = '0 0 0 3px rgba(72, 187, 120, 0.1)';
-    input.classList.remove('error-state');
+  const existingSection = bangGiaList.querySelector('.add-price-section');
+  if (existingSection) existingSection.remove();
 
-    const existingError = formGroup.querySelector('.time-error-message');
-    if (existingError) existingError.remove();
-  }
+  const priceItem = createPriceItem(khungGio, giaTien, maGia);
+  bangGiaList.appendChild(priceItem);
+  addPriceItemSection();
 
-  function resetTimeInputError(input) {
-    const formGroup = input.closest('.time-input-group');
-    input.style.borderColor = '';
-    input.style.boxShadow = '';
-    input.classList.remove('error-state');
-
-    const existingError = formGroup.querySelector('.time-error-message');
-    if (existingError) existingError.remove();
-  }
-
-  function showGiaTienError(input, message) {
-    const formGroup = input.closest('.price-input-group');
-
-    input.style.borderColor = '#e53e3e';
-    input.style.boxShadow = '0 0 0 3px rgba(229, 62, 62, 0.1)';
-    input.classList.add('error-state');
-
-    const existingError = formGroup.querySelector('.gia-tien-error-message');
-    if (existingError) existingError.remove();
-
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'gia-tien-error-message';
-    errorDiv.style.color = '#e53e3e';
-    errorDiv.style.fontSize = '0.75rem';
-    errorDiv.style.marginTop = '4px';
-    errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
-    formGroup.appendChild(errorDiv);
-  }
-
-  function showGiaTienSuccess(input) {
-    const formGroup = input.closest('.price-input-group');
-    input.style.borderColor = '#48bb78';
-    input.style.boxShadow = '0 0 0 3px rgba(72, 187, 120, 0.1)';
-    input.classList.remove('error-state');
-
-    const existingError = formGroup.querySelector('.gia-tien-error-message');
-    if (existingError) existingError.remove();
-  }
-
-  function resetGiaTienError(input) {
-    const formGroup = input.closest('.price-input-group');
-    input.style.borderColor = '';
-    input.style.boxShadow = '';
-    input.classList.remove('error-state');
-
-    const existingError = formGroup.querySelector('.gia-tien-error-message');
-    if (existingError) existingError.remove();
-  }
-
-  function syncPriceDataToMap() {
-    if (!currentEditingLoaiPhong) {
-      return;
-    }
-
+  if (currentEditingLoaiPhong && currentEditingLoaiPhong === pendingRoomType) {
     const allPriceItemsInDOM = document.querySelectorAll('.price-item');
     const currentPriceData = [];
-
     allPriceItemsInDOM.forEach(item => {
       const start = item.querySelector('.start-time-input').value.trim();
       const end = item.querySelector('.end-time-input').value.trim();
       const price = item.querySelector('.gia-tien-input').value;
-      const maGia = item.querySelector('.ma-gia-input').value;
 
-      if (start && end && price) {
-        currentPriceData.push({
-          KhungGio: `${start}-${end}`,
-          GiaTien: price,
-          MaGia: maGia
-        });
-      }
+      currentPriceData.push({
+        KhungGio: `${start}-${end}`,
+        GiaTien: price,
+        MaGia: maGia
+      });
     });
+  }
+}
 
-    newRoomName.set(currentEditingLoaiPhong, currentPriceData);
-    hasUnsavedChanges = currentPriceData.length > 0;
+function removePriceItem(button) {
+  const priceItem = button.closest('.price-item');
+  const allPriceItems = document.querySelectorAll('.price-item');
+
+  if (allPriceItems.length <= 1) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Không thể xóa',
+      text: 'Phải có ít nhất một khung giờ!',
+      confirmButtonColor: '#667eea'
+    });
+    return;
+  }
+  priceItem.remove();
+  addPriceItemSection();
+  syncPriceDataToMap();
+}
+
+// ===== TIME VALIDATION FUNCTIONS =====
+function setupTimeInputValidation(timeInput, isStartTime = true) {
+  timeInput.addEventListener('blur', async (e) => {
+    const formattedTime = formatTimeInput(e.target.value);
+    e.target.value = formattedTime;
+    await validateTimeRangeWithAlert(timeInput);
+  });
+
+  timeInput.addEventListener('input', (e) => {
+    setTimeout(() => validateTimeRangeVisual(timeInput), 100);
+  });
+}
+
+function setupGiaTienValidation(giaTienInput) {
+  giaTienInput.addEventListener('blur', async (e) => {
+    await validateTimeRangeWithAlert(giaTienInput);
+  });
+
+  giaTienInput.addEventListener('input', (e) => {
+    setTimeout(() => validateTimeRangeVisual(giaTienInput), 100);
+  });
+}
+
+async function validateTimeRangeWithAlert(changedInput) {
+  const priceItem = changedInput.closest('.price-item');
+  if (!priceItem) return true;
+
+  const startTimeInput = priceItem.querySelector('.start-time-input');
+  const endTimeInput = priceItem.querySelector('.end-time-input');
+  const giaTienInput = priceItem.querySelector('.gia-tien-input');
+
+  const startTime = startTimeInput.value.trim();
+  const endTime = endTimeInput.value.trim();
+  const giaTien = giaTienInput ? giaTienInput.value.trim() : '';
+
+  resetTimeInputError(startTimeInput);
+  resetTimeInputError(endTimeInput);
+  if (giaTienInput) resetGiaTienError(giaTienInput);
+
+  let isValid = true;
+
+  if (!startTime || !endTime) return true;
+
+  if (!validateTimeFormat(startTime)) {
+    showTimeInputError(startTimeInput, 'Định dạng HH:MM không hợp lệ');
+    isValid = false;
   }
 
-  async function saveBangGia() {
-    const isValid = await validateAllTimeRangesBeforeSave();
-    if (!isValid) return;
+  if (!validateTimeFormat(endTime)) {
+    showTimeInputError(endTimeInput, 'Định dạng HH:MM không hợp lệ');
+    isValid = false;
+  }
 
-    try {
-      const loaiPhong = document.getElementById('bangGiaLoaiPhong').value;
-      if (!loaiPhong) {
-        await Swal.fire({
-          icon: 'warning',
-          title: 'Thiếu thông tin',
-          text: 'Vui lòng chọn loại phòng',
-          confirmButtonColor: '#667eea'
-        });
-        return;
-      }
+  if (startTime === endTime) {
+    showTimeInputError(startTimeInput, 'Giờ bắt đầu không được trùng giờ kết thúc');
+    showTimeInputError(endTimeInput, 'Giờ kết thúc không được trùng giờ bắt đầu');
+    isValid = false;
+  }
 
-      const priceItems = document.querySelectorAll('.price-item');
-      if (priceItems.length === 0) {
-        await Swal.fire({
-          icon: 'warning',
-          title: 'Thiếu thông tin',
-          text: 'Vui lòng thêm ít nhất một khung giờ và giá tiền!',
-          confirmButtonColor: '#667eea'
-        });
-        return;
-      }
+  if (!isTimeDifferenceValid(startTime, endTime)) {
+    showTimeInputError(startTimeInput, 'Khung giờ phải có thời lượng ít nhất 1 giờ');
+    showTimeInputError(endTimeInput, 'Khung giờ phải có thời lượng ít nhất 1 giờ');
+    isValid = false;
+  }
 
-      const bangGiaData = [];
-      for (const item of priceItems) {
-        const startTime = item.querySelector('.start-time-input').value.trim();
-        const endTime = item.querySelector('.end-time-input').value.trim();
-        const giaTien = item.querySelector('.gia-tien-input').value;
-        const maGia = item.querySelector('.ma-gia-input').value;
+  if (giaTienInput && giaTien) {
+    const giaTienNum = parseInt(giaTien);
+    if (giaTienNum === 0) {
+      showGiaTienError(giaTienInput, 'Giá tiền không thể bằng 0');
+      isValid = false;
+    }
 
-        if (!startTime || !endTime || !giaTien) {
-          await Swal.fire({
-            icon: 'warning',
-            title: 'Thiếu thông tin',
-            text: 'Vui lòng điền đầy đủ thông tin khung giờ và giá tiền!',
-            confirmButtonColor: '#667eea'
-          });
-          return;
-        }
-
-        if (giaTien < 1000) {
-          await Swal.fire({
-            icon: 'warning',
-            title: 'Giá tiền không hợp lệ',
-            text: 'Giá tiền phải từ 1,000 VNĐ trở lên!',
-            confirmButtonColor: '#667eea'
-          });
-          return;
-        }
-
-        const khungGio = `${startTime}-${endTime}`;
-        bangGiaData.push({
-          MaGia: maGia,
-          LoaiPhong: loaiPhong,
-          KhungGio: khungGio,
-          GiaTien: parseInt(giaTien)
-        });
-      }
-
-      Swal.fire({
-        title: 'Đang lưu bảng giá...',
-        html: `
-          <div style="text-align: center;">
-            <div class="spinner-border text-primary mb-3" role="status">
-              <span class="visually-hidden">Loading...</span>
-            </div>
-            <p>Vui lòng chờ trong giây lát</p>
-          </div>
-        `,
-        showConfirmButton: false,
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        didOpen: () => Swal.showLoading()
-      });
-
-      const response = await fetch(`/api/banggia/${loaiPhong}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ loaiPhong: loaiPhong, bangGia: bangGiaData })
-      });
-
-      if (!response.ok) {
-        const errorResult = await response.json();
-        throw new Error(errorResult.error || 'Lỗi lưu bảng giá');
-      }
-
-      Swal.close();
-
-      const currentState = {
-        page: currentPage,
-        filters: {
-          search: document.getElementById('searchInput').value,
-          type: document.getElementById('typeFilter').value,
-          status: document.getElementById('statusFilter').value
-        },
-        timestamp: Date.now()
-      };
-      sessionStorage.setItem('karaokeAppStateBeforeReload', JSON.stringify(currentState));
-
-      sessionStorage.setItem('lastActionLoaiPhong', loaiPhong);
-      sessionStorage.setItem('lastActionType', 'banggia');
-
-      await Swal.fire({
-        icon: 'success',
-        title: 'Thành công!',
-        text: `Đã lưu ${bangGiaData.length} khung giờ cho loại phòng ${loaiPhong}`,
-        timer: 2000,
-        showConfirmButton: false,
-        timerProgressBar: true
-      });
-
-      loadBangGiaForRoomType(loaiPhong);
-      hasUnsavedChanges = false;
-
-    } catch (error) {
-      Swal.close();
-      console.error('❌ Lỗi khi lưu bảng giá:', error);
-
-      await Swal.fire({
-        icon: 'error',
-        title: 'Lỗi!',
-        html: `Không thể lưu bảng giá:<br><strong>${error.message}</strong>`,
-        confirmButtonColor: '#667eea'
-      });
+    if (giaTienNum < 1000) {
+      showGiaTienError(giaTienInput, 'Giá tiền tối thiểu là 1,000 VNĐ');
+      isValid = false;
     }
   }
 
-  // ===== AUTO NAVIGATION AFTER RELOAD =====
-  function handleAutoNavigationAfterReload() {
-    const lastActionType = sessionStorage.getItem('lastActionType');
-    const savedState = sessionStorage.getItem('karaokeAppStateBeforeReload');
+  const startMinutes = parseInt(startTime.split(':')[1]);
+  const endMinutes = parseInt(endTime.split(':')[1]);
 
-    if (!lastActionType && !savedState) {
+  if (startMinutes > 59) {
+    showTimeInputError(startTimeInput, 'Phút không được lớn hơn 59');
+    isValid = false;
+  }
+
+  if (endMinutes > 59) {
+    showTimeInputError(endTimeInput, 'Phút không được lớn hơn 59');
+    isValid = false;
+  }
+
+  if (startTime >= '24:00' || endTime > '24:00') {
+    showTimeInputError(startTimeInput, 'Giờ không được vượt quá 24:00');
+    showTimeInputError(endTimeInput, 'Giờ không được vượt quá 24:00');
+    isValid = false;
+  }
+
+  if (isValid) {
+    showTimeInputSuccess(startTimeInput);
+    showTimeInputSuccess(endTimeInput);
+    if (giaTienInput && giaTien && parseInt(giaTien) >= 1000) {
+      showGiaTienSuccess(giaTienInput);
+    }
+  }
+
+  return true;
+}
+
+function validateTimeRangeVisual(changedInput) {
+  const priceItem = changedInput.closest('.price-item');
+  if (!priceItem) return;
+
+  const startTimeInput = priceItem.querySelector('.start-time-input');
+  const endTimeInput = priceItem.querySelector('.end-time-input');
+  const giaTienInput = priceItem.querySelector('.gia-tien-input');
+  const startTime = startTimeInput.value.trim();
+  const endTime = endTimeInput.value.trim();
+  const giaTien = giaTienInput ? giaTienInput.value.trim() : '';
+  if (giaTienInput) resetGiaTienError(giaTienInput);
+
+  resetTimeInputError(startTimeInput);
+  resetTimeInputError(endTimeInput);
+  if (giaTienInput) resetGiaTienError(giaTienInput);
+
+  if (!startTime || !endTime) return;
+
+  if (!validateTimeFormat(startTime)) {
+    showTimeInputError(startTimeInput, 'Định dạng HH:MM không hợp lệ');
+    return;
+  }
+
+  if (!validateTimeFormat(endTime)) {
+    showTimeInputError(endTimeInput, 'Định dạng HH:MM không hợp lệ');
+    return;
+  }
+
+  if (startTime >= '24:00' || endTime > '24:00') {
+    showTimeInputError(startTimeInput, 'Giờ không được vượt quá 24:00');
+    showTimeInputError(endTimeInput, 'Giờ không được vượt quá 24:00');
+    return;
+  }
+
+  if (startTime === endTime) {
+    showTimeInputError(startTimeInput, 'Giờ bắt đầu không được trùng giờ kết thúc');
+    showTimeInputError(endTimeInput, 'Giờ kết thúc không được trùng giờ bắt đầu');
+    return;
+  }
+
+  if (!isTimeDifferenceValid(startTime, endTime)) {
+    showTimeInputError(startTimeInput, 'Khung giờ phải có thời lượng ít nhất 1 giờ');
+    showTimeInputError(endTimeInput, 'Khung giờ phải có thời lượng ít nhất 1 giờ');
+    return;
+  }
+
+  if (giaTienInput && giaTien) {
+    const giaTienNum = parseInt(giaTien);
+    if (giaTienNum === 0) {
+      showGiaTienError(giaTienInput, 'Giá tiền không thể bằng 0');
       return;
     }
 
-    setTimeout(() => {
-      let shouldUpdateDisplay = false;
-
-      if (lastActionType === 'room') {
-        const roomId = sessionStorage.getItem('lastActionRoomId');
-        if (roomId) {
-          const targetPage = findRoomPage(roomId);
-
-          if (targetPage !== currentPage) {
-            currentPage = targetPage;
-            shouldUpdateDisplay = true;
-          }
-
-          highlightRoom(roomId);
-        }
-      }
-      else if (lastActionType === 'banggia') {
-        const loaiPhong = sessionStorage.getItem('lastActionLoaiPhong');
-        if (loaiPhong) {
-          const targetPage = findRoomPageByType(loaiPhong);
-
-          if (targetPage !== currentPage) {
-            currentPage = targetPage;
-            shouldUpdateDisplay = true;
-          }
-
-          highlightRoomsByType(loaiPhong);
-        }
-      }
-
-      if (shouldUpdateDisplay) {
-        showCurrentPage();
-        updatePaginationInfo();
-      }
-
-      cleanupAfterNavigation();
-
-    }, 300);
-  }
-
-  function findRoomPage(roomId) {
-    for (let i = 0; i < allRooms.length; i++) {
-      const roomElement = allRooms[i];
-      const roomDataId = roomElement.getAttribute('data-id');
-
-      if (roomDataId === roomId) {
-        const page = Math.floor(i / CONFIG.roomsPerPage) + 1;
-        return page;
-      }
+    if (giaTienNum < 1000) {
+      showGiaTienError(giaTienInput, 'Giá tiền tối thiểu là 1,000 VNĐ');
+      return;
     }
 
-    return 1;
-  }
-
-  function findRoomPageByType(loaiPhong) {
-    for (let i = 0; i < allRooms.length; i++) {
-      const roomElement = allRooms[i];
-      const roomType = roomElement.getAttribute('data-type');
-
-      if (roomType === loaiPhong) {
-        const page = Math.floor(i / CONFIG.roomsPerPage) + 1;
-        return page;
-      }
-    }
-
-    return 1;
-  }
-
-  function highlightRoom(roomId) {
-    const roomElement = document.querySelector(`.room-card[data-id="${roomId}"]`);
-    if (roomElement) {
-      roomElement.style.boxShadow = '0 0 0 3px #48bb78, 0 8px 30px rgba(72, 187, 120, 0.3)';
-      roomElement.style.transform = 'translateY(-5px)';
-
-      roomElement.animate([
-        { transform: 'translateY(-5px) scale(1)' },
-        { transform: 'translateY(-5px) scale(1.02)' },
-        { transform: 'translateY(-5px) scale(1)' }
-      ], {
-        duration: 1000,
-        iterations: 2
-      });
-
-      roomElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-        inline: 'center'
-      });
-
-      setTimeout(() => {
-        if (roomElement) {
-          roomElement.style.boxShadow = '';
-          roomElement.style.transform = '';
-        }
-      }, 5000);
+    if (giaTienNum >= 1000) {
+      showGiaTienSuccess(giaTienInput);
     }
   }
 
-  function highlightRoomsByType(loaiPhong) {
-    const roomElements = document.querySelectorAll(`.room-card[data-type="${loaiPhong}"]`);
-    roomElements.forEach(roomElement => {
-      roomElement.style.boxShadow = '0 0 0 3px #667eea, 0 8px 30px rgba(102, 126, 234, 0.3)';
-      roomElement.style.transform = 'translateY(-3px)';
+  showTimeInputSuccess(startTimeInput);
+  showTimeInputSuccess(endTimeInput);
+}
 
-      setTimeout(() => {
-        roomElement.style.boxShadow = '';
-        roomElement.style.transform = '';
-      }, 5000);
+function checkAllTimeRangesForDuplicates() {
+  const priceItems = document.querySelectorAll('.price-item');
+  const duplicates = [];
+
+  priceItems.forEach(item => {
+    const startTimeInput = item.querySelector('.start-time-input');
+    const endTimeInput = item.querySelector('.end-time-input');
+    resetTimeInputError(startTimeInput);
+    resetTimeInputError(endTimeInput);
+    item.classList.remove('error-highlight');
+  });
+
+  for (let i = 0; i < priceItems.length; i++) {
+    const item1 = priceItems[i];
+    const startTime1 = item1.querySelector('.start-time-input').value.trim();
+    const endTime1 = item1.querySelector('.end-time-input').value.trim();
+
+    if (!startTime1 || !endTime1) continue;
+
+    for (let j = i + 1; j < priceItems.length; j++) {
+      const item2 = priceItems[j];
+      const startTime2 = item2.querySelector('.start-time-input').value.trim();
+      const endTime2 = item2.querySelector('.end-time-input').value.trim();
+
+      if (!startTime2 || !endTime2) continue;
+
+      if (startTime1 === startTime2 && endTime1 === endTime2) {
+        duplicates.push({
+          type: 'complete',
+          item1: item1,
+          item2: item2,
+          timeRange: `${startTime1}-${endTime1}`,
+          message: `Khung giờ ${startTime1}-${endTime1} bị trùng hoàn toàn`
+        });
+      } else if (isTimeRangeOverlapping(startTime1, endTime1, startTime2, endTime2)) {
+        duplicates.push({
+          type: 'overlap',
+          item1: item1,
+          item2: item2,
+          timeRange1: `${startTime1}-${endTime1}`,
+          timeRange2: `${startTime2}-${endTime2}`,
+          message: `Khung giờ ${startTime1}-${endTime1} trùng lắp với ${startTime2}-${endTime2}`
+        });
+      }
+    }
+  }
+
+  markPriceItemsAsError(duplicates);
+
+  return duplicates;
+}
+
+function markPriceItemsAsError(duplicates) {
+  document.querySelectorAll('.price-item').forEach(item => {
+    const startInput = item.querySelector('.start-time-input');
+    const endInput = item.querySelector('.end-time-input');
+    resetTimeInputError(startInput);
+    resetTimeInputError(endInput);
+    item.classList.remove('error-highlight');
+  });
+
+  duplicates.forEach(dup => {
+    [dup.item1, dup.item2].forEach(item => {
+      if (item) {
+        item.classList.add('error-highlight');
+        const startInput = item.querySelector('.start-time-input');
+        const endInput = item.querySelector('.end-time-input');
+
+        if (startInput) {
+          startInput.classList.add('error-state');
+          startInput.style.borderColor = '#e53e3e';
+          startInput.style.boxShadow = '0 0 0 3px rgba(229, 62, 62, 0.2)';
+        }
+
+        if (endInput) {
+          endInput.classList.add('error-state');
+          endInput.style.borderColor = '#e53e3e';
+          endInput.style.boxShadow = '0 0 0 3px rgba(229, 62, 62, 0.2)';
+        }
+      }
     });
+  });
+}
 
-    if (roomElements.length > 0) {
-      roomElements[0].scrollIntoView({
-        behavior: 'smooth',
-        block: 'center'
-      });
+async function validateAllTimeRangesBeforeSave() {
+  const priceItems = document.querySelectorAll('.price-item');
+  let allValid = true;
+  let errorMessage = '';
+
+  for (const item of priceItems) {
+    const startTimeInput = item.querySelector('.start-time-input');
+    const endTimeInput = item.querySelector('.end-time-input');
+    const giaTienInput = item.querySelector('.gia-tien-input');
+    const startTime = startTimeInput.value.trim();
+    const endTime = endTimeInput.value.trim();
+    const giaTien = giaTienInput ? giaTienInput.value.trim() : '';
+
+    if (!startTime || !endTime || !giaTien) {
+      allValid = false;
+      errorMessage = 'Vui lòng điền đầy đủ tất cả khung giờ';
+      break;
+    }
+
+    if (!validateTimeFormat(startTime) || !validateTimeFormat(endTime)) {
+      allValid = false;
+      errorMessage = 'Có khung giờ không đúng định dạng HH:MM';
+      break;
+    }
+    if (startTime === endTime) {
+      allValid = false;
+      errorMessage = `Khung giờ ${startTime}-${endTime} có giờ bắt đầu và kết thúc trùng nhau`;
+      break;
+    }
+
+    if (!isTimeDifferenceValid(startTime, endTime)) {
+      allValid = false;
+      errorMessage = `Khung giờ ${startTime}-${endTime} có thời lượng ít hơn 1 giờ`;
+      break;
+    }
+
+    const giaTienNum = parseInt(giaTien);
+    if (giaTienNum === 0) {
+      allValid = false;
+      errorMessage = `Giá tiền không thể bằng 0 (khung giờ ${startTime}-${endTime})`;
+      break;
+    }
+
+    if (giaTienNum < 1000) {
+      allValid = false;
+      errorMessage = `Giá tiền phải từ 1,000 VNĐ trở lên (khung giờ ${startTime}-${endTime})`;
+      break;
     }
   }
 
-  function cleanupAfterNavigation() {
-    sessionStorage.removeItem('lastActionType');
-    sessionStorage.removeItem('lastActionRoomId');
-    sessionStorage.removeItem('lastActionLoaiPhong');
-    sessionStorage.removeItem('currentFilters');
-    sessionStorage.removeItem('karaokeAppStateBeforeReload');
+  if (!allValid) {
+    await Swal.fire({
+      icon: 'error',
+      title: 'Lỗi dữ liệu',
+      html: `
+        <div style="text-align: left;">
+          <p style="margin-bottom: 10px;">${errorMessage}</p>
+          <ul style="text-align: left; margin-left: 20px; color: #718096;">
+            <li>Định dạng: HH:MM (24h)</li>
+            <li>Giờ không vượt quá 24:00</li>
+            <li>Điền đầy đủ tất cả khung giờ</li>
+          </ul>
+        </div>
+      `,
+      confirmButtonColor: '#667eea',
+      confirmButtonText: 'Đã hiểu'
+    });
+    return false;
   }
 
-  // ===== HELPER FUNCTIONS =====
-  async function checkAndDeleteEmptyRoomType(currentRoomType) {
-    try {
-      const isUsed = await checkRoomTypeInUse(currentRoomType);
-      if (isUsed) {
+  const duplicates = checkAllTimeRangesForDuplicates();
+  if (duplicates.length > 0) {
+    allValid = false;
+    const duplicateMessages = duplicates.map(dup => dup.message).join('<br>');
+
+    await Swal.fire({
+      icon: 'error',
+      title: 'Lỗi trùng khung giờ',
+      html: `
+        <div style="text-align: left;">
+          <p style="margin-bottom: 15px; color: #e53e3e; font-weight: 600;">Phát hiện các khung giờ bị trùng:</p>
+          <div style="background: #fff5f5; padding: 15px; border-radius: 8px; border-left: 4px solid #e53e3e;">
+            ${duplicateMessages}
+          </div>
+          <p style="margin-top: 15px; color: #718096; font-size: 0.9rem;">
+            Vui lòng sửa các khung giờ bị trùng trước khi lưu.
+          </p>
+        </div>
+      `,
+      confirmButtonColor: '#667eea',
+      confirmButtonText: 'Đã hiểu'
+    });
+  }
+
+  return allValid;
+}
+
+function showTimeInputError(input, message) {
+  const formGroup = input.closest('.time-input-group');
+
+  input.style.borderColor = '#e53e3e';
+  input.style.boxShadow = '0 0 0 3px rgba(229, 62, 62, 0.1)';
+  input.classList.add('error-state');
+
+  const existingError = formGroup.querySelector('.time-error-message');
+  if (existingError) existingError.remove();
+
+  const errorDiv = document.createElement('div');
+  errorDiv.className = 'time-error-message';
+  errorDiv.style.color = '#e53e3e';
+  errorDiv.style.fontSize = '0.75rem';
+  errorDiv.style.marginTop = '4px';
+  errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+  formGroup.appendChild(errorDiv);
+}
+
+function showTimeInputSuccess(input) {
+  const formGroup = input.closest('.time-input-group');
+  input.style.borderColor = '#48bb78';
+  input.style.boxShadow = '0 0 0 3px rgba(72, 187, 120, 0.1)';
+  input.classList.remove('error-state');
+
+  const existingError = formGroup.querySelector('.time-error-message');
+  if (existingError) existingError.remove();
+}
+
+function resetTimeInputError(input) {
+  const formGroup = input.closest('.time-input-group');
+  input.style.borderColor = '';
+  input.style.boxShadow = '';
+  input.classList.remove('error-state');
+
+  const existingError = formGroup.querySelector('.time-error-message');
+  if (existingError) existingError.remove();
+}
+
+function showGiaTienError(input, message) {
+  const formGroup = input.closest('.price-input-group');
+
+  input.style.borderColor = '#e53e3e';
+  input.style.boxShadow = '0 0 0 3px rgba(229, 62, 62, 0.1)';
+  input.classList.add('error-state');
+
+  const existingError = formGroup.querySelector('.gia-tien-error-message');
+  if (existingError) existingError.remove();
+
+  const errorDiv = document.createElement('div');
+  errorDiv.className = 'gia-tien-error-message';
+  errorDiv.style.color = '#e53e3e';
+  errorDiv.style.fontSize = '0.75rem';
+  errorDiv.style.marginTop = '4px';
+  errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+  formGroup.appendChild(errorDiv);
+}
+
+function showGiaTienSuccess(input) {
+  const formGroup = input.closest('.price-input-group');
+  input.style.borderColor = '#48bb78';
+  input.style.boxShadow = '0 0 0 3px rgba(72, 187, 120, 0.1)';
+  input.classList.remove('error-state');
+
+  const existingError = formGroup.querySelector('.gia-tien-error-message');
+  if (existingError) existingError.remove();
+}
+
+function resetGiaTienError(input) {
+  const formGroup = input.closest('.price-input-group');
+  input.style.borderColor = '';
+  input.style.boxShadow = '';
+  input.classList.remove('error-state');
+
+  const existingError = formGroup.querySelector('.gia-tien-error-message');
+  if (existingError) existingError.remove();
+}
+
+function syncPriceDataToMap() {
+  if (!currentEditingLoaiPhong) {
+    return;
+  }
+
+  const allPriceItemsInDOM = document.querySelectorAll('.price-item');
+  const currentPriceData = [];
+
+  allPriceItemsInDOM.forEach(item => {
+    const start = item.querySelector('.start-time-input').value.trim();
+    const end = item.querySelector('.end-time-input').value.trim();
+    const price = item.querySelector('.gia-tien-input').value;
+    const maGia = item.querySelector('.ma-gia-input').value;
+
+    if (start && end && price) {
+      currentPriceData.push({
+        KhungGio: `${start}-${end}`,
+        GiaTien: price,
+        MaGia: maGia
+      });
+    }
+  });
+
+  newRoomName.set(currentEditingLoaiPhong, currentPriceData);
+  hasUnsavedChanges = currentPriceData.length > 0;
+}
+
+async function saveBangGia() {
+  const isValid = await validateAllTimeRangesBeforeSave();
+  if (!isValid) return;
+
+  try {
+    const loaiPhong = document.getElementById('bangGiaLoaiPhong').value;
+    if (!loaiPhong) {
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Thiếu thông tin',
+        text: 'Vui lòng chọn loại phòng',
+        confirmButtonColor: '#667eea'
+      });
+      return;
+    }
+
+    const priceItems = document.querySelectorAll('.price-item');
+    if (priceItems.length === 0) {
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Thiếu thông tin',
+        text: 'Vui lòng thêm ít nhất một khung giờ và giá tiền!',
+        confirmButtonColor: '#667eea'
+      });
+      return;
+    }
+
+    const bangGiaData = [];
+    for (const item of priceItems) {
+      const startTime = item.querySelector('.start-time-input').value.trim();
+      const endTime = item.querySelector('.end-time-input').value.trim();
+      const giaTien = item.querySelector('.gia-tien-input').value;
+      const maGia = item.querySelector('.ma-gia-input').value;
+
+      if (!startTime || !endTime || !giaTien) {
         await Swal.fire({
-          icon: 'error',
-          title: 'Không thể xóa',
-          html: `Loại phòng <strong>"${currentRoomType}"</strong> đang được sử dụng bởi các phòng hát.<br><br>Vui lòng xóa hoặc đổi loại phòng của các phòng liên quan trước.`,
+          icon: 'warning',
+          title: 'Thiếu thông tin',
+          text: 'Vui lòng điền đầy đủ thông tin khung giờ và giá tiền!',
           confirmButtonColor: '#667eea'
         });
         return;
       }
-      const result = await Swal.fire({
-        title: 'Xác nhận xóa loại phòng?',
-        html: `Bạn có chắc muốn xóa loại phòng <strong>"${currentRoomType}"</strong>?<br><br>
-               <span style="color: #e53e3e; font-weight: 600;">
-               ⚠️ Cảnh báo: Tất cả khung giờ của loại phòng này sẽ bị xóa vĩnh viễn!
-               </span>`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#e53e3e',
-        cancelButtonColor: '#667eea',
-        confirmButtonText: 'Xóa loại phòng',
-        cancelButtonText: 'Hủy',
-        reverseButtons: true
-      });
-      if (result.isConfirmed) {
-        await deleteRoomTypeFromServer(currentRoomType);
-      }
-    }
-    catch (error) {
-      console.error('❌ Lỗi khi kiểm tra loại phòng trống:', error);
 
-      Swal.fire({
-        icon: 'error',
-        title: 'Lỗi!',
-        text: `Không thể xóa loại phòng: ${error.message}`,
-        timer: 2000,
-        showConfirmButton: false
-      });
-    }
-  }
-
-  async function deleteRoomTypeFromServer(roomType) {
-    try {
-      Swal.fire({
-        title: 'Đang xoá loại phòng...',
-        text: 'Vui lòng chờ trong giây lát',
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading()
-      });
-
-      const response = await fetch(`/api/banggia/${roomType}`, {
-        method: 'DELETE'
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || result.message || 'Lỗi khi xoá loại phòng');
+      if (giaTien < 1000) {
+        await Swal.fire({
+          icon: 'warning',
+          title: 'Giá tiền không hợp lệ',
+          text: 'Giá tiền phải từ 1,000 VNĐ trở lên!',
+          confirmButtonColor: '#667eea'
+        });
+        return;
       }
 
-      await updateRoomTypeInUI(roomType, 'delete');
-
-      Swal.fire({
-        icon: 'success',
-        title: 'Đã xoá!',
-        text: result.message || `Đã xoá loại phòng "${roomType}" thành công!`,
-        timer: 2000,
-        showConfirmButton: false
-      });
-
-      document.getElementById('bangGiaModal').style.display = 'none';
-      document.body.style.overflow = 'auto';
-      resetBangGiaModal();
-
-    } catch (error) {
-      console.error('❌ Lỗi khi xoá loại phòng:', error);
-
-      Swal.fire({
-        icon: 'error',
-        title: 'Lỗi!',
-        text: error.message || 'Không thể xoá loại phòng',
-        confirmButtonColor: '#667eea'
-      });
-    }
-  }
-
-  async function saveRoomType(roomType, action, oldRoomType = null) {
-    try {
-      Swal.fire({
-        title: action === 'add' ? 'Đang thêm loại phòng...' :
-          action === 'edit' ? 'Đang cập nhật loại phòng...' : 'Đang xóa loại phòng...',
-        text: 'Vui lòng chờ trong giây lát',
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading()
-      });
-
-      const payload = {
-        TenLoaiPhong: roomType,
-        Action: action
-      };
-
-      if (action === 'edit') {
-        payload.OldRoomType = oldRoomType;
-      }
-
-      const response = await fetch('/api/loaiphong', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        let errorMessage = `HTTP ${response.status}: `;
-
-        try {
-          const errorResult = await response.json();
-          errorMessage += errorResult.error || errorResult.message || 'Lỗi không xác định từ server';
-        } catch (e) {
-          const errorText = await response.text();
-          errorMessage += errorText || 'Lỗi server không xác định';
-        }
-
-        throw new Error(errorMessage);
-      }
-
-      const result = await response.json();
-
-      await updateRoomTypeInUI(roomType, action, oldRoomType);
-
-      Swal.fire({
-        icon: 'success',
-        title: 'Thành công!',
-        text: result.message || `Đã ${action === 'add' ? 'thêm' : action === 'edit' ? 'cập nhật' : 'xoá'} loại phòng "${roomType}" thành công!`,
-        timer: 2000,
-        showConfirmButton: false
-      });
-      hasUnsavedChanges = false;
-
-      if (action === 'add') {
-        document.getElementById('bangGiaLoaiPhong').value = roomType;
-        loadBangGiaForRoomType(roomType);
-      } else if (action === 'edit') {
-        loadBangGiaForRoomType(roomType);
-      }
-
-    } catch (error) {
-      console.error(`❌ Lỗi chi tiết khi ${action} loại phòng:`, error);
-
-      Swal.fire({
-        icon: 'error',
-        title: 'Lỗi!',
-        html: `Lỗi khi ${action} loại phòng:<br><strong>${error.message}</strong>`,
-        confirmButtonColor: '#667eea'
-      });
-    }
-  }
-
-  // ===== UTILITY FUNCTIONS =====
-  function toggleGuide() {
-    const guideContent = document.getElementById('guideContent');
-    const toggleBtn = document.querySelector('.btn-toggle-guide');
-
-    if (!guideContent || !toggleBtn) return;
-
-    guideContent.classList.toggle('collapsed');
-    toggleBtn.classList.toggle('active');
-
-    if (guideContent.classList.contains('collapsed')) {
-      toggleBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
-    } else {
-      toggleBtn.innerHTML = '<i class="fas fa-chevron-up"></i>';
-    }
-  }
-
-  function restoreStateAfterReload() {
-    try {
-      const savedState = sessionStorage.getItem('karaokeAppStateBeforeReload');
-
-      if (savedState) {
-        const state = JSON.parse(savedState);
-
-        if (Date.now() - state.timestamp < 10000) {
-          if (state.filters) {
-            const searchInput = document.getElementById('searchInput');
-            const typeFilter = document.getElementById('typeFilter');
-            const statusFilter = document.getElementById('statusFilter');
-
-            if (searchInput) searchInput.value = state.filters.search || '';
-            if (typeFilter) typeFilter.value = state.filters.type || '';
-            if (statusFilter) statusFilter.value = state.filters.status || '';
-          }
-
-          if (state.page) {
-            currentPage = state.page;
-          }
-        }
-      } else {
-        currentPage = 1;
-      }
-    } catch (error) {
-      console.error('❌ Lỗi khi khôi phục state:', error);
-      currentPage = 1;
-    }
-  }
-
-  function restoreBangGiaModalState() {
-    try {
-      const savedState = sessionStorage.getItem('bangGiaModalState');
-      if (savedState) {
-        const modalState = JSON.parse(savedState);
-        const now = Date.now();
-
-        if (modalState.isModalOpen && (now - modalState.timestamp) < 30000) {
-          setTimeout(() => {
-            const modal = document.getElementById('bangGiaModal');
-            if (modal) {
-              modal.style.display = 'flex';
-              document.body.style.overflow = 'hidden';
-            }
-
-            const selectLoaiPhong = document.getElementById('bangGiaLoaiPhong');
-            if (selectLoaiPhong) selectLoaiPhong.value = modalState.loaiPhong;
-
-            if (modalState.loaiPhong) loadBangGiaForRoomType(modalState.loaiPhong);
-
-            if (modalState.action !== 'afterSave') {
-              sessionStorage.removeItem('bangGiaModalState');
-            }
-          }, 500);
-        } else {
-          sessionStorage.removeItem('bangGiaModalState');
-        }
-      }
-    } catch (error) {
-      console.error('❌ Lỗi khi khôi phục trạng thái modal:', error);
-      sessionStorage.removeItem('bangGiaModalState');
-    }
-  }
-
-  function initializeRoomTypeActions() {
-    const roomTypeActions = document.querySelector('.room-type-actions');
-    if (roomTypeActions) {
-      roomTypeActions.innerHTML = `
-        <button class="btn-add-room-type" onclick="addNewRoomType()" type="button" title="Thêm loại phòng mới">
-          <i class="fas fa-plus"></i>
-        </button>
-        <button class="btn-edit-room-type" onclick="editRoomType()" type="button" title="Sửa loại phòng">
-          <i class="fas fa-edit"></i>
-        </button>
-        <button class="btn-delete-room-type" onclick="deleteRoomType()" type="button" title="Xoá loại phòng">
-          <i class="fas fa-trash"></i>
-        </button>
-      `;
-    }
-  }
-
-  function setupEventListeners() {
-    const typeFilter = document.getElementById('typeFilter');
-    const statusFilter = document.getElementById('statusFilter');
-
-    if (typeFilter) typeFilter.addEventListener('change', filterRooms);
-    if (statusFilter) statusFilter.addEventListener('change', filterRooms);
-
-    const roomModal = document.getElementById('roomModal');
-    const bangGiaModal = document.getElementById('bangGiaModal');
-
-    if (roomModal) {
-      roomModal.addEventListener('click', function (e) {
-        if (e.target === roomModal) {
-          closeRoomModal();
-        }
+      const khungGio = `${startTime}-${endTime}`;
+      bangGiaData.push({
+        MaGia: maGia,
+        LoaiPhong: loaiPhong,
+        KhungGio: khungGio,
+        GiaTien: parseInt(giaTien)
       });
     }
 
-    if (bangGiaModal) {
-      bangGiaModal.addEventListener('click', function (e) {
-        if (e.target === bangGiaModal) {
-          closeBangGiaModal();
-        }
-      });
-    }
-  }
-
-  function initializePaginationAndFilter() {
-    allRooms = Array.from(document.querySelectorAll('.room-card'));
-
-    restoreStateAfterReload();
-
-    const searchInput = document.getElementById('searchInput');
-    const typeFilter = document.getElementById('typeFilter');
-    const statusFilter = document.getElementById('statusFilter');
-
-    if (searchInput) searchInput.value = '';
-    if (typeFilter) typeFilter.value = '';
-    if (statusFilter) statusFilter.value = '';
-
-    applyFiltersWithoutPageReset();
-
-    setTimeout(() => {
-      handleAutoNavigationAfterReload();
-    }, 100);
-  }
-
-  function applyFiltersWithoutPageReset() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const typeFilter = document.getElementById('typeFilter').value;
-    const statusFilter = document.getElementById('statusFilter').value;
-
-    filteredRooms = allRooms.filter(card => {
-      const name = card.getAttribute('data-name').toLowerCase();
-      const type = card.getAttribute('data-type');
-      const status = card.getAttribute('data-status');
-
-      const matchesSearch = !searchTerm || name.includes(searchTerm);
-      const matchesType = !typeFilter || type === typeFilter;
-      const matchesStatus = !statusFilter || status === statusFilter;
-
-      return matchesSearch && matchesType && matchesStatus;
+    Swal.fire({
+      title: 'Đang lưu bảng giá...',
+      html: `
+        <div style="text-align: center;">
+          <div class="spinner-border text-primary mb-3" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p>Vui lòng chờ trong giây lát</p>
+        </div>
+      `,
+      showConfirmButton: false,
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => Swal.showLoading()
     });
 
-    const totalPages = Math.ceil(filteredRooms.length / CONFIG.roomsPerPage);
+    const response = await fetch(`/api/banggia/${loaiPhong}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ loaiPhong: loaiPhong, bangGia: bangGiaData })
+    });
 
-    if (currentPage > totalPages && totalPages > 0) {
-      currentPage = totalPages;
-    } else if (totalPages === 0) {
-      currentPage = 1;
+    if (!response.ok) {
+      const errorResult = await response.json();
+      throw new Error(errorResult.error || 'Lỗi lưu bảng giá');
     }
 
-    showCurrentPage();
-    updatePaginationInfo();
-    togglePaginationVisibility();
-    toggleEmptyState(filteredRooms.length === 0);
+    Swal.close();
+
+    const currentState = {
+      page: currentPage,
+      filters: {
+        search: document.getElementById('searchInput').value,
+        type: document.getElementById('typeFilter').value,
+        status: document.getElementById('statusFilter').value
+      },
+      timestamp: Date.now()
+    };
+    sessionStorage.setItem('karaokeAppStateBeforeReload', JSON.stringify(currentState));
+
+    sessionStorage.setItem('lastActionLoaiPhong', loaiPhong);
+    sessionStorage.setItem('lastActionType', 'banggia');
+
+    await Swal.fire({
+      icon: 'success',
+      title: 'Thành công!',
+      text: `Đã lưu ${bangGiaData.length} khung giờ cho loại phòng ${loaiPhong}`,
+      timer: 2000,
+      showConfirmButton: false,
+      timerProgressBar: true
+    });
+
+    loadBangGiaForRoomType(loaiPhong);
+    hasUnsavedChanges = false;
+
+  } catch (error) {
+    Swal.close();
+    console.error('❌ Lỗi khi lưu bảng giá:', error);
+
+    await Swal.fire({
+      icon: 'error',
+      title: 'Lỗi!',
+      html: `Không thể lưu bảng giá:<br><strong>${error.message}</strong>`,
+      confirmButtonColor: '#667eea'
+    });
+  }
+}
+
+// ===== AUTO NAVIGATION AFTER RELOAD =====
+function handleAutoNavigationAfterReload() {
+  const lastActionType = sessionStorage.getItem('lastActionType');
+  const savedState = sessionStorage.getItem('karaokeAppStateBeforeReload');
+
+  if (!lastActionType && !savedState) {
+    return;
   }
 
-  function initializeApp() {
-    try {
-      const bangGiaDataJson = '{{{json currentBangGia}}}';
-      if (bangGiaDataJson && bangGiaDataJson !== 'undefined') {
-        window.bangGiaData = JSON.parse(bangGiaDataJson);
-      } else {
-        window.bangGiaData = [];
+  setTimeout(() => {
+    let shouldUpdateDisplay = false;
+
+    if (lastActionType === 'room') {
+      const roomId = sessionStorage.getItem('lastActionRoomId');
+      if (roomId) {
+        const targetPage = findRoomPage(roomId);
+
+        if (targetPage !== currentPage) {
+          currentPage = targetPage;
+          shouldUpdateDisplay = true;
+        }
+
+        highlightRoom(roomId);
       }
-    } catch (error) {
-      console.error('Error parsing bangGiaData:', error);
-      window.bangGiaData = [];
+    }
+    else if (lastActionType === 'banggia') {
+      const loaiPhong = sessionStorage.getItem('lastActionLoaiPhong');
+      if (loaiPhong) {
+        const targetPage = findRoomPageByType(loaiPhong);
+
+        if (targetPage !== currentPage) {
+          currentPage = targetPage;
+          shouldUpdateDisplay = true;
+        }
+
+        highlightRoomsByType(loaiPhong);
+      }
     }
 
-    const guideContent = document.getElementById('guideContent');
-    const toggleBtn = document.querySelector('.btn-toggle-guide');
-    if (guideContent && toggleBtn) {
-      guideContent.classList.add('collapsed');
-      toggleBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
-      toggleBtn.classList.remove('active');
+    if (shouldUpdateDisplay) {
+      showCurrentPage();
+      updatePaginationInfo();
     }
+
+    cleanupAfterNavigation();
+
+  }, 300);
+}
+
+function findRoomPage(roomId) {
+  for (let i = 0; i < allRooms.length; i++) {
+    const roomElement = allRooms[i];
+    const roomDataId = roomElement.getAttribute('data-id');
+
+    if (roomDataId === roomId) {
+      const page = Math.floor(i / CONFIG.roomsPerPage) + 1;
+      return page;
+    }
+  }
+
+  return 1;
+}
+
+function findRoomPageByType(loaiPhong) {
+  for (let i = 0; i < allRooms.length; i++) {
+    const roomElement = allRooms[i];
+    const roomType = roomElement.getAttribute('data-type');
+
+    if (roomType === loaiPhong) {
+      const page = Math.floor(i / CONFIG.roomsPerPage) + 1;
+      return page;
+    }
+  }
+
+  return 1;
+}
+
+function highlightRoom(roomId) {
+  const roomElement = document.querySelector(`.room-card[data-id="${roomId}"]`);
+  if (roomElement) {
+    roomElement.style.boxShadow = '0 0 0 3px #48bb78, 0 8px 30px rgba(72, 187, 120, 0.3)';
+    roomElement.style.transform = 'translateY(-5px)';
+
+    roomElement.animate([
+      { transform: 'translateY(-5px) scale(1)' },
+      { transform: 'translateY(-5px) scale(1.02)' },
+      { transform: 'translateY(-5px) scale(1)' }
+    ], {
+      duration: 1000,
+      iterations: 2
+    });
+
+    roomElement.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+      inline: 'center'
+    });
 
     setTimeout(() => {
-      initializePaginationAndFilter();
-      setupRealTimeSearch();
-      setupEventListeners();
-      initializeRoomTypeActions();
-      restoreBangGiaModalState();
-    }, 100);
+      if (roomElement) {
+        roomElement.style.boxShadow = '';
+        roomElement.style.transform = '';
+      }
+    }, 5000);
+  }
+}
+
+function highlightRoomsByType(loaiPhong) {
+  const roomElements = document.querySelectorAll(`.room-card[data-type="${loaiPhong}"]`);
+  roomElements.forEach(roomElement => {
+    roomElement.style.boxShadow = '0 0 0 3px #667eea, 0 8px 30px rgba(102, 126, 234, 0.3)';
+    roomElement.style.transform = 'translateY(-3px)';
+
+    setTimeout(() => {
+      roomElement.style.boxShadow = '';
+      roomElement.style.transform = '';
+    }, 5000);
+  });
+
+  if (roomElements.length > 0) {
+    roomElements[0].scrollIntoView({
+      behavior: 'smooth',
+      block: 'center'
+    });
+  }
+}
+
+function cleanupAfterNavigation() {
+  sessionStorage.removeItem('lastActionType');
+  sessionStorage.removeItem('lastActionRoomId');
+  sessionStorage.removeItem('lastActionLoaiPhong');
+  sessionStorage.removeItem('currentFilters');
+  sessionStorage.removeItem('karaokeAppStateBeforeReload');
+}
+
+// ===== HELPER FUNCTIONS =====
+async function checkAndDeleteEmptyRoomType(currentRoomType) {
+  try {
+    const isUsed = await checkRoomTypeInUse(currentRoomType);
+    if (isUsed) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Không thể xóa',
+        html: `Loại phòng <strong>"${currentRoomType}"</strong> đang được sử dụng bởi các phòng hát.<br><br>Vui lòng xóa hoặc đổi loại phòng của các phòng liên quan trước.`,
+        confirmButtonColor: '#667eea'
+      });
+      return;
+    }
+    const result = await Swal.fire({
+      title: 'Xác nhận xóa loại phòng?',
+      html: `Bạn có chắc muốn xóa loại phòng <strong>"${currentRoomType}"</strong>?<br><br>
+              <span style="color: #e53e3e; font-weight: 600;">
+              ⚠️ Cảnh báo: Tất cả khung giờ của loại phòng này sẽ bị xóa vĩnh viễn!
+              </span>`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e53e3e',
+      cancelButtonColor: '#667eea',
+      confirmButtonText: 'Xóa loại phòng',
+      cancelButtonText: 'Hủy',
+      reverseButtons: true
+    });
+    if (result.isConfirmed) {
+      await deleteRoomTypeFromServer(currentRoomType);
+    }
+  }
+  catch (error) {
+    console.error('❌ Lỗi khi kiểm tra loại phòng trống:', error);
+
+    Swal.fire({
+      icon: 'error',
+      title: 'Lỗi!',
+      text: `Không thể xóa loại phòng: ${error.message}`,
+      timer: 2000,
+      showConfirmButton: false
+    });
+  }
+}
+
+async function deleteRoomTypeFromServer(roomType) {
+  try {
+    Swal.fire({
+      title: 'Đang xoá loại phòng...',
+      text: 'Vui lòng chờ trong giây lát',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
+
+    const response = await fetch(`/api/banggia/${roomType}`, {
+      method: 'DELETE'
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || result.message || 'Lỗi khi xoá loại phòng');
+    }
+
+    await updateRoomTypeInUI(roomType, 'delete');
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Đã xoá!',
+      text: result.message || `Đã xoá loại phòng "${roomType}" thành công!`,
+      timer: 2000,
+      showConfirmButton: false
+    });
+
+    document.getElementById('bangGiaModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    resetBangGiaModal();
+
+  } catch (error) {
+    console.error('❌ Lỗi khi xoá loại phòng:', error);
+
+    Swal.fire({
+      icon: 'error',
+      title: 'Lỗi!',
+      text: error.message || 'Không thể xoá loại phòng',
+      confirmButtonColor: '#667eea'
+    });
+  }
+}
+
+async function saveRoomType(roomType, action, oldRoomType = null) {
+  try {
+    Swal.fire({
+      title: action === 'add' ? 'Đang thêm loại phòng...' :
+        action === 'edit' ? 'Đang cập nhật loại phòng...' : 'Đang xóa loại phòng...',
+      text: 'Vui lòng chờ trong giây lát',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
+
+    const payload = {
+      TenLoaiPhong: roomType,
+      Action: action
+    };
+
+    if (action === 'edit') {
+      payload.OldRoomType = oldRoomType;
+    }
+
+    const response = await fetch('/api/loaiphong', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      let errorMessage = `HTTP ${response.status}: `;
+
+      try {
+        const errorResult = await response.json();
+        errorMessage += errorResult.error || errorResult.message || 'Lỗi không xác định từ server';
+      } catch (e) {
+        const errorText = await response.text();
+        errorMessage += errorText || 'Lỗi server không xác định';
+      }
+
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+
+    await updateRoomTypeInUI(roomType, action, oldRoomType);
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Thành công!',
+      text: result.message || `Đã ${action === 'add' ? 'thêm' : action === 'edit' ? 'cập nhật' : 'xoá'} loại phòng "${roomType}" thành công!`,
+      timer: 2000,
+      showConfirmButton: false
+    });
+    hasUnsavedChanges = false;
+
+    if (action === 'add') {
+      document.getElementById('bangGiaLoaiPhong').value = roomType;
+      loadBangGiaForRoomType(roomType);
+    } else if (action === 'edit') {
+      loadBangGiaForRoomType(roomType);
+    }
+
+  } catch (error) {
+    console.error(`❌ Lỗi chi tiết khi ${action} loại phòng:`, error);
+
+    Swal.fire({
+      icon: 'error',
+      title: 'Lỗi!',
+      html: `Lỗi khi ${action} loại phòng:<br><strong>${error.message}</strong>`,
+      confirmButtonColor: '#667eea'
+    });
+  }
+}
+
+// ===== UTILITY FUNCTIONS =====
+function toggleGuide() {
+  const guideContent = document.getElementById('guideContent');
+  const toggleBtn = document.querySelector('.btn-toggle-guide');
+
+  if (!guideContent || !toggleBtn) return;
+
+  guideContent.classList.toggle('collapsed');
+  toggleBtn.classList.toggle('active');
+
+  if (guideContent.classList.contains('collapsed')) {
+    toggleBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
+  } else {
+    toggleBtn.innerHTML = '<i class="fas fa-chevron-up"></i>';
+  }
+}
+
+function restoreStateAfterReload() {
+  try {
+    const savedState = sessionStorage.getItem('karaokeAppStateBeforeReload');
+
+    if (savedState) {
+      const state = JSON.parse(savedState);
+
+      if (Date.now() - state.timestamp < 10000) {
+        if (state.filters) {
+          const searchInput = document.getElementById('searchInput');
+          const typeFilter = document.getElementById('typeFilter');
+          const statusFilter = document.getElementById('statusFilter');
+
+          if (searchInput) searchInput.value = state.filters.search || '';
+          if (typeFilter) typeFilter.value = state.filters.type || '';
+          if (statusFilter) statusFilter.value = state.filters.status || '';
+        }
+
+        if (state.page) {
+          currentPage = state.page;
+        }
+      }
+    } else {
+      currentPage = 1;
+    }
+  } catch (error) {
+    console.error('❌ Lỗi khi khôi phục state:', error);
+    currentPage = 1;
+  }
+}
+
+function restoreBangGiaModalState() {
+  try {
+    const savedState = sessionStorage.getItem('bangGiaModalState');
+    if (savedState) {
+      const modalState = JSON.parse(savedState);
+      const now = Date.now();
+
+      if (modalState.isModalOpen && (now - modalState.timestamp) < 30000) {
+        setTimeout(() => {
+          const modal = document.getElementById('bangGiaModal');
+          if (modal) {
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+          }
+
+          const selectLoaiPhong = document.getElementById('bangGiaLoaiPhong');
+          if (selectLoaiPhong) selectLoaiPhong.value = modalState.loaiPhong;
+
+          if (modalState.loaiPhong) loadBangGiaForRoomType(modalState.loaiPhong);
+
+          if (modalState.action !== 'afterSave') {
+            sessionStorage.removeItem('bangGiaModalState');
+          }
+        }, 500);
+      } else {
+        sessionStorage.removeItem('bangGiaModalState');
+      }
+    }
+  } catch (error) {
+    console.error('❌ Lỗi khi khôi phục trạng thái modal:', error);
+    sessionStorage.removeItem('bangGiaModalState');
+  }
+}
+
+function initializeRoomTypeActions() {
+  const roomTypeActions = document.querySelector('.room-type-actions');
+  if (roomTypeActions) {
+    roomTypeActions.innerHTML = `
+      <button class="btn-add-room-type" onclick="addNewRoomType()" type="button" title="Thêm loại phòng mới">
+        <i class="fas fa-plus"></i>
+      </button>
+      <button class="btn-edit-room-type" onclick="editRoomType()" type="button" title="Sửa loại phòng">
+        <i class="fas fa-edit"></i>
+      </button>
+      <button class="btn-delete-room-type" onclick="deleteRoomType()" type="button" title="Xoá loại phòng">
+        <i class="fas fa-trash"></i>
+      </button>
+    `;
+  }
+}
+
+function setupEventListeners() {
+  const typeFilter = document.getElementById('typeFilter');
+  const statusFilter = document.getElementById('statusFilter');
+
+  if (typeFilter) typeFilter.addEventListener('change', filterRooms);
+  if (statusFilter) statusFilter.addEventListener('change', filterRooms);
+
+  const roomModal = document.getElementById('roomModal');
+  const bangGiaModal = document.getElementById('bangGiaModal');
+
+  if (roomModal) {
+    roomModal.addEventListener('click', function (e) {
+      if (e.target === roomModal) {
+        closeRoomModal();
+      }
+    });
   }
 
-  document.addEventListener('DOMContentLoaded', initializeApp);
+  if (bangGiaModal) {
+    bangGiaModal.addEventListener('click', function (e) {
+      if (e.target === bangGiaModal) {
+        closeBangGiaModal();
+      }
+    });
+  }
+}
+
+function initializePaginationAndFilter() {
+  allRooms = Array.from(document.querySelectorAll('.room-card'));
+
+  restoreStateAfterReload();
+
+  const searchInput = document.getElementById('searchInput');
+  const typeFilter = document.getElementById('typeFilter');
+  const statusFilter = document.getElementById('statusFilter');
+
+  if (searchInput) searchInput.value = '';
+  if (typeFilter) typeFilter.value = '';
+  if (statusFilter) statusFilter.value = '';
+
+  applyFiltersWithoutPageReset();
+
+  setTimeout(() => {
+    handleAutoNavigationAfterReload();
+  }, 100);
+}
+
+function applyFiltersWithoutPageReset() {
+  const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+  const typeFilter = document.getElementById('typeFilter').value;
+  const statusFilter = document.getElementById('statusFilter').value;
+
+  filteredRooms = allRooms.filter(card => {
+    const name = card.getAttribute('data-name').toLowerCase();
+    const type = card.getAttribute('data-type');
+    const status = card.getAttribute('data-status');
+
+    const matchesSearch = !searchTerm || name.includes(searchTerm);
+    const matchesType = !typeFilter || type === typeFilter;
+    const matchesStatus = !statusFilter || status === statusFilter;
+
+    return matchesSearch && matchesType && matchesStatus;
+  });
+
+  const totalPages = Math.ceil(filteredRooms.length / CONFIG.roomsPerPage);
+
+  if (currentPage > totalPages && totalPages > 0) {
+    currentPage = totalPages;
+  } else if (totalPages === 0) {
+    currentPage = 1;
+  }
+
+  showCurrentPage();
+  updatePaginationInfo();
+  togglePaginationVisibility();
+  toggleEmptyState(filteredRooms.length === 0);
+}
+
+function initializeApp() {
+  try {
+    const bangGiaDataJson = '{{{json currentBangGia}}}';
+    if (bangGiaDataJson && bangGiaDataJson !== 'undefined') {
+      window.bangGiaData = JSON.parse(bangGiaDataJson);
+    } else {
+      window.bangGiaData = [];
+    }
+  } catch (error) {
+    console.error('Error parsing bangGiaData:', error);
+    window.bangGiaData = [];
+  }
+
+  const guideContent = document.getElementById('guideContent');
+  const toggleBtn = document.querySelector('.btn-toggle-guide');
+  if (guideContent && toggleBtn) {
+    guideContent.classList.add('collapsed');
+    toggleBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
+    toggleBtn.classList.remove('active');
+  }
+
+  setTimeout(() => {
+    initializePaginationAndFilter();
+    setupRealTimeSearch();
+    setupEventListeners();
+    initializeRoomTypeActions();
+    restoreBangGiaModalState();
+  }, 100);
+}
+
+document.addEventListener('DOMContentLoaded', initializeApp);
 </script>
 
 

@@ -2424,3 +2424,236 @@ input:checked + .toggle-slider:before {
     color: #ff6b6b !important;
     text-shadow: 0 0 10px rgba(255, 107, 107, 0.5) !important;
 }
+
+/* ==================== MEDIA QUERIES ==================== */
+
+/* Tablet Devices (768px - 1024px) */
+@media (max-width: 1024px) {
+  .modal-container {
+    max-width: 95%;
+  }
+  
+  .room-card-horizontal {
+    flex-direction: column;
+  }
+  
+  .room-image-horizontal {
+    width: 100%;
+    height: 250px;
+  }
+  
+  .form-row-3col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .services-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  /* Điều chỉnh gap cho tablet */
+  .submit-section {
+    gap: 12px;
+  }
+}
+
+/* Mobile Devices (576px - 768px) */
+@media (max-width: 768px) {
+  .modal {
+    padding: 10px;
+  }
+  
+  .modal-container {
+    max-height: 98vh;
+  }
+  
+  .modal-header {
+    padding: 15px;
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+  
+  .header-content {
+    width: 100%;
+  }
+  
+  .close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+  }
+  
+  .body-content {
+    padding: 15px;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .section-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-row-3col {
+    grid-template-columns: 1fr;
+  }
+  
+  .services-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .room-footer-horizontal {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .room-meta-horizontal {
+    align-items: flex-start;
+    margin-top: 10px;
+  }
+  
+  .footer-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .submit-section {
+    width: 100%;
+    flex-direction: column;
+    /* Tăng gap cho mobile để dễ thao tác */
+    gap: 15px;
+  }
+  
+  .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Small Mobile Devices (up to 576px) */
+@media (max-width: 576px) {
+  .header-text h2 {
+    font-size: 18px;
+  }
+  
+  .header-text p {
+    font-size: 13px;
+  }
+  
+  .room-title-section-horizontal h3 {
+    font-size: 18px;
+  }
+  
+  .room-features-horizontal {
+    gap: 5px;
+  }
+  
+  .feature-tag-horizontal {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+  
+  .pricing-section-horizontal .price-amount-horizontal {
+    font-size: 20px;
+  }
+  
+  .section-title h4 {
+    font-size: 16px;
+  }
+  
+  .section-title p {
+    font-size: 13px;
+  }
+  
+  .input-container input,
+  .input-container textarea {
+    padding: 10px 12px 10px 40px;
+    font-size: 14px;
+  }
+  
+  .input-icon {
+    left: 12px;
+  }
+  
+  .textarea-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  
+  .service-card {
+    padding: 15px;
+  }
+  
+  .service-header h5 {
+    font-size: 15px;
+  }
+  
+  .service-price {
+    font-size: 13px;
+  }
+  
+  .service-desc {
+    font-size: 12px;
+  }
+  
+  .price-amount {
+    font-size: 18px;
+  }
+  
+  /* Điều chỉnh gap cho small mobile */
+  .submit-section {
+    gap: 12px;
+  }
+}
+
+/* Extra Small Devices (up to 400px) */
+@media (max-width: 400px) {
+  .modal-header {
+    padding: 12px;
+  }
+  
+  .body-content {
+    padding: 12px;
+  }
+  
+  .room-image-horizontal {
+    min-width: 100%;
+    height: 200px;
+  }
+  
+  .room-content-horizontal {
+    min-width: 100%;
+    padding: 15px;
+  }
+  
+  .room-header-horizontal {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .btn-favorite-horizontal {
+    align-self: flex-end;
+    margin-top: -40px;
+  }
+  
+  .room-stats-horizontal {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  /* Điều chỉnh gap cho extra small devices */
+  .submit-section {
+    gap: 10px;
+  }
+}

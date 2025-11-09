@@ -123,6 +123,208 @@
 
 
 
+<script>
+  // Xử lý modal ảnh TOÀN MÀN HÌNH
+  document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('imageModal');
+    const modalImg = document.getElementById('modalImage');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalDescription = document.getElementById('modalDescription');
+    const closeBtn = document.querySelector('.close-modal');
+
+    let isDragging = false;
+    let startX, startY, scrollLeft, scrollTop;
+    let scale = 1;
+    let isZoomed = false;
+
+    // Mở modal khi click nút xem ảnh
+    document.addEventListener('click', function (e) {
+      if (e.target.closest('.view-image-btn')) {
+        const btn = e.target.closest('.view-image-btn');
+        const imageUrl = btn.dataset.image;
+        const title = btn.dataset.title;
+
+        // Hiển thị loading
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+
+        // Đặt thông tin
+        modalTitle.textContent = title;
+        modalDescription.textContent = `Phòng hát ${title} - Hình ảnh chất lượng cao`;
+
+        // Tải ảnh
+        const img = new Image();
+        img.onload = function () {
+          modalImg.src = imageUrl;
+          modalImg.style.display = 'block';
+          resetImageState();
+        };
+        img.onerror = function () {
+          modalImg.alt = 'Không thể tải ảnh';
+          modalImg.style.display = 'block';
+        };
+        img.src = imageUrl;
+      }
+    });
+
+    // Đóng modal
+    function closeModal() {
+      modal.style.display = 'none';
+      document.body.style.overflow = 'auto';
+      resetImageState();
+    }
+
+    closeBtn.addEventListener('click', closeModal);
+
+    // Đóng bằng phím ESC
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && modal.style.display === 'block') {
+        closeModal();
+      }
+    });
+
+    // Đóng khi click overlay
+    modal.addEventListener('click', function (e) {
+      if (e.target === modal || e.target.classList.contains('modal-overlay')) {
+        closeModal();
+      }
+    });
+
+    // Reset trạng thái ảnh
+    function resetImageState() {
+      scale = 1;
+      isZoomed = false;
+      modalImg.style.transform = 'scale(1)';
+      modalImg.classList.remove('zoomed');
+      updateZoomLevel();
+    }
+
+    // Cập nhật hiển thị zoom level
+    function updateZoomLevel() {
+      let zoomLevel = document.querySelector('.zoom-level');
+      if (!zoomLevel) {
+        zoomLevel = document.createElement('div');
+        zoomLevel.className = 'zoom-level';
+        document.querySelector('.modal-body').appendChild(zoomLevel);
+      }
+      zoomLevel.textContent = `${Math.round(scale * 100)}%`;
+    }
+
+    // Zoom in
+    document.addEventListener('click', function (e) {
+      if (e.target.closest('.btn-zoom-in')) {
+        scale = Math.min(scale + 0.5, 3);
+        modalImg.style.transform = `scale(${scale})`;
+        modalImg.classList.add('zoomed');
+        isZoomed = scale > 1;
+        updateZoomLevel();
+      }
+
+      if (e.target.closest('.btn-zoom-out')) {
+        scale = Math.max(scale - 0.5, 1);
+        modalImg.style.transform = `scale(${scale})`;
+        if (scale === 1) {
+          modalImg.classList.remove('zoomed');
+          isZoomed = false;
+        }
+        updateZoomLevel();
+      }
+    });
+
+    // Tải ảnh
+    document.addEventListener('click', function (e) {
+      if (e.target.closest('.btn-download')) {
+        const imageUrl = modalImg.src;
+        const link = document.createElement('a');
+        link.href = imageUrl;
+        link.download = `phong-hat-${modalTitle.textContent.toLowerCase().replace(/\s+/g, '-')}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    });
+
+    // Kéo ảnh khi zoom
+    modalImg.addEventListener('mousedown', function (e) {
+      if (isZoomed) {
+        isDragging = true;
+        startX = e.pageX - modalImg.offsetLeft;
+        startY = e.pageY - modalImg.offsetTop;
+        modalImg.classList.add('dragging');
+        e.preventDefault();
+      }
+    });
+
+    document.addEventListener('mousemove', function (e) {
+      if (!isDragging || !isZoomed) return;
+
+      const x = e.pageX - startX;
+      const y = e.pageY - startY;
+
+      modalImg.style.left = x + 'px';
+      modalImg.style.top = y + 'px';
+    });
+
+    document.addEventListener('mouseup', function () {
+      isDragging = false;
+      modalImg.classList.remove('dragging');
+    });
+
+    // Zoom bằng scroll
+    modalImg.addEventListener('wheel', function (e) {
+      if (e.ctrlKey) {
+        e.preventDefault();
+        if (e.deltaY < 0) {
+          // Zoom in
+          scale = Math.min(scale + 0.1, 3);
+        } else {
+          // Zoom out
+          scale = Math.max(scale - 0.1, 1);
+        }
+        modalImg.style.transform = `scale(${scale})`;
+        isZoomed = scale > 1;
+        updateZoomLevel();
+      }
+    });
+
+    // Touch events cho mobile
+    let touchStartDistance = 0;
+
+    modalImg.addEventListener('touchstart', function (e) {
+      if (e.touches.length === 2) {
+        touchStartDistance = Math.hypot(
+          e.touches[0].pageX - e.touches[1].pageX,
+          e.touches[0].pageY - e.touches[1].pageY
+        );
+      }
+    });
+
+    modalImg.addEventListener('touchmove', function (e) {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const touchDistance = Math.hypot(
+          e.touches[0].pageX - e.touches[1].pageX,
+          e.touches[0].pageY - e.touches[1].pageY
+        );
+
+        if (touchStartDistance > 0) {
+          scale = Math.max(1, Math.min(touchDistance / touchStartDistance, 3));
+          modalImg.style.transform = `scale(${scale})`;
+          isZoomed = scale > 1;
+          updateZoomLevel();
+        }
+      }
+    });
+  });
+
+  function showRoomDetail(roomId) {
+    // Hiển thị chi tiết phòng
+    console.log('Chi tiết phòng:', roomId);
+  }
+</script>
+
+
+
 <style>
   :root {
     --cyber-purple: #7A00FF;
@@ -1066,207 +1268,3 @@
     transform: translateZ(0);
   }
 </style>
-
-
-
-
-<script>
-  // Xử lý modal ảnh TOÀN MÀN HÌNH
-  document.addEventListener('DOMContentLoaded', function () {
-    const modal = document.getElementById('imageModal');
-    const modalImg = document.getElementById('modalImage');
-    const modalTitle = document.getElementById('modalTitle');
-    const modalDescription = document.getElementById('modalDescription');
-    const closeBtn = document.querySelector('.close-modal');
-
-    let isDragging = false;
-    let startX, startY, scrollLeft, scrollTop;
-    let scale = 1;
-    let isZoomed = false;
-
-    // Mở modal khi click nút xem ảnh
-    document.addEventListener('click', function (e) {
-      if (e.target.closest('.view-image-btn')) {
-        const btn = e.target.closest('.view-image-btn');
-        const imageUrl = btn.dataset.image;
-        const title = btn.dataset.title;
-
-        // Hiển thị loading
-        modal.style.display = 'block';
-        document.body.style.overflow = 'hidden';
-
-        // Đặt thông tin
-        modalTitle.textContent = title;
-        modalDescription.textContent = `Phòng hát ${title} - Hình ảnh chất lượng cao`;
-
-        // Tải ảnh
-        const img = new Image();
-        img.onload = function () {
-          modalImg.src = imageUrl;
-          modalImg.style.display = 'block';
-          resetImageState();
-        };
-        img.onerror = function () {
-          modalImg.alt = 'Không thể tải ảnh';
-          modalImg.style.display = 'block';
-        };
-        img.src = imageUrl;
-      }
-    });
-
-    // Đóng modal
-    function closeModal() {
-      modal.style.display = 'none';
-      document.body.style.overflow = 'auto';
-      resetImageState();
-    }
-
-    closeBtn.addEventListener('click', closeModal);
-
-    // Đóng bằng phím ESC
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && modal.style.display === 'block') {
-        closeModal();
-      }
-    });
-
-    // Đóng khi click overlay
-    modal.addEventListener('click', function (e) {
-      if (e.target === modal || e.target.classList.contains('modal-overlay')) {
-        closeModal();
-      }
-    });
-
-    // Reset trạng thái ảnh
-    function resetImageState() {
-      scale = 1;
-      isZoomed = false;
-      modalImg.style.transform = 'scale(1)';
-      modalImg.classList.remove('zoomed');
-      updateZoomLevel();
-    }
-
-    // Cập nhật hiển thị zoom level
-    function updateZoomLevel() {
-      let zoomLevel = document.querySelector('.zoom-level');
-      if (!zoomLevel) {
-        zoomLevel = document.createElement('div');
-        zoomLevel.className = 'zoom-level';
-        document.querySelector('.modal-body').appendChild(zoomLevel);
-      }
-      zoomLevel.textContent = `${Math.round(scale * 100)}%`;
-    }
-
-    // Zoom in
-    document.addEventListener('click', function (e) {
-      if (e.target.closest('.btn-zoom-in')) {
-        scale = Math.min(scale + 0.5, 3);
-        modalImg.style.transform = `scale(${scale})`;
-        modalImg.classList.add('zoomed');
-        isZoomed = scale > 1;
-        updateZoomLevel();
-      }
-
-      if (e.target.closest('.btn-zoom-out')) {
-        scale = Math.max(scale - 0.5, 1);
-        modalImg.style.transform = `scale(${scale})`;
-        if (scale === 1) {
-          modalImg.classList.remove('zoomed');
-          isZoomed = false;
-        }
-        updateZoomLevel();
-      }
-    });
-
-    // Tải ảnh
-    document.addEventListener('click', function (e) {
-      if (e.target.closest('.btn-download')) {
-        const imageUrl = modalImg.src;
-        const link = document.createElement('a');
-        link.href = imageUrl;
-        link.download = `phong-hat-${modalTitle.textContent.toLowerCase().replace(/\s+/g, '-')}.jpg`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
-    });
-
-    // Kéo ảnh khi zoom
-    modalImg.addEventListener('mousedown', function (e) {
-      if (isZoomed) {
-        isDragging = true;
-        startX = e.pageX - modalImg.offsetLeft;
-        startY = e.pageY - modalImg.offsetTop;
-        modalImg.classList.add('dragging');
-        e.preventDefault();
-      }
-    });
-
-    document.addEventListener('mousemove', function (e) {
-      if (!isDragging || !isZoomed) return;
-
-      const x = e.pageX - startX;
-      const y = e.pageY - startY;
-
-      modalImg.style.left = x + 'px';
-      modalImg.style.top = y + 'px';
-    });
-
-    document.addEventListener('mouseup', function () {
-      isDragging = false;
-      modalImg.classList.remove('dragging');
-    });
-
-    // Zoom bằng scroll
-    modalImg.addEventListener('wheel', function (e) {
-      if (e.ctrlKey) {
-        e.preventDefault();
-        if (e.deltaY < 0) {
-          // Zoom in
-          scale = Math.min(scale + 0.1, 3);
-        } else {
-          // Zoom out
-          scale = Math.max(scale - 0.1, 1);
-        }
-        modalImg.style.transform = `scale(${scale})`;
-        isZoomed = scale > 1;
-        updateZoomLevel();
-      }
-    });
-
-    // Touch events cho mobile
-    let touchStartDistance = 0;
-
-    modalImg.addEventListener('touchstart', function (e) {
-      if (e.touches.length === 2) {
-        touchStartDistance = Math.hypot(
-          e.touches[0].pageX - e.touches[1].pageX,
-          e.touches[0].pageY - e.touches[1].pageY
-        );
-      }
-    });
-
-    modalImg.addEventListener('touchmove', function (e) {
-      if (e.touches.length === 2) {
-        e.preventDefault();
-        const touchDistance = Math.hypot(
-          e.touches[0].pageX - e.touches[1].pageX,
-          e.touches[0].pageY - e.touches[1].pageY
-        );
-
-        if (touchStartDistance > 0) {
-          scale = Math.max(1, Math.min(touchDistance / touchStartDistance, 3));
-          modalImg.style.transform = `scale(${scale})`;
-          isZoomed = scale > 1;
-          updateZoomLevel();
-        }
-      }
-    });
-  });
-
-
-  function showRoomDetail(roomId) {
-    // Hiển thị chi tiết phòng
-    console.log('Chi tiết phòng:', roomId);
-  }
-</script>

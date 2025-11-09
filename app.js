@@ -677,35 +677,48 @@ app.get('/', async (req, res) => {
 
         // Gắn giá phòng - Lấy giá THẤP NHẤT để hiển thị
         const phonghatsWithPrice = phonghats.map(room => {
-        const giaPhong = banggiaphongs.filter(bg => bg.LoaiPhong === room.LoaiPhong);
-        
-        // Tính giá thấp nhất, cao nhất và giá hiện tại
-        const giaValues = giaPhong.map(g => g.GiaTien);
-        const giaThapNhat = giaValues.length > 0 ? Math.min(...giaValues) : 0;
-        const giaCaoNhat = giaValues.length > 0 ? Math.max(...giaValues) : 0;
-        
-        // Lấy giá hiện tại dựa trên thời gian thực (hoặc giá thấp nhất)
-        const gioHienTai = new Date().getHours();
-        const giaHienTai = giaPhong.find(g => {
-            const [gioBatDau, gioKetThuc] = g.KhungGio.split('-').map(Number);
-            return gioHienTai >= gioBatDau && gioHienTai < gioKetThuc;
-        })?.GiaTien || giaThapNhat;
+          const giaPhong = banggiaphongs.filter(bg => bg.LoaiPhong === room.LoaiPhong);
+          
+          // Tính giá thấp nhất, cao nhất và giá hiện tại
+          const giaValues = giaPhong.map(g => g.GiaTien);
+          const giaThapNhat = giaValues.length > 0 ? Math.min(...giaValues) : 0;
+          const giaCaoNhat = giaValues.length > 0 ? Math.max(...giaValues) : 0;
+          
+          // Lấy giá hiện tại dựa trên thời gian thực (hoặc giá thấp nhất)
 
-        return {
-            ...room,
-            // Giá để hiển thị
-            GiaHienTai: giaHienTai,
-            GiaThapNhat: giaThapNhat,
-            GiaCaoNhat: giaCaoNhat,
-            // Toàn bộ bảng giá
-            BangGia: giaPhong,
-            // Compatible với template cũ
-            GiaPhong: giaThapNhat, // Hiển thị giá thấp nhất
-            GiaTien: giaThapNhat,   // Backup
-        };
+          const giaHienTai = giaPhong.find(g => {
+              const [startTime, endTime] = g.KhungGio.split('-');
+              const [startHour, startMinute] = startTime.split(':').map(Number);
+              const [endHour, endMinute] = endTime.split(':').map(Number);
+              
+              const now = new Date();
+              const currentHour = now.getHours();
+              const currentMinute = now.getMinutes();
+              
+              const currentTotalMinutes = currentHour * 60 + currentMinute;
+              const startTotalMinutes = startHour * 60 + startMinute;
+              const endTotalMinutes = endHour * 60 + endMinute;
+              
+              return currentTotalMinutes >= startTotalMinutes && currentTotalMinutes < endTotalMinutes;
+          })?.GiaTien || giaCaoNhat;
+
+          
+
+          return {
+              ...room,
+              // Giá để hiển thị
+              GiaHienTai: giaHienTai,
+              GiaThapNhat: giaThapNhat,
+              GiaCaoNhat: giaCaoNhat,
+              // Toàn bộ bảng giá
+              BangGia: giaPhong,
+              // Compatible với template cũ
+              GiaPhong: giaThapNhat, // Hiển thị giá thấp nhất
+              GiaTien: giaHienTai,   // Backup
+          };
         });
 
-        const phonghatHome = phonghats.filter(phong => phong.TrangThai === 'Trống');
+        const phonghatHome = phonghatsWithPrice.filter(phong => phong.TrangThai === 'Trống');
 
 
         res.render('home', { 
@@ -713,6 +726,19 @@ app.get('/', async (req, res) => {
             phonghats: phonghatsWithPrice,
             roomTypes: roomTypes,
             phonghatsH: phonghatHome
+        });
+
+    } catch (error) {
+        console.error("Lỗi khi tải dữ liệu:", error);
+        res.status(500).send("Lỗi khi tải dữ liệu: " + error.message);
+    }
+});
+
+// About
+app.get('/about', async (req, res) => {
+    try {
+        res.render('about', { 
+            layout: 'HomeMain.handlebars',
         });
 
     } catch (error) {
@@ -1135,7 +1161,7 @@ app.get('/admin/phonghat', async (req, res) => {
             DataModel.Data_PhongHat_Model.find({}).lean().exec(),
             DataModel.Data_BangGiaPhong_Model.find({}).lean().exec(),
             DataModel.Data_BangGiaPhong_Model.distinct('LoaiPhong'),
-            DataModel.Data_BangGiaPhong_Model.distinct('TrangThai')
+            DataModel.Data_PhongHat_Model.distinct('TrangThai')
         ]);
 
         // Tạo map để tra cứu nhanh bảng giá theo LoaiPhong
