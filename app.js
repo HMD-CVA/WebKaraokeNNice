@@ -1849,7 +1849,16 @@ app.get('/api/phong/:maPhong/banggia', async (req, res) => {
     }
 });
 
-
+// GET /api/khachhang
+app.get('/api/khachhang', async (req, res) => {
+    try {
+        const {phone} = req.query
+        if(!phone) return res.json(await DataModel.Data_KhachHang_Model.find({}).lean())
+        else return res.json(await DataModel.Data_KhachHang_Model.findOne({SDT: phone}).lean())
+    } catch (error) {
+        res.status(500).send({message: `Lỗi server: ${error.message}`});
+    }
+})
 
 // Admin login page
 app.get('/admin-login', (req, res) => res.redirect('/'));
@@ -2305,6 +2314,11 @@ app.post('/api/datphong', async (req, res) => {
         createdAt: new Date()
       });
       await khachHang.save();
+    } 
+    else {
+        khachHang.TenKH = tenKH
+        khachHang.Email = email
+        await khachHang.save()
     }
 
     // 2. Tạo đơn đặt phòng

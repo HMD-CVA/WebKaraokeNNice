@@ -1607,6 +1607,12 @@ class BookingModal {
             this.setMinDateTime();
         }
 
+        // Ẩn field tên và email của khách hàng
+        const fieldName = document.querySelector('#customerName').closest('.input-field')
+        const fieldEmail = document.querySelector('#customerEmail').closest('.input-field')
+        if(fieldName) fieldName.classList.add('d-none')
+        if(fieldEmail) fieldEmail.classList.add('d-none')
+
         // RESET CÁC BIẾN THỜI GIAN
         this.lastValidDateTime = null;
         this.isDateTimeValid = false;
@@ -2001,6 +2007,35 @@ class BookingModal {
             width: '400px'
         });
     }
+
+    // Debouncing
+    debounce(func, delay) {
+        let timerId
+        return function () {
+            clearTimeout(timerId)
+            timerId = setTimeout(() => func.apply(this, arguments), delay)
+        }
+    }
+
+    async checkExistPhone(phone) {
+        try {
+            const res = await fetch(`/api/khachhang?phone=${phone}`)
+            const khachHang = await res.json()
+            const inputName = document.querySelector('#customerName')
+            const inputEmail = document.querySelector('#customerEmail')
+
+            if(khachHang && inputName && inputEmail) {
+                inputName.value = khachHang.TenKH
+                inputEmail.value = khachHang.Email
+            }
+            else{
+                inputName.value = ''
+                inputEmail.value = ''
+            }
+        } catch (error) {
+            console.log({info: 'Lỗi khi lấy thông tin khách hàng', message: error.message});
+        }
+    }
 }
 
 // Khởi tạo modal khi DOM ready
@@ -2041,6 +2076,37 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
+    // Xử lý lấy thông tin khách hàng khi nhập xong số điện thoại
+    document.addEventListener('keyup', (e) => {
+        if(e.target.closest('#customerPhone')) {
+            const phone = document.querySelector('#customerPhone').value
+            const fieldName = document.querySelector('#customerName').closest('.input-field')
+            const fieldEmail = document.querySelector('#customerEmail').closest('.input-field')
+
+            if(phone.length < 10) {
+                fieldName.classList.add('d-none')
+                fieldEmail.classList.add('d-none')
+                // fieldName.querySelector('#customerName').value = ''
+                // fieldEmail.querySelector('#customerEmail').value = ''
+                return
+            }
+
+            fieldName.classList.remove('d-none')
+            fieldEmail.classList.remove('d-none')
+
+            if(phone.length === 10) {
+                const checkExistPhone = window.bookingModal.checkExistPhone
+                const delay = 500
+                const debouncedHandler = window.bookingModal.debounce(checkExistPhone, delay)
+                debouncedHandler(phone)
+            }
+            // else if(phone.length > 10) {
+            //     fieldName.querySelector('#customerName').value = ''
+            //     fieldEmail.querySelector('#customerEmail').value = ''
+            // }
+        }
+    })
     
     // TEST: Log để kiểm tra
     console.log('Booking modal handlers initialized');
