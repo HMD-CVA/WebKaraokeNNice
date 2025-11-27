@@ -260,14 +260,16 @@
             <h3>Thông tin khách hàng</h3>
             <div class="form-grid">
               <div class="form-group">
-                <label for="tenKH">Họ tên *</label>
-                <input type="text" id="tenKH" required placeholder="Nhập họ tên khách hàng">
-              </div>
-              <div class="form-group">
                 <label for="sdtKH">Số điện thoại *</label>
                 <input type="text" id="sdtKH" required placeholder="Nhập số điện thoại">
               </div>
-              <div class="form-group full-width">
+              
+              <div class="form-group d-none">
+                <label for="tenKH">Họ tên *</label>
+                <input type="text" id="tenKH" required placeholder="Nhập họ tên khách hàng">
+              </div>
+              
+              <div class="form-group d-none full-width">
                 <label for="emailKH">Email</label>
                 <input type="email" id="emailKH" placeholder="Nhập email (không bắt buộc)">
               </div>
@@ -464,6 +466,9 @@ function initializeEventListeners() {
     document.getElementById('closeHoaDonModal').addEventListener('click', closeHoaDonModal);
     document.getElementById('cancelHoaDonBtn').addEventListener('click', closeHoaDonModal);
     document.getElementById('saveHoaDonBtn').addEventListener('click', saveHoaDon);
+
+    // Check customer's phone
+    document.getElementById('sdtKH').addEventListener('keyup', checkExistPhoneCustomer)
 
     // Service controls
     document.getElementById('addServiceBtn').addEventListener('click', addService);
@@ -831,6 +836,11 @@ function resetHoaDonForm() {
     document.getElementById('giaPhongDisplay').textContent = '0 VND';
     document.getElementById('tienDichVuDisplay').textContent = '0 VND';
     document.getElementById('tongTienDisplay').textContent = '0 VND';
+
+    // Ẩn 2 field thông tin khách hàng
+    document.getElementById('tenKH').closest('.form-group').classList.add('d-none')
+    document.getElementById('emailKH').closest('.form-group').classList.add('d-none')
+
     renderServicesList();
 }
 
@@ -2131,6 +2141,62 @@ function populateHoaDonEdit(hoaDonData) {
         console.log('Số lượng services:', selectedServices.length);
     }, 200);
 }
+
+// Delay sau 1 khoảng thời gian thì mới thực thi hàm
+function debounce(func, delay) {
+    let timerId
+    return function () {
+        clearTimeout(timerId)
+        return timerId = setTimeout(() => {func.apply(this, arguments)}, delay)
+    }
+}
+
+// Kiểm tra sđt khách hàng trước khi tạo hóa đơn mới
+function checkExistPhoneCustomer(phone) {
+    const phoneValue = document.querySelector('#sdtKH').value.trim()
+    const fieldName = document.querySelector('#tenKH').closest('.form-group')
+    const fieldEmail = document.querySelector('#emailKH').closest('.form-group')
+    
+    if(phoneValue.length < 10) {
+        fieldName.classList.add('d-none')
+        fieldEmail.classList.add('d-none')
+        return
+    }
+
+    fieldName.classList.remove('d-none')
+    fieldEmail.classList.remove('d-none')
+
+
+    if(phoneValue.length === 10) {
+
+        const getInforByPhone = async (phone) => {
+            try {
+                const res = await fetch(`/api/khachhang?phone=${phone}`)
+                const khachHang = await res.json()
+                const inputName = document.querySelector('#tenKH')
+                const inputEmail = document.querySelector('#emailKH')
+
+                if(khachHang && inputName && inputEmail) {
+                    inputName.value = khachHang.TenKH
+                    inputEmail.value = khachHang.Email
+                }
+                else{
+                    inputName.value = ''
+                    inputEmail.value = ''
+                }
+            } catch (error) {
+                console.log({info: 'Lỗi khi lấy thông tin khách hàng', message: error.message});
+            }
+        }
+
+        const delay = 500
+
+        const debouncedHandler = debounce(getInforByPhone, delay)
+        debouncedHandler(phoneValue)
+    }
+}
+
+
 
 // Export functions to global scope
 window.updateServiceQuantity = updateServiceQuantity;

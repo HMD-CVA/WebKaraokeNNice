@@ -353,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 500);
 });
 class FoodBannerSlider {
-    constructor() {
+    constructor(foodItems) {
         this.track = document.getElementById('foodBannerTrack');
         this.indicatorsContainer = document.querySelector('.food-indicators');
         this.prevBtn = document.querySelector('.food-prev-btn');
@@ -370,38 +370,39 @@ class FoodBannerSlider {
         this.minWidth = 200;
         this.minHeight = 300;
         
-        this.foodItems = [
-            {
-                id: 1,
-                name: "SÒ DIỆP NƯỚNG PHÔ MAI",
-                image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
-            },
-            {
-                id: 2,
-                name: "XÔI GÀ RÔ TI",
-                image: "https://images.unsplash.com/photo-1563379091339-03246963d96f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
-            },
-            {
-                id: 3,
-                name: "BÒ NƯỚNG SỐT TIÊU ĐEN",
-                image: "https://images.unsplash.com/photo-1588168333986-5078d3ae3976?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
-            },
-            {
-                id: 4,
-                name: "GÀ NƯỚNG MUỐI ỚT",
-                image: "https://images.unsplash.com/photo-1604503468506-a8da13d82791?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
-            },
-            {
-                id: 5,
-                name: "CÁ HỒI SỐT CAM",
-                image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
-            },
-            {
-                id: 6,
-                name: "TÔM SỐT XOÀI",
-                image: "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
-            }
-        ];
+        this.foodItems = foodItems
+        // this.foodItems = [
+        //     {
+        //         id: 1,
+        //         name: "SÒ DIỆP NƯỚNG PHÔ MAI",
+        //         image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+        //     },
+        //     {
+        //         id: 2,
+        //         name: "XÔI GÀ RÔ TI",
+        //         image: "https://images.unsplash.com/photo-1563379091339-03246963d96f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+        //     },
+        //     {
+        //         id: 3,
+        //         name: "BÒ NƯỚNG SỐT TIÊU ĐEN",
+        //         image: "https://images.unsplash.com/photo-1588168333986-5078d3ae3976?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+        //     },
+        //     {
+        //         id: 4,
+        //         name: "GÀ NƯỚNG MUỐI ỚT",
+        //         image: "https://images.unsplash.com/photo-1604503468506-a8da13d82791?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+        //     },
+        //     {
+        //         id: 5,
+        //         name: "CÁ HỒI SỐT CAM",
+        //         image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+        //     },
+        //     {
+        //         id: 6,
+        //         name: "TÔM SỐT XOÀI",
+        //         image: "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+        //     }
+        // ];
         
         this.init();
     }
@@ -661,6 +662,22 @@ class FoodBannerSlider {
         
         console.log('✅ Food Banner Slider initialized successfully - Auto slide will start immediately');
     }
+
+    static async create() {
+        const loaiHang = 'Đồ ăn'
+        const res = await fetch(`/api/mathang?LoaiHang=${loaiHang}`)
+        let foodItems = await res.json()
+
+        foodItems = foodItems.map(food => {
+            return {
+                id: food._id,
+                name: food.TenHang,
+                image: food.LinkAnh,
+            }
+        })
+
+        return new FoodBannerSlider(foodItems)
+    }
     
     setupTouchEvents() {
         let startX = 0;
@@ -859,9 +876,11 @@ class FoodBannerSlider {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 Page loaded - Starting food banner...');
     
-    setTimeout(() => {
+    setTimeout(async () => {
         try {
-            window.foodBannerSlider = new FoodBannerSlider();
+            // window.foodBannerSlider = new FoodBannerSlider();
+            window.foodBannerSlider = await FoodBannerSlider.create()
+
             console.log('🎉 Food Banner started successfully!');
             
             // Debug helper
@@ -2017,7 +2036,7 @@ class BookingModal {
         }
     }
 
-    async checkExistPhone(phone) {
+    async getInforByPhone(phone) {
         try {
             const res = await fetch(`/api/khachhang?phone=${phone}`)
             const khachHang = await res.json()
@@ -2080,15 +2099,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Xử lý lấy thông tin khách hàng khi nhập xong số điện thoại
     document.addEventListener('keyup', (e) => {
         if(e.target.closest('#customerPhone')) {
-            const phone = document.querySelector('#customerPhone').value
+            const phone = document.querySelector('#customerPhone').value.trim()
             const fieldName = document.querySelector('#customerName').closest('.input-field')
             const fieldEmail = document.querySelector('#customerEmail').closest('.input-field')
 
             if(phone.length < 10) {
                 fieldName.classList.add('d-none')
                 fieldEmail.classList.add('d-none')
-                // fieldName.querySelector('#customerName').value = ''
-                // fieldEmail.querySelector('#customerEmail').value = ''
                 return
             }
 
@@ -2096,15 +2113,11 @@ document.addEventListener('DOMContentLoaded', () => {
             fieldEmail.classList.remove('d-none')
 
             if(phone.length === 10) {
-                const checkExistPhone = window.bookingModal.checkExistPhone
+                const getInforByPhone = window.bookingModal.getInforByPhone
                 const delay = 500
-                const debouncedHandler = window.bookingModal.debounce(checkExistPhone, delay)
+                const debouncedHandler = window.bookingModal.debounce(getInforByPhone, delay)
                 debouncedHandler(phone)
             }
-            // else if(phone.length > 10) {
-            //     fieldName.querySelector('#customerName').value = ''
-            //     fieldEmail.querySelector('#customerEmail').value = ''
-            // }
         }
     })
     

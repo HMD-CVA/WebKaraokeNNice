@@ -251,8 +251,13 @@
             </div>
 
             <div class="form-group">
-              <label for="employeeEmail">Email *</label>
+              <label for="employeeEmail">Email đăng nhập *</label>
               <input type="email" id="employeeEmail" required placeholder="Nhập email">
+            </div>
+
+            <div class="form-group">
+              <label for="employeeEmail">Mật khẩu đăng nhập *</label>
+              <input type="text" id="employeePassword" required placeholder="Nhập mật khẩu">
             </div>
 
             <div class="form-group">
@@ -299,7 +304,7 @@
             </div>
 
             <div class="form-group">
-              <label for="employeeGender">Giới tính</label>
+              <label for="employeeGender">Giới tính *</label>
               <select id="employeeGender">
                 <option value="">Chọn giới tính</option>
                 <option value="Nam">Nam</option>
@@ -598,6 +603,7 @@
       TenNV: document.getElementById('employeeName').value.trim(),
       SĐT: document.getElementById('employeePhone').value.trim(),
       Email: document.getElementById('employeeEmail').value.trim(),
+      Password: document.getElementById('employeePassword').value.trim(),
       VaiTro: document.getElementById('employeeRole').value,
       CaTruc: document.getElementById('employeeShift').value,
       LuongCoBan: document.getElementById('employeeSalary').value ? parseInt(document.getElementById('employeeSalary').value) : 0,
@@ -626,6 +632,10 @@
   }
   if (!formData.Email) {
     showError('Vui lòng nhập email');
+    return;
+  }
+  if (!formData.Password) {
+    showError('Vui lòng nhập mật khẩu');
     return;
   }
   if (!formData.VaiTro) {

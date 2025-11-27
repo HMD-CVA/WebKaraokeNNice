@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { generateCode } from "../utils/codeGenerator.js";
+import bcrypt from "bcrypt"
 
 // TẠO SCHEMA TRƯỚC, RỒI THÊM MIDDLEWARE, CUỐI CÙNG MỚI TẠO MODEL
 
@@ -20,7 +21,8 @@ const NhanVienSchema = new mongoose.Schema({
   MaNV: { type: String, unique: true, required: true },
   TenNV: { type: String, required: true },
   SĐT: { type: String, required: true },
-  Email: { type: String, required: true, unique: true },
+  Email: { type: String, required: true, unique: true, select: false },
+  Password: {type: String, require: true},
   VaiTro: { 
     type: String, 
     required: true,
@@ -215,6 +217,15 @@ NhanVienSchema.pre('save', async function(next) {
     const NhanVien = mongoose.model('NhanVien', NhanVienSchema);
     this.MaNV = await generateCode('NV', NhanVien, 'MaNV');
   }
+
+  try {
+    const hash = await bcrypt.hash(this.Password, 10)
+    this.Password = hash
+  } catch (error) {
+    console.log('Có lỗi khi mã hóa mật khẩu:' + error.message);
+    throw new Error('Có lỗi khi mã hóa mật khẩu:' + error.message)
+  }
+
   next();
 });
 

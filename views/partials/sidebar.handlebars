@@ -13,7 +13,7 @@
     <button class="sidebar-toggle" id="sidebarToggle">
       <i class="fas fa-bars"></i>
     </button>
-    
+
     <!-- NÚT ĐÓNG CHO MOBILE -->
     <button class="sidebar-close" id="sidebarClose">
       <i class="fas fa-times"></i>
@@ -88,14 +88,14 @@
           <span class="nav-text">Nhân Viên</span>
         </a>
       </li>
-      
+
     </ul>
   </div>
 
   <!-- Sidebar Footer -->
   <div class="sidebar-footer">
     <div class="user-menu">
-      <a href="/profile" class="user-menu-item">
+      <a href="/admin/profile" class="user-menu-item">
         <i class="fas fa-user-circle"></i>
         <span>Hồ sơ</span>
       </a>
@@ -103,10 +103,12 @@
         <i class="fas fa-cog"></i>
         <span>Cài đặt</span>
       </a>
-      <a href="/logout" class="user-menu-item logout-btn">
+      <a href="#" class="user-menu-item logout-btn"
+        onclick="document.querySelector('#form-logout').submit(); return false">
         <i class="fas fa-sign-out-alt"></i>
         <span>Đăng xuất</span>
       </a>
+      <form id="form-logout" action="/admin-logout" method="POST" style="display: none"></form>
     </div>
   </div>
 </div>
@@ -400,7 +402,7 @@
   }
 
   /* ========== RESPONSIVE FIX ========== */
-  
+
   /* MOBILE: <= 768px */
   @media (max-width: 768px) {
     .admin-sidebar {
@@ -424,7 +426,7 @@
       display: flex;
     }
 
-    .admin-sidebar.mobile-open + .mobile-overlay {
+    .admin-sidebar.mobile-open+.mobile-overlay {
       display: block;
     }
 
@@ -499,12 +501,12 @@
     }
 
     /* MAIN CONTENT DESKTOP */
-    .admin-sidebar.collapsed + .main-content {
+    .admin-sidebar.collapsed+.main-content {
       margin-left: 80px !important;
       width: calc(100% - 80px) !important;
     }
-    
-    .admin-sidebar:not(.collapsed) + .main-content {
+
+    .admin-sidebar:not(.collapsed)+.main-content {
       margin-left: 280px !important;
       width: calc(100% - 280px) !important;
     }
@@ -540,7 +542,7 @@
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+  document.addEventListener('DOMContentLoaded', function () {
     const sidebar = document.querySelector('.admin-sidebar');
     const desktopToggle = document.getElementById('sidebarToggle');
     const mobileToggle = document.getElementById('mobileToggle');
@@ -554,155 +556,155 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // KHỞI TẠO SIDEBAR STATE - ĐƠN GIẢN HÓA
     function initializeSidebar() {
-        if (isInitialized) return;
-        
-        const savedState = localStorage.getItem('sidebarCollapsed');
-        const width = window.innerWidth;
+      if (isInitialized) return;
 
-        // MOBILE
-        if (width <= 768) {
-            sidebar.classList.remove('collapsed');
-            updateMainContentMargin(0);
+      const savedState = localStorage.getItem('sidebarCollapsed');
+      const width = window.innerWidth;
+
+      // MOBILE
+      if (width <= 768) {
+        sidebar.classList.remove('collapsed');
+        updateMainContentMargin(0);
+      }
+      // TABLET - AUTO COLLAPSE
+      else if (width <= 1024) {
+        sidebar.classList.add('collapsed');
+        localStorage.setItem('sidebarCollapsed', 'true');
+        updateMainContentMargin(80);
+      }
+      // DESKTOP - RESTORE STATE
+      else {
+        if (savedState === 'true') {
+          sidebar.classList.add('collapsed');
+          updateMainContentMargin(80);
+        } else {
+          sidebar.classList.remove('collapsed');
+          updateMainContentMargin(280);
         }
-        // TABLET - AUTO COLLAPSE
-        else if (width <= 1024) {
-            sidebar.classList.add('collapsed');
-            localStorage.setItem('sidebarCollapsed', 'true');
-            updateMainContentMargin(80);
-        }
-        // DESKTOP - RESTORE STATE
-        else {
-            if (savedState === 'true') {
-                sidebar.classList.add('collapsed');
-                updateMainContentMargin(80);
-            } else {
-                sidebar.classList.remove('collapsed');
-                updateMainContentMargin(280);
-            }
-        }
-        
-        isInitialized = true;
+      }
+
+      isInitialized = true;
     }
 
     // HÀM CẬP NHẬT MARGIN - TỐI ƯU
     function updateMainContentMargin(sidebarWidth) {
-        const mainContent = document.querySelector('.main-content');
-        if (mainContent) {
-            mainContent.style.marginLeft = sidebarWidth + 'px';
-            mainContent.style.width = `calc(100% - ${sidebarWidth}px)`;
-        }
-        document.documentElement.style.setProperty('--sidebar-width', sidebarWidth + 'px');
+      const mainContent = document.querySelector('.main-content');
+      if (mainContent) {
+        mainContent.style.marginLeft = sidebarWidth + 'px';
+        mainContent.style.width = `calc(100% - ${sidebarWidth}px)`;
+      }
+      document.documentElement.style.setProperty('--sidebar-width', sidebarWidth + 'px');
     }
 
     // TOGGLE DESKTOP - ĐƠN GIẢN
     if (desktopToggle) {
-        desktopToggle.addEventListener('click', function () {
-            if (window.innerWidth > 1024) {
-                sidebar.classList.toggle('collapsed');
-                const isCollapsed = sidebar.classList.contains('collapsed');
-                localStorage.setItem('sidebarCollapsed', isCollapsed);
-                updateMainContentMargin(isCollapsed ? 80 : 280);
-            }
-        });
+      desktopToggle.addEventListener('click', function () {
+        if (window.innerWidth > 1024) {
+          sidebar.classList.toggle('collapsed');
+          const isCollapsed = sidebar.classList.contains('collapsed');
+          localStorage.setItem('sidebarCollapsed', isCollapsed);
+          updateMainContentMargin(isCollapsed ? 80 : 280);
+        }
+      });
     }
 
     // MOBILE FUNCTIONALITY
     function openMobileSidebar() {
-        sidebar.classList.add('mobile-open');
-        body.classList.add('sidebar-open');
-        if (mobileOverlay) mobileOverlay.style.display = 'block';
+      sidebar.classList.add('mobile-open');
+      body.classList.add('sidebar-open');
+      if (mobileOverlay) mobileOverlay.style.display = 'block';
     }
 
     function closeMobileSidebar() {
-        sidebar.classList.remove('mobile-open');
-        body.classList.remove('sidebar-open');
-        if (mobileOverlay) mobileOverlay.style.display = 'none';
+      sidebar.classList.remove('mobile-open');
+      body.classList.remove('sidebar-open');
+      if (mobileOverlay) mobileOverlay.style.display = 'none';
     }
 
     if (mobileToggle) {
-        mobileToggle.addEventListener('click', openMobileSidebar);
+      mobileToggle.addEventListener('click', openMobileSidebar);
     }
 
     if (sidebarClose) {
-        sidebarClose.addEventListener('click', closeMobileSidebar);
+      sidebarClose.addEventListener('click', closeMobileSidebar);
     }
 
     if (mobileOverlay) {
-        mobileOverlay.addEventListener('click', closeMobileSidebar);
+      mobileOverlay.addEventListener('click', closeMobileSidebar);
     }
 
     // ĐÓNG SIDEBAR KHI CLICK MENU ITEM TRÊN MOBILE
     navLinks.forEach(link => {
-        link.addEventListener('click', function() {
-            if (window.innerWidth <= 768) {
-                closeMobileSidebar();
-            }
-        });
+      link.addEventListener('click', function () {
+        if (window.innerWidth <= 768) {
+          closeMobileSidebar();
+        }
+      });
     });
 
     // RESIZE HANDLER - TỐI ƯU
     window.addEventListener('resize', function () {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(function() {
-            const width = window.innerWidth;
-            
-            // MOBILE
-            if (width <= 768) {
-                sidebar.classList.remove('collapsed');
-                closeMobileSidebar();
-                updateMainContentMargin(0);
-            }
-            // TABLET
-            else if (width <= 1024) {
-                sidebar.classList.add('collapsed');
-                closeMobileSidebar();
-                updateMainContentMargin(80);
-            }
-            // DESKTOP
-            else {
-                closeMobileSidebar();
-                const savedState = localStorage.getItem('sidebarCollapsed');
-                if (savedState === 'true') {
-                    sidebar.classList.add('collapsed');
-                    updateMainContentMargin(80);
-                } else {
-                    sidebar.classList.remove('collapsed');
-                    updateMainContentMargin(280);
-                }
-            }
-        }, 150);
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(function () {
+        const width = window.innerWidth;
+
+        // MOBILE
+        if (width <= 768) {
+          sidebar.classList.remove('collapsed');
+          closeMobileSidebar();
+          updateMainContentMargin(0);
+        }
+        // TABLET
+        else if (width <= 1024) {
+          sidebar.classList.add('collapsed');
+          closeMobileSidebar();
+          updateMainContentMargin(80);
+        }
+        // DESKTOP
+        else {
+          closeMobileSidebar();
+          const savedState = localStorage.getItem('sidebarCollapsed');
+          if (savedState === 'true') {
+            sidebar.classList.add('collapsed');
+            updateMainContentMargin(80);
+          } else {
+            sidebar.classList.remove('collapsed');
+            updateMainContentMargin(280);
+          }
+        }
+      }, 150);
     });
 
     // SET ACTIVE MENU
     function setActiveMenu() {
-        const currentPath = window.location.pathname;
-        
-        navLinks.forEach(link => {
-            link.classList.remove('active');
-            const linkPath = link.getAttribute('href');
-            
-            if (linkPath === currentPath) {
-                link.classList.add('active');
-            }
-            else if (currentPath.includes('/phonghat') && linkPath.includes('/phonghat')) {
-                link.classList.add('active');
-            }
-            else if (currentPath.includes('/sanpham') && linkPath.includes('/sanpham')) {
-                link.classList.add('active');
-            }
-            else if (currentPath.includes('/khachhang') && linkPath.includes('/khachhang')) {
-                link.classList.add('active');
-            }
-        });
+      const currentPath = window.location.pathname;
+
+      navLinks.forEach(link => {
+        link.classList.remove('active');
+        const linkPath = link.getAttribute('href');
+
+        if (linkPath === currentPath) {
+          link.classList.add('active');
+        }
+        else if (currentPath.includes('/phonghat') && linkPath.includes('/phonghat')) {
+          link.classList.add('active');
+        }
+        else if (currentPath.includes('/sanpham') && linkPath.includes('/sanpham')) {
+          link.classList.add('active');
+        }
+        else if (currentPath.includes('/khachhang') && linkPath.includes('/khachhang')) {
+          link.classList.add('active');
+        }
+      });
     }
 
     // KHỞI CHẠY
     initializeSidebar();
     setActiveMenu();
-    
+
     // ĐẢM BẢO MAIN CONTENT ĐƯỢC CẬP NHẬT
     setTimeout(() => {
-        initializeSidebar();
+      initializeSidebar();
     }, 100);
-});
+  });
 </script>
