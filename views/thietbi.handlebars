@@ -97,96 +97,75 @@
       <!-- Room buttons will be dynamically generated -->
     </div>
 
-    <!-- ThietBi Grid -->
-    <div class="rooms-grid" id="thietBiGrid">
-      {{#each thietbis}}
-      <div class="room-card" 
-           data-id="{{this._id}}" 
-           data-matb="{{this.MaThietBi}}"
-           data-maphong="{{this.MaPhong}}"
-           data-tenthietbi="{{this.TenThietBi}}" 
-           data-tinhtrang="{{this.TinhTrang}}" 
-           data-loai="{{this.LoaiThietBi}}">
-        <div class="room-image">
-          {{#if this.LinkAnh}}
-          <img src="{{this.LinkAnh}}" alt="{{this.TenThietBi}}">
-          {{else}}
-          <div class="employee-avatar-placeholder device {{this.LoaiThietBi}}">
-            <i class="{{getDeviceIcon this.LoaiThietBi}}"></i>
-          </div>
-          {{/if}}
-          <div class="room-overlay">
-            <div class="room-actions">
-              <button class="btn-edit" onclick="viewBaoTriHistory('{{this.MaThietBi}}')">
-                <i class="fas fa-history"></i>
-              </button>
-              <button class="btn-edit" onclick="editThietBi('{{this.MaThietBi}}')">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button class="btn-delete" onclick="deleteThietBi('{{this.MaThietBi}}', '{{this.TenThietBi}}')">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-          </div>
-          <div class="room-badge {{this.LoaiThietBi}}">
-            {{this.LoaiThietBi}}
-          </div>
-          <div class="room-status {{#if (eq this.TinhTrang 'Tốt')}}active{{else if (eq this.TinhTrang 'Đang bảo trì')}}onleave{{else}}inactive{{/if}}">
-            {{this.TinhTrang}}
-          </div>
+    <!-- ThietBi Table -->
+    <div class="table-container">
+      <table class="data-table" id="thietBiTable">
+        <thead>
+          <tr>
+            <th>Ảnh</th>
+            <th>Mã TB</th>
+            <th>Tên thiết bị</th>
+            <th>Phòng</th>
+            <th>Loại</th>
+            <th>Ngày nhập</th>
+            <th>Tình trạng</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="thietBiTableBody">
+          {{#each thietbis}}
+          <tr class="thietbi-row" 
+              data-id="{{this._id}}" 
+              data-matb="{{this.MaThietBi}}"
+              data-maphong="{{this.MaPhong}}"
+              data-tenthietbi="{{this.TenThietBi}}" 
+              data-tinhtrang="{{this.TinhTrang}}" 
+              data-loai="{{this.LoaiThietBi}}">
+            <td>
+              <div class="device-avatar">
+                {{#if this.LinkAnh}}
+                <img src="{{this.LinkAnh}}" alt="{{this.TenThietBi}}">
+                {{else}}
+                <div class="avatar-placeholder {{this.LoaiThietBi}}">
+                  <i class="{{getDeviceIcon this.LoaiThietBi}}"></i>
+                </div>
+                {{/if}}
+              </div>
+            </td>
+            <td><span class="device-code">{{this.MaThietBi}}</span></td>
+            <td><strong>{{this.TenThietBi}}</strong></td>
+            <td><span class="room-badge">{{this.MaPhong}}</span></td>
+            <td><span class="type-badge {{this.LoaiThietBi}}">{{this.LoaiThietBi}}</span></td>
+            <td>{{formatDate this.NgayNhap}}</td>
+            <td>
+              <span class="status-badge {{#if (eq this.TinhTrang 'Tốt')}}active{{else if (eq this.TinhTrang 'Đang bảo trì')}}maintenance{{else}}broken{{/if}}">
+                {{this.TinhTrang}}
+              </span>
+            </td>
+            <td>
+              <div class="table-actions">
+                <button class="btn-table-action btn-history" onclick="viewBaoTriHistory('{{this.MaThietBi}}')" title="Lịch sử">
+                  <i class="fas fa-history"></i>
+                </button>
+                <button class="btn-table-action btn-edit" onclick="editThietBi('{{this.MaThietBi}}')" title="Chỉnh sửa">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn-table-action btn-delete" onclick="deleteThietBi('{{this.MaThietBi}}', '{{this.TenThietBi}}')" title="Xóa">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+      
+      <div class="pagination-controls">
+        <div class="pagination-info">
+          Hiển thị <span id="currentRange">1-10</span> trong tổng số <span id="totalDevices">{{thietbis.length}}</span> thiết bị
         </div>
-
-        <div class="room-content">
-          <h3 class="room-title">{{this.TenThietBi}}</h3>
-          <p class="room-code">Mã: {{this.MaThietBi}}</p>
-          <p class="room-phong">Phòng: {{this.MaPhong}}</p>
-
-          <div class="room-details">
-            <div class="detail-item">
-              <i class="fas fa-calendar-alt"></i>
-              <span>Ngày nhập: {{formatDate this.NgayNhap}}</span>
-            </div>
-            {{#if this.HangSanXuat}}
-            <div class="detail-item">
-              <i class="fas fa-industry"></i>
-              <span>Hãng: {{this.HangSanXuat}}</span>
-            </div>
-            {{/if}}
-            {{#if this.Model}}
-            <div class="detail-item">
-              <i class="fas fa-barcode"></i>
-              <span>Model: {{this.Model}}</span>
-            </div>
-            {{/if}}
-            {{#if this.GiaTri}}
-            <div class="detail-item">
-              <i class="fas fa-money-bill-wave"></i>
-              <span>Giá trị: {{formatCurrency this.GiaTri}}</span>
-            </div>
-            {{/if}}
-          </div>
-
-          <!-- Lịch sử bảo trì gần nhất -->
-          {{#if this.BaoTriGanNhat}}
-          <div class="maintenance-history">
-            <h4>Bảo trì gần nhất:</h4>
-            <div class="maintenance-item">
-              <span class="maintenance-date">{{formatDate this.BaoTriGanNhat.ThoiGian}}</span>
-              <span class="maintenance-cost">{{formatCurrency this.BaoTriGanNhat.ChiPhi}}</span>
-            </div>
-            <p class="maintenance-desc">{{this.BaoTriGanNhat.MoTa}}</p>
-          </div>
-          {{/if}}
-
-          <div class="room-footer">
-            <span class="room-id">#{{this.MaThietBi}}</span>
-            <button class="btn-status" onclick="toggleStatus('{{this.MaThietBi}}', '{{this.TinhTrang}}')">
-              <i class="fas fa-sync-alt"></i>
-            </button>
-          </div>
-        </div>
+        <div class="page-numbers" id="pageNumbers"></div>
       </div>
-      {{/each}}
     </div>
 
     <!-- Empty State -->
@@ -392,6 +371,137 @@
   let filteredThietBis = [];
   let currentThietBiHistory = [];
   let currentRoomFilter = 'all';
+  let thietBiPagination;
+
+  // ===== PAGINATION CLASS =====
+  class ThietBiPagination {
+    constructor(itemsPerPage = 10) {
+      this.itemsPerPage = itemsPerPage;
+      this.currentPage = 1;
+      this.allRows = [];
+      this.filteredRows = [];
+      this.totalPages = 1;
+      this.maxVisiblePages = 5;
+    }
+
+    init() {
+      this.allRows = Array.from(document.querySelectorAll('.thietbi-row'));
+      this.filteredRows = [...this.allRows];
+      this.updatePagination();
+      this.renderPageNumbers();
+    }
+
+    applyFilters() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      const statusFilter = document.getElementById('statusFilter').value;
+      const loaiFilter = document.getElementById('loaiFilter').value;
+
+      this.filteredRows = this.allRows.filter(row => {
+        const tenThietBi = row.getAttribute('data-tenthietbi').toLowerCase();
+        const maThietBi = row.getAttribute('data-matb').toLowerCase();
+        const maPhong = row.getAttribute('data-maphong');
+        const tinhtrang = row.getAttribute('data-tinhtrang');
+        const loai = row.getAttribute('data-loai');
+
+        const matchesSearch = !searchTerm || 
+          tenThietBi.includes(searchTerm) || 
+          maThietBi.includes(searchTerm) ||
+          (maPhong && maPhong.toLowerCase().includes(searchTerm));
+        const matchesStatus = !statusFilter || tinhtrang === statusFilter;
+        const matchesLoai = !loaiFilter || loai === loaiFilter;
+        
+        // Room filter
+        let matchesRoom = true;
+        if (currentRoomFilter !== 'all') {
+          if (currentRoomFilter === 'other') {
+            matchesRoom = !maPhong || maPhong === '';
+          } else {
+            matchesRoom = maPhong === currentRoomFilter;
+          }
+        }
+
+        return matchesSearch && matchesStatus && matchesLoai && matchesRoom;
+      });
+
+      this.currentPage = 1;
+      this.updatePagination();
+      this.renderPageNumbers();
+    }
+
+    updatePagination() {
+      this.totalPages = Math.ceil(this.filteredRows.length / this.itemsPerPage);
+      
+      const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+      const endIndex = startIndex + this.itemsPerPage;
+
+      this.allRows.forEach(row => row.style.display = 'none');
+      
+      this.filteredRows.forEach((row, index) => {
+        if (index >= startIndex && index < endIndex) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+
+      const start = Math.min(startIndex + 1, this.filteredRows.length);
+      const end = Math.min(endIndex, this.filteredRows.length);
+      document.getElementById('currentRange').textContent = this.filteredRows.length > 0 ? `${start}-${end}` : '0';
+      document.getElementById('totalDevices').textContent = this.filteredRows.length;
+
+      toggleEmptyState(this.filteredRows.length === 0);
+      calculateFilteredStatistics(this.filteredRows);
+    }
+
+    renderPageNumbers() {
+      const container = document.getElementById('pageNumbers');
+      if (!container) return;
+
+      container.innerHTML = '';
+
+      if (this.totalPages <= 1) return;
+
+      const createButton = (page, text = page, isActive = false) => {
+        const button = document.createElement('button');
+        button.textContent = text;
+        button.className = 'page-btn' + (isActive ? ' active' : '');
+        if (!isActive && page !== '...') {
+          button.onclick = () => this.goToPage(page);
+        }
+        if (page === '...') button.disabled = true;
+        return button;
+      };
+
+      container.appendChild(createButton(Math.max(1, this.currentPage - 1), '‹'));
+
+      let pages = [];
+      if (this.totalPages <= this.maxVisiblePages) {
+        pages = Array.from({length: this.totalPages}, (_, i) => i + 1);
+      } else {
+        if (this.currentPage <= 3) {
+          pages = [1, 2, 3, 4, '...', this.totalPages];
+        } else if (this.currentPage >= this.totalPages - 2) {
+          pages = [1, '...', this.totalPages - 3, this.totalPages - 2, this.totalPages - 1, this.totalPages];
+        } else {
+          pages = [1, '...', this.currentPage - 1, this.currentPage, this.currentPage + 1, '...', this.totalPages];
+        }
+      }
+
+      pages.forEach(page => {
+        container.appendChild(createButton(page, page, page === this.currentPage));
+      });
+
+      container.appendChild(createButton(Math.min(this.totalPages, this.currentPage + 1), '›'));
+    }
+
+    goToPage(page) {
+      if (page < 1 || page > this.totalPages) return;
+      this.currentPage = page;
+      this.updatePagination();
+      this.renderPageNumbers();
+      document.getElementById('thietBiTable').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
 
   // ===== INITIALIZATION =====
   document.addEventListener('DOMContentLoaded', function() {
@@ -400,8 +510,12 @@
 
   function initializeApp() {
     // Khởi tạo dữ liệu và giao diện
-    allThietBis = Array.from(document.querySelectorAll('.room-card'));
+    allThietBis = Array.from(document.querySelectorAll('.thietbi-row'));
     filteredThietBis = [...allThietBis];
+    
+    // Khởi tạo pagination
+    thietBiPagination = new ThietBiPagination(10);
+    thietBiPagination.init();
     
     calculateStatistics();
     initRoomNavigation();
@@ -867,64 +981,22 @@
 
   // ===== FILTER & SEARCH =====
   function filterThietBi() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const statusFilter = document.getElementById('statusFilter').value;
-    const loaiFilter = document.getElementById('loaiFilter').value;
-
-    filteredThietBis = allThietBis.filter(card => {
-      const matchesSearch = matchesSearchCriteria(card, searchTerm);
-      const matchesStatus = matchesFilterCriteria(card, 'data-tinhtrang', statusFilter);
-      const matchesLoai = matchesFilterCriteria(card, 'data-loai', loaiFilter);
-      const matchesRoom = matchesRoomCriteria(card);
-      
-      const shouldShow = matchesSearch && matchesStatus && matchesLoai && matchesRoom;
-      card.style.display = shouldShow ? 'block' : 'none';
-      return shouldShow;
-    });
-
-    updateDisplay();
-  }
-
-  function matchesSearchCriteria(card, searchTerm) {
-    if (!searchTerm) return true;
-    
-    const tenthietbi = card.getAttribute('data-tenthietbi').toLowerCase();
-    const matb = card.getAttribute('data-matb').toLowerCase();
-    
-    return tenthietbi.includes(searchTerm) || matb.includes(searchTerm);
-  }
-
-  function matchesFilterCriteria(card, attribute, filterValue) {
-    if (!filterValue) return true;
-    return card.getAttribute(attribute) === filterValue;
-  }
-
-  function matchesRoomCriteria(card) {
-    const maphong = card.getAttribute('data-maphong');
-    
-    if (currentRoomFilter === 'all') return true;
-    if (currentRoomFilter === 'other') {
-      return !maphong || maphong === '' || maphong === 'Khác';
+    if (thietBiPagination) {
+      thietBiPagination.applyFilters();
     }
-    return maphong === currentRoomFilter;
   }
 
-  function updateDisplay() {
-    calculateFilteredStatistics();
-    toggleEmptyState(filteredThietBis.length === 0);
-  }
-
-  function calculateFilteredStatistics() {
-    const totalThietBis = filteredThietBis.length;
-    const countGood = filteredThietBis.filter(tb => 
+  function calculateFilteredStatistics(rows) {
+    const totalThietBis = rows.length;
+    const countGood = rows.filter(tb => 
       tb.getAttribute('data-tinhtrang') === 'Tốt'
     ).length;
     
-    const countMaintenance = filteredThietBis.filter(tb => 
+    const countMaintenance = rows.filter(tb => 
       tb.getAttribute('data-tinhtrang') === 'Đang bảo trì'
     ).length;
     
-    const countBroken = filteredThietBis.filter(tb => 
+    const countBroken = rows.filter(tb => 
       tb.getAttribute('data-tinhtrang') === 'Hỏng'
     ).length;
 
@@ -944,28 +1016,25 @@
     document.querySelectorAll('.room-nav-btn').forEach(btn => {
       btn.classList.remove('active');
     });
-    document.querySelector('.room-nav-btn[data-room="all"]').classList.add('active');
+    const allBtn = document.querySelector('.room-nav-btn[data-room="all"]');
+    if (allBtn) allBtn.classList.add('active');
 
-    allThietBis.forEach(card => {
-      card.style.display = 'block';
-    });
-
-    filteredThietBis = [...allThietBis];
-    calculateStatistics();
-    toggleEmptyState(false);
+    if (thietBiPagination) {
+      thietBiPagination.applyFilters();
+    }
   }
 
   function toggleEmptyState(show) {
     const emptyState = document.getElementById('emptyState');
-    const grid = document.getElementById('thietBiGrid');
+    const tableContainer = document.querySelector('.table-container');
 
-    if (!emptyState || !grid) return;
+    if (!emptyState || !tableContainer) return;
 
     if (show) {
-      grid.style.display = 'none';
+      tableContainer.style.display = 'none';
       emptyState.style.display = 'block';
     } else {
-      grid.style.display = 'grid';
+      tableContainer.style.display = 'block';
       emptyState.style.display = 'none';
     }
   }
@@ -1458,11 +1527,296 @@
     font-size: 1.1rem;
   }
 
-  /* ===== ROOMS GRID ===== */
+  /* ===== TABLE STYLES ===== */
+  .table-container {
+    background: white;
+    border-radius: 16px;
+    padding: 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+  }
+
+  .data-table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .data-table thead th {
+    padding: 18px 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  .data-table tbody tr {
+    border-bottom: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+  }
+
+  .data-table tbody tr:hover {
+    background: #f8fafc;
+    transform: scale(1.001);
+  }
+
+  .data-table tbody td {
+    padding: 16px;
+    color: #475569;
+    vertical-align: middle;
+  }
+
+  .device-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+
+  .device-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .device-avatar .avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+  }
+
+  .avatar-placeholder.Micro {
+    background: linear-gradient(135deg, #f56565, #e53e3e);
+  }
+
+  .avatar-placeholder.Loa {
+    background: linear-gradient(135deg, #4299e1, #3182ce);
+  }
+
+  .avatar-placeholder.Amply {
+    background: linear-gradient(135deg, #ed8936, #d97706);
+  }
+
+  .avatar-placeholder.Màn-hình,
+  .avatar-placeholder[class*="Màn"] {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+  }
+
+  .avatar-placeholder.Điều-hòa,
+  .avatar-placeholder[class*="Điều"] {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+  }
+
+  .avatar-placeholder.Bàn-ghế,
+  .avatar-placeholder[class*="Bàn"] {
+    background: linear-gradient(135deg, #9f7aea, #805ad5);
+  }
+
+  .avatar-placeholder.Khác {
+    background: linear-gradient(135deg, #a0aec0, #718096);
+  }
+
+  .device-code {
+    color: #667eea;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .room-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, #e2e8f0, #cbd5e0);
+    color: #2d3748;
+  }
+
+  .type-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .type-badge.Micro {
+    background: linear-gradient(135deg, #fed7d7, #feb2b2);
+    color: #c53030;
+  }
+
+  .type-badge.Loa {
+    background: linear-gradient(135deg, #bee3f8, #90cdf4);
+    color: #2b6cb0;
+  }
+
+  .type-badge.Amply {
+    background: linear-gradient(135deg, #fbd38d, #f6ad55);
+    color: #dd6b20;
+  }
+
+  .type-badge.Màn-hình,
+  .type-badge[class*="Màn"] {
+    background: linear-gradient(135deg, #d6bcfa, #b794f4);
+    color: #6b46c1;
+  }
+
+  .type-badge.Điều-hòa,
+  .type-badge[class*="Điều"] {
+    background: linear-gradient(135deg, #c6f6d5, #9ae6b4);
+    color: #276749;
+  }
+
+  .type-badge.Bàn-ghế,
+  .type-badge[class*="Bàn"] {
+    background: linear-gradient(135deg, #e9d8fd, #d6bcfa);
+    color: #6b46c1;
+  }
+
+  .type-badge.Khác {
+    background: linear-gradient(135deg, #e2e8f0, #cbd5e0);
+    color: #2d3748;
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .status-badge.active {
+    background: linear-gradient(135deg, #c6f6d5, #9ae6b4);
+    color: #276749;
+  }
+
+  .status-badge.maintenance {
+    background: linear-gradient(135deg, #fbd38d, #f6ad55);
+    color: #dd6b20;
+  }
+
+  .status-badge.broken {
+    background: linear-gradient(135deg, #fed7d7, #feb2b2);
+    color: #c53030;
+  }
+
+  .table-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-start;
+  }
+
+  .btn-table-action {
+    width: 36px !important;
+    height: 36px !important;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+  }
+
+  .btn-table-action.btn-history {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+  }
+
+  .btn-table-action.btn-edit {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+    color: white;
+  }
+
+  .btn-table-action.btn-delete {
+    background: linear-gradient(135deg, #f56565, #e53e3e);
+    color: white;
+  }
+
+  .btn-table-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  /* ===== PAGINATION STYLES ===== */
+  .pagination-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .pagination-info {
+    color: #64748b;
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+
+  .page-numbers {
+    display: flex;
+    gap: 4px;
+    flex-direction: row;
+  }
+
+  .page-btn {
+    min-width: 36px;
+    height: 36px;
+    border: 2px solid #e2e8f0;
+    background: white;
+    color: #475569;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    padding: 0 12px;
+  }
+
+  .page-btn:hover:not(:disabled):not(.active) {
+    border-color: #667eea;
+    color: #667eea;
+    transform: translateY(-1px);
+  }
+
+  .page-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: transparent;
+  }
+
+  .page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* ===== ROOMS GRID (kept for compatibility) ===== */
   .rooms-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-    gap: 28px;
+    display: none;
   }
 
   .room-card {
@@ -2131,6 +2485,19 @@
     .room-navigation {
       flex-wrap: wrap;
     }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    .data-table {
+      min-width: 800px;
+    }
+
+    .pagination-controls {
+      flex-direction: column;
+      align-items: flex-start;
+    }
   }
 
   @media (max-width: 480px) {
@@ -2158,6 +2525,15 @@
 
     .room-content {
       padding: 20px;
+    }
+
+    .data-table {
+      font-size: 0.85rem;
+    }
+
+    .data-table thead th,
+    .data-table tbody td {
+      padding: 12px 10px;
     }
   }
 

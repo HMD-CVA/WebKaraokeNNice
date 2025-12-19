@@ -228,6 +228,10 @@ app.engine(
                     'Đang sử dụng': 'ĐANG SỬ DỤNG',
                     'Đang bảo trì': 'BẢO TRÌ',
                     'Đã đặt trước': 'ĐÃ ĐẶT',
+                    'Sắp tới': 'SẮP TỚI',
+                    'Đã đặt': 'ĐÃ ĐẶT',
+                    'Hoàn thành': 'HOÀN THÀNH',
+                    'Đã hủy': 'ĐÃ HỦY',
                     available: 'CÒN TRỐNG',
                     busy: 'ĐANG SỬ DỤNG',
                     maintenance: 'BẢO TRÌ',
@@ -245,6 +249,10 @@ app.engine(
                     'Đang sử dụng': 'status-busy',
                     'Đang bảo trì': 'status-maintenance',
                     'Đã đặt trước': 'status-reserved',
+                    'Sắp tới': 'status-upcoming',
+                    'Đã đặt': 'status-reserved',
+                    'Hoàn thành': 'status-completed',
+                    'Đã hủy': 'status-cancelled',
                     inStock: 'status-in-stock',
                     lowStock: 'status-low-stock',
                     outOfStock: 'status-out-of-stock',
@@ -258,6 +266,10 @@ app.engine(
                     'Đang sử dụng': 'fa-microphone-alt',
                     'Đang bảo trì': 'fa-tools',
                     'Đã đặt trước': 'fa-calendar-check',
+                    'Sắp tới': 'fa-clock',
+                    'Đã đặt': 'fa-calendar-check',
+                    'Hoàn thành': 'fa-check-circle',
+                    'Đã hủy': 'fa-times-circle',
                     inStock: 'fa-check-circle',
                     lowStock: 'fa-exclamation-triangle',
                     outOfStock: 'fa-times-circle',
@@ -833,6 +845,18 @@ app.get('/about', async (req, res) => {
     } catch (error) {
         console.error('Lỗi khi tải dữ liệu:', error)
         res.status(500).send('Lỗi khi tải dữ liệu: ' + error.message)
+    }
+})
+
+// Services
+app.get('/services', async (req, res) => {
+    try {
+        res.render('services', {
+            layout: 'HomeMain.handlebars',
+        })
+    } catch (error) {
+        console.error('Lỗi khi tải trang dịch vụ:', error)
+        res.status(500).send('Lỗi khi tải trang dịch vụ: ' + error.message)
     }
 })
 
@@ -1732,12 +1756,33 @@ app.get('/admin/datphong', async (req, res) => {
             }
         })
 
+        // Lấy danh sách phòng CÓ TRẠNG THÁI "TRỐNG" để hiển thị trong modal
+        // Cộng thêm các phòng đang được đặt (để cho phép edit giữ nguyên phòng)
+        const phongsTrong = await DataModel.Data_PhongHat_Model.find({ 
+            TrangThai: 'Trống' 
+        }).lean().exec()
+        
+        // Lấy danh sách phòng đang được đặt
+        const maPhongDangDat = [...new Set(datphongs.map(dp => dp.MaPhong))];
+        const phongsDangDat = await DataModel.Data_PhongHat_Model.find({
+            MaPhong: { $in: maPhongDangDat }
+        }).lean().exec()
+        
+        // Gộp lại và loại bỏ trùng lặp
+        const phongMap = new Map();
+        [...phongsTrong, ...phongsDangDat].forEach(p => {
+            phongMap.set(p.MaPhong, p);
+        });
+        const phongs = Array.from(phongMap.values());
+
         console.log(datPhongKH)
 
         res.render('datphong', {
             layout: 'AdminMain',
             title: 'Quản lý đặt phòng',
             datPhongKH,
+            khachhangs,
+            phongs,
         })
     } catch (error) {
         console.error('Lỗi đặt phòng:', error)
@@ -1782,6 +1827,44 @@ app.get('/api/datphong/:maDatPhong', async (req, res) => {
         console.log(result)
 
         res.json(result) // Trả về object thay vì array
+    } catch (err) {
+        console.error('Error:', err)
+        res.status(500).json({ error: 'Lỗi server!' })
+    }
+})
+
+// API lấy giá phòng theo khung giờ
+app.get('/api/phonghat/:maPhong/gia', async (req, res) => {
+    try {
+        const { maPhong } = req.params
+        const { khungGio } = req.query
+
+        console.log('🔍 Lấy giá phòng:', maPhong, 'Khung giờ:', khungGio)
+
+        // Tìm phòng
+        const phong = await DataModel.Data_PhongHat_Model.findOne({
+            MaPhong: maPhong,
+        }).lean().exec()
+
+        if (!phong) {
+            return res.status(404).json({ error: 'Không tìm thấy phòng' })
+        }
+
+        // Tìm giá theo khung giờ trong BangGia
+        const bangGia = phong.BangGia || []
+        const giaTheoGio = bangGia.find(g => g.KhungGio === khungGio)
+
+        if (giaTheoGio) {
+            res.json({ 
+                gia: giaTheoGio.GiaTien,
+                khungGio: khungGio
+            })
+        } else {
+            res.json({ 
+                gia: null,
+                message: `Không có giá cho khung giờ ${khungGio}`
+            })
+        }
     } catch (err) {
         console.error('Error:', err)
         res.status(500).json({ error: 'Lỗi server!' })
@@ -3396,10 +3479,10 @@ app.put('/api/datphong/:maDatPhong/checkin', async (req, res) => {
         //     return res.status(400).json({ error: 'Đã quá thời gian cho phép check-in' });
         // }
 
-        if (datPhong.TrangThai !== 'Đã đặt') {
+        if (datPhong.TrangThai !== 'Đã đặt' && datPhong.TrangThai !== 'Sắp tới') {
             return res
                 .status(400)
-                .json({ error: 'Chỉ có thể check-in đặt phòng đã đặt' })
+                .json({ error: 'Chỉ có thể check-in đặt phòng có trạng thái "Đã đặt" hoặc "Sắp tới"' })
         }
 
         // Tạo mã hoá đơn tự động
@@ -3447,10 +3530,10 @@ app.put('/api/datphong/:maDatPhong/checkin', async (req, res) => {
 
         await chiTietThuePhong.save()
 
-        // 4. Cập nhật trạng thái đặt phòng thành "Đang sử dụng" (theo nghiệp vụ)
+        // 4. Cập nhật trạng thái đặt phòng thành "Hoàn thành" (đã check-in và tạo hóa đơn)
         await DataModel.Data_DatPhong_Model.findByIdAndUpdate(datPhong._id, {
-            TrangThai: 'Đang sử dụng',
-            GhiChu: `Đã chuyển thành hóa đơn ${hoaDon.MaHoaDon}`,
+            TrangThai: 'Hoàn thành',
+            GhiChu: `Đã check-in và chuyển thành hóa đơn ${hoaDon.MaHoaDon}`,
         })
 
         res.json({
@@ -3459,6 +3542,96 @@ app.put('/api/datphong/:maDatPhong/checkin', async (req, res) => {
         })
     } catch (error) {
         res.status(500).json({ error: error.message })
+    }
+})
+
+// API cập nhật đặt phòng
+app.put('/api/datphong/:maDatPhong', async (req, res) => {
+    try {
+        const { maDatPhong } = req.params
+        const { MaPhong, SoNguoi, ThoiGianBatDau, GhiChu } = req.body
+
+        console.log('📝 Cập nhật đặt phòng:', { maDatPhong, MaPhong, SoNguoi, ThoiGianBatDau })
+
+        // 1. Tìm đơn đặt phòng hiện tại
+        const datPhong = await DataModel.Data_DatPhong_Model.findOne({
+            MaDatPhong: maDatPhong,
+        })
+
+        if (!datPhong) {
+            return res.status(404).json({
+                success: false,
+                error: 'Không tìm thấy đơn đặt phòng',
+            })
+        }
+
+        // 2. Lưu phòng cũ để cập nhật trạng thái
+        const maPhongCu = datPhong.MaPhong
+
+        // 3. Nếu đổi phòng, cập nhật trạng thái phòng cũ về "Trống" và phòng mới thành "Đã đặt trước"
+        if (maPhongCu !== MaPhong) {
+            console.log(`🔄 Đổi phòng từ ${maPhongCu} sang ${MaPhong}`)
+
+            // Cập nhật phòng cũ về "Trống"
+            const phongCu = await DataModel.Data_PhongHat_Model.findOneAndUpdate(
+                { MaPhong: maPhongCu },
+                {
+                    TrangThai: 'Trống',
+                    updatedAt: new Date(),
+                },
+                { new: true }
+            )
+
+            if (phongCu) {
+                console.log(`✅ Đã cập nhật phòng cũ ${maPhongCu} về "Trống"`)
+            } else {
+                console.warn(`⚠️ Không tìm thấy phòng cũ ${maPhongCu}`)
+            }
+
+            // Cập nhật phòng mới thành "Đã đặt trước"
+            const phongMoi = await DataModel.Data_PhongHat_Model.findOneAndUpdate(
+                { MaPhong: MaPhong },
+                {
+                    TrangThai: 'Đã đặt trước',
+                    updatedAt: new Date(),
+                },
+                { new: true }
+            )
+
+            if (phongMoi) {
+                console.log(`✅ Đã cập nhật phòng mới ${MaPhong} thành "Đã đặt trước"`)
+            } else {
+                console.warn(`⚠️ Không tìm thấy phòng mới ${MaPhong}`)
+            }
+        }
+
+        // 4. Cập nhật đơn đặt phòng
+        datPhong.MaPhong = MaPhong
+        datPhong.SoNguoi = SoNguoi
+        datPhong.ThoiGianBatDau = new Date(ThoiGianBatDau)
+        datPhong.GhiChu = GhiChu || datPhong.GhiChu
+        datPhong.updatedAt = new Date()
+        
+        await datPhong.save()
+
+        console.log('✅ Đã cập nhật đơn đặt phòng:', datPhong.MaDatPhong)
+
+        res.status(200).json({
+            success: true,
+            message: 'Cập nhật đặt phòng thành công',
+            data: {
+                maDatPhong: datPhong.MaDatPhong,
+                maPhong: datPhong.MaPhong,
+                maPhongCu: maPhongCu,
+                doiPhong: maPhongCu !== MaPhong,
+            },
+        })
+    } catch (error) {
+        console.error('❌ Lỗi cập nhật đặt phòng:', error)
+        res.status(500).json({
+            success: false,
+            error: 'Lỗi khi cập nhật đặt phòng: ' + error.message,
+        })
     }
 })
 
@@ -3489,7 +3662,7 @@ app.put('/api/datphong/:maDatPhong/huy', async (req, res) => {
             await DataModel.Data_PhongHat_Model.findOneAndUpdate(
                 { MaPhong: datPhong.MaPhong },
                 {
-                    TrangThai: 'Còn Trống',
+                    TrangThai: 'Trống',
                     updatedAt: new Date(),
                 },
                 { new: true }

@@ -657,82 +657,80 @@ body {
 }
 
 /* ===== PAGE INDICATOR STYLES ===== */
-.page-indicator {
+/* Page Numbers Container */
+.page-numbers {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-weight: 700;
-    color: var(--cyber-cyan);
-    font-size: 1.1rem;
-    padding: 0.5rem 1rem;
+    padding: 0.5rem;
+}
+
+/* Page Number Buttons */
+.page-number-btn {
+    min-width: 40px;
+    height: 40px;
+    padding: 0.5rem;
     background: rgba(43, 0, 51, 0.8);
-    border-radius: 12px;
     border: 1px solid rgba(122, 0, 255, 0.3);
-    backdrop-filter: blur(10px);
-    min-width: 120px;
-    justify-content: center;
-}
-
-.page-indicator span:first-child {
-    color: var(--cyber-yellow);
-    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-    font-size: 1.2rem;
-}
-
-.page-separator {
-    color: rgba(255, 255, 255, 0.5);
-    margin: 0 0.2rem;
-}
-
-.page-indicator span:last-child {
+    border-radius: 8px;
     color: var(--cyber-cyan);
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
     text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
 }
 
-/* Animation cho page indicator */
-.page-indicator {
-    animation: pageIndicatorPulse 3s ease-in-out infinite;
+.page-number-btn:hover {
+    background: rgba(122, 0, 255, 0.3);
+    border-color: var(--cyber-purple);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(122, 0, 255, 0.4);
 }
 
-@keyframes pageIndicatorPulse {
-    0%, 100% {
-        box-shadow: 0 0 0 rgba(122, 0, 255, 0.3);
-    }
-    50% {
-        box-shadow: 0 0 15px rgba(122, 0, 255, 0.6);
-    }
+.page-number-btn.active {
+    background: linear-gradient(135deg, var(--cyber-purple), var(--cyber-pink));
+    border-color: var(--cyber-yellow);
+    color: white;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+    transform: scale(1.1);
+    box-shadow: 0 5px 20px rgba(255, 215, 0, 0.5);
 }
 
-/* Hover effect */
-.page-indicator:hover {
-    background: rgba(43, 0, 51, 0.9);
-    transform: scale(1.05);
-    transition: all 0.3s ease;
+/* Ellipsis */
+.page-ellipsis {
+    color: var(--cyber-cyan);
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 0.5rem;
+    opacity: 0.6;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-    .page-indicator {
-        font-size: 1rem;
-        min-width: 100px;
-        padding: 0.4rem 0.8rem;
+    .page-numbers {
+        gap: 0.3rem;
     }
     
-    .page-indicator span:first-child {
-        font-size: 1.1rem;
+    .page-number-btn {
+        min-width: 35px;
+        height: 35px;
+        font-size: 0.9rem;
     }
 }
 
 @media (max-width: 480px) {
-    .page-indicator {
-        font-size: 0.9rem;
-        min-width: 90px;
-        padding: 0.3rem 0.6rem;
-        order: -1; /* Đưa indicator lên trên cùng trên mobile */
+    .page-numbers {
+        gap: 0.2rem;
+        order: -1; /* Đưa page numbers lên trên cùng trên mobile */
     }
     
-    .page-indicator span:first-child {
-        font-size: 1rem;
+    .page-number-btn {
+        min-width: 32px;
+        height: 32px;
+        font-size: 0.85rem;
+        padding: 0.3rem;
     }
 }
 

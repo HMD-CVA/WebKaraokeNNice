@@ -124,107 +124,91 @@
       </div>
     </div>
 
-    <!-- HoaDon Grid -->
-    <div class="employees-grid" id="hoaDonGrid">
-      {{#each hoadons}}
-      <div class="employee-card" 
-           data-id="{{this._id}}" 
-           data-mahd="{{this.MaHoaDon}}"
-           data-madp="{{this.MaDatPhong}}"
-           data-tongtien="{{this.TongTien}}" 
-           data-status="{{this.TrangThai}}" 
-           data-date="{{formatDate this.createdAt}}">
-        <div class="employee-image">
-          <div class="employee-avatar-placeholder bill">
-            <i class="fas fa-receipt"></i>
-          </div>
-          <div class="employee-overlay">
-            <div class="employee-actions">
-              {{!-- {{#unless (or (eq this.TrangThai "Đã thanh toán") (eq this.TrangThai "Đã hủy"))}} --}}
-              <button class="btn-edit" data-mahd="{{this.MaHoaDon}}">
-                <i class="fas fa-edit"></i>
-              </button>
-              {{!-- {{/unless}} --}}
-              <button class="btn-delete" data-id="{{this._id}}" data-mahd="{{this.MaHoaDon}}">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-          </div>
-          <div class="employee-badge {{this.TrangThai}}">
-            {{this.TrangThai}}
-          </div>
-          <div class="employee-status {{#if (eq this.TrangThai 'Đã thanh toán')}}active{{else if (eq this.TrangThai 'Chưa thanh toán')}}onleave{{else}}inactive{{/if}}">
-            {{formatNumber this.TongTien}} VND
-          </div>
-        </div>
-
-        <div class="employee-content">
-          <h3 class="employee-name">{{this.MaHoaDon}}</h3>
-          <p class="employee-code">Đặt phòng: 
-            {{#if this.MaDatPhong}}
-                {{this.MaDatPhong}}
-            {{else}}
-                Gọi trực tiếp
-            {{/if}}
-          </p>
-
-          <div class="employee-details">
-            <div class="detail-item">
-              <i class="fas fa-calendar-alt"></i>
-              <span>{{formatDate this.createdAt}}</span>
-            </div>
-            <div class="detail-item">
-              <i class="fas fa-money-bill-wave"></i>
-              <span>{{formatNumber this.TongTien}} VND</span>
-            </div>
-            <div class="detail-item">
-              <i class="fas fa-user"></i>
-              <span>KH: {{this.KH.TenKH}}</span>
-            </div>
-            <div class="detail-item">
-              <i class="fas fa-door-open"></i>
-              <span>Phòng: {{this.MaPhong}}</span>
-            </div>
-            {{#if this.ThoiGianBatDau}}
-            <div class="detail-item">
-              <i class="fas fa-play-circle"></i>
-              <span>Bắt đầu: {{formatTime this.ThoiGianBatDau}}</span>
-            </div>
-            {{/if}}
-            {{#if this.ThoiGianKetThuc}}
-            <div class="detail-item">
-              <i class="fas fa-stop-circle"></i>
-              <span>Kết thúc: {{formatTime this.ThoiGianKetThuc}}</span>
-            </div>
-            {{else}}
-            <div class="detail-item">
-              <i class="fas fa-stop-circle"></i>
-              <span class="highlight">Kết thúc: Đang sử dụng</span>
-            </div>
-            {{/if}}
-          </div>
-
-          <!-- FOOTER VỚI 2 NÚT -->
-          <div class="employee-footer">
-            <button class="btn-detail" data-mahd="{{this.MaHoaDon}}">
-              <i class="fas fa-eye"></i>
-              Xem chi tiết
-            </button>
-            {{#if (eq this.TrangThai "Chưa thanh toán")}}
-            <button class="btn-pay" data-mahd="{{this.MaHoaDon}}">
-              <i class="fas fa-credit-card"></i>
-              Thanh toán
-            </button>
-            {{else}}
-            <button class="btn-print" data-mahd="{{this.MaHoaDon}}">
-              <i class="fas fa-print"></i>
-              In hóa đơn
-            </button>
-            {{/if}}
-          </div>
-        </div>
-      </div>
-      {{/each}}
+    <!-- HoaDon Table -->
+    <div class="table-container" id="hoaDonTable">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 120px;">Mã hóa đơn</th>
+            <th style="width: 120px;">Mã đặt phòng</th>
+            <th style="width: 150px;">Khách hàng</th>
+            <th style="width: 100px;">Phòng</th>
+            <th style="width: 120px;">Ngày tạo</th>
+            <th style="width: 130px;">Bắt đầu</th>
+            <th style="width: 130px;">Kết thúc</th>
+            <th style="width: 130px;">Tổng tiền</th>
+            <th style="width: 130px;">Trạng thái</th>
+            <th style="width: 200px;">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="hoaDonTableBody">
+          {{#each hoadons}}
+          <tr data-id="{{this._id}}" 
+              data-mahd="{{this.MaHoaDon}}"
+              data-madp="{{this.MaDatPhong}}"
+              data-tongtien="{{this.TongTien}}" 
+              data-status="{{this.TrangThai}}" 
+              data-date="{{formatDate this.createdAt}}"
+              data-customer="{{this.KH.TenKH}}">
+            <td><strong class="invoice-code">{{this.MaHoaDon}}</strong></td>
+            <td>
+              {{#if this.MaDatPhong}}
+                <span class="booking-code">{{this.MaDatPhong}}</span>
+              {{else}}
+                <span class="direct-call">Gọi trực tiếp</span>
+              {{/if}}
+            </td>
+            <td>{{this.KH.TenKH}}</td>
+            <td><span class="room-badge">{{this.MaPhong}}</span></td>
+            <td>{{formatDate this.createdAt}}</td>
+            <td>
+              {{#if this.ThoiGianBatDau}}
+                {{formatTime this.ThoiGianBatDau}}
+              {{else}}
+                <span class="text-muted">--:--</span>
+              {{/if}}
+            </td>
+            <td>
+              {{#if this.ThoiGianKetThuc}}
+                {{formatTime this.ThoiGianKetThuc}}
+              {{else}}
+                <span class="using-badge">Đang sử dụng</span>
+              {{/if}}
+            </td>
+            <td><strong class="price-text">{{formatNumber this.TongTien}} VND</strong></td>
+            <td>
+              <span class="status-badge {{#if (eq this.TrangThai 'Đã thanh toán')}}status-success{{else if (eq this.TrangThai 'Chưa thanh toán')}}status-warning{{else}}status-danger{{/if}}">
+                {{#if (eq this.TrangThai 'Đã thanh toán')}}✅ Đã thanh toán{{/if}}
+                {{#if (eq this.TrangThai 'Chưa thanh toán')}}⏳ Chưa thanh toán{{/if}}
+                {{#if (eq this.TrangThai 'Đã hủy')}}❌ Đã hủy{{/if}}
+              </span>
+            </td>
+            <td class="table-actions">
+              <div class="action-buttons">
+                <button class="btn-table-action btn-detail" data-mahd="{{this.MaHoaDon}}" title="Xem chi tiết">
+                  <i class="fas fa-eye"></i>
+                </button>
+                {{#if (eq this.TrangThai "Chưa thanh toán")}}
+                <button class="btn-table-action btn-pay" data-mahd="{{this.MaHoaDon}}" title="Thanh toán">
+                  <i class="fas fa-credit-card"></i>
+                </button>
+                {{else}}
+                <button class="btn-table-action btn-print" data-mahd="{{this.MaHoaDon}}" title="In hóa đơn">
+                  <i class="fas fa-print"></i>
+                </button>
+                {{/if}}
+                <button class="btn-table-action btn-edit" data-mahd="{{this.MaHoaDon}}" title="Sửa">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn-table-action btn-delete-table" data-id="{{this._id}}" data-mahd="{{this.MaHoaDon}}" title="Xóa">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
     </div>
 
     <!-- Empty State -->
@@ -236,6 +220,24 @@
         <i class="fas fa-plus"></i>
         Tạo hóa đơn đầu tiên
       </button>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-container" id="paginationContainer" style="{{#if hoadons.length}}display: flex;{{else}}display: none;{{/if}}">
+      <div class="pagination-info">
+        Hiển thị <span id="startIndex">1</span> - <span id="endIndex">10</span> trong tổng số <span id="totalInvoices">{{hoadons.length}}</span> hóa đơn
+      </div>
+      <div class="pagination-controls">
+        <button class="pagination-btn" id="prevPageBtn">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="page-numbers" id="pageNumbers">
+          <!-- Page numbers will be generated by JavaScript -->
+        </div>
+        <button class="pagination-btn" id="nextPageBtn">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -264,12 +266,12 @@
                 <input type="text" id="sdtKH" required placeholder="Nhập số điện thoại">
               </div>
               
-              <div class="form-group d-none">
+              <div class="form-group">
                 <label for="tenKH">Họ tên *</label>
                 <input type="text" id="tenKH" required placeholder="Nhập họ tên khách hàng">
               </div>
               
-              <div class="form-group d-none full-width">
+              <div class="form-group full-width">
                 <label for="emailKH">Email</label>
                 <input type="email" id="emailKH" placeholder="Nhập email (không bắt buộc)">
               </div>
@@ -422,6 +424,8 @@ document.addEventListener('DOMContentLoaded', function() {
 function initializeApp() {
     initializeEventListeners();
     loadInitialData();
+    invoicePagination = new InvoicePagination();
+    invoicePagination.init();
     calculateStatistics();
 }
 
@@ -509,9 +513,9 @@ function initializeEventListeners() {
             removeService(parseInt(index));
         }
 
-        // Delete buttons
-        if (e.target.closest('.btn-delete')) {
-            const btn = e.target.closest('.btn-delete');
+        // Delete buttons (support both old and new class names)
+        if (e.target.closest('.btn-delete') || e.target.closest('.btn-delete-table')) {
+            const btn = e.target.closest('.btn-delete') || e.target.closest('.btn-delete-table');
             const id = btn.getAttribute('data-id');
             const mahd = btn.getAttribute('data-mahd');
             deleteHoaDon(id, mahd);
@@ -519,8 +523,158 @@ function initializeEventListeners() {
     });
 }
 
+// Pagination Class
+class InvoicePagination {
+  constructor() {
+    this.currentPage = 1;
+    this.itemsPerPage = 10;
+    this.maxVisiblePages = 5;
+    this.allRows = [];
+    this.filteredRows = [];
+  }
+
+  init() {
+    this.allRows = Array.from(document.querySelectorAll('#hoaDonTableBody tr'));
+    this.filteredRows = [...this.allRows];
+    this.setupEventListeners();
+    this.showPage(1);
+  }
+
+  setupEventListeners() {
+    document.getElementById('prevPageBtn').addEventListener('click', () => {
+      if (this.currentPage > 1) {
+        this.showPage(this.currentPage - 1);
+      }
+    });
+
+    document.getElementById('nextPageBtn').addEventListener('click', () => {
+      if (this.currentPage < this.getTotalPages()) {
+        this.showPage(this.currentPage + 1);
+      }
+    });
+  }
+
+  applyFilters() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value;
+    const dateFrom = document.getElementById('dateFromFilter').value;
+    const dateTo = document.getElementById('dateToFilter').value;
+
+    this.filteredRows = this.allRows.filter(row => {
+      const mahd = row.getAttribute('data-mahd').toLowerCase();
+      const madp = row.getAttribute('data-madp') ? row.getAttribute('data-madp').toLowerCase() : '';
+      const customer = row.getAttribute('data-customer').toLowerCase();
+      const status = row.getAttribute('data-status');
+      const dateStr = row.getAttribute('data-date');
+
+      const matchesSearch = !searchTerm || mahd.includes(searchTerm) || madp.includes(searchTerm) || customer.includes(searchTerm);
+      const matchesStatus = !statusFilter || status === statusFilter;
+      
+      let matchesDateRange = true;
+      if (dateFrom || dateTo) {
+        const invoiceDate = new Date(dateStr);
+        if (dateFrom && new Date(dateFrom) > invoiceDate) matchesDateRange = false;
+        if (dateTo && new Date(dateTo) < invoiceDate) matchesDateRange = false;
+      }
+
+      return matchesSearch && matchesStatus && matchesDateRange;
+    });
+
+    this.currentPage = 1;
+    this.showPage(1);
+    toggleEmptyState(this.filteredRows.length === 0);
+  }
+
+  getTotalPages() {
+    return Math.ceil(this.filteredRows.length / this.itemsPerPage);
+  }
+
+  showPage(pageNum) {
+    this.currentPage = pageNum;
+    const startIndex = (pageNum - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+
+    this.allRows.forEach(row => row.style.display = 'none');
+    this.filteredRows.forEach((row, index) => {
+      if (index >= startIndex && index < endIndex) {
+        row.style.display = '';
+      }
+    });
+
+    this.updatePaginationUI();
+  }
+
+  updatePaginationUI() {
+    const totalPages = this.getTotalPages();
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage + 1;
+    const endIndex = Math.min(this.currentPage * this.itemsPerPage, this.filteredRows.length);
+
+    document.getElementById('startIndex').textContent = this.filteredRows.length > 0 ? startIndex : 0;
+    document.getElementById('endIndex').textContent = endIndex;
+    document.getElementById('totalInvoices').textContent = this.filteredRows.length;
+
+    document.getElementById('prevPageBtn').disabled = this.currentPage === 1;
+    document.getElementById('nextPageBtn').disabled = this.currentPage === totalPages || totalPages === 0;
+
+    this.renderPageNumbers();
+
+    const paginationContainer = document.getElementById('paginationContainer');
+    paginationContainer.style.display = this.filteredRows.length > 0 ? 'flex' : 'none';
+  }
+
+  renderPageNumbers() {
+    const pageNumbersContainer = document.getElementById('pageNumbers');
+    pageNumbersContainer.innerHTML = '';
+    
+    const totalPages = this.getTotalPages();
+    if (totalPages <= 1) return;
+
+    const createPageButton = (pageNum) => {
+      const btn = document.createElement('button');
+      btn.className = 'pagination-page' + (pageNum === this.currentPage ? ' active' : '');
+      btn.textContent = pageNum;
+      btn.addEventListener('click', () => this.showPage(pageNum));
+      return btn;
+    };
+
+    const createEllipsis = () => {
+      const span = document.createElement('span');
+      span.className = 'pagination-ellipsis';
+      span.textContent = '...';
+      return span;
+    };
+
+    if (totalPages <= this.maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbersContainer.appendChild(createPageButton(i));
+      }
+    } else {
+      pageNumbersContainer.appendChild(createPageButton(1));
+
+      if (this.currentPage > 3) {
+        pageNumbersContainer.appendChild(createEllipsis());
+      }
+
+      const startPage = Math.max(2, this.currentPage - 1);
+      const endPage = Math.min(totalPages - 1, this.currentPage + 1);
+
+      for (let i = startPage; i <= endPage; i++) {
+        pageNumbersContainer.appendChild(createPageButton(i));
+      }
+
+      if (this.currentPage < totalPages - 2) {
+        pageNumbersContainer.appendChild(createEllipsis());
+      }
+
+      pageNumbersContainer.appendChild(createPageButton(totalPages));
+    }
+  }
+}
+
+let invoicePagination;
+
 function loadInitialData() {
-    allHoaDons = Array.from(document.querySelectorAll('.employee-card'));
+    allHoaDons = Array.from(document.querySelectorAll('#hoaDonTableBody tr'));
     filteredHoaDons = [...allHoaDons];
 }
 
@@ -836,10 +990,25 @@ function resetHoaDonForm() {
     document.getElementById('giaPhongDisplay').textContent = '0 VND';
     document.getElementById('tienDichVuDisplay').textContent = '0 VND';
     document.getElementById('tongTienDisplay').textContent = '0 VND';
-
-    // Ẩn 2 field thông tin khách hàng
-    document.getElementById('tenKH').closest('.form-group').classList.add('d-none')
-    document.getElementById('emailKH').closest('.form-group').classList.add('d-none')
+    
+    // Enable lại tất cả các trường (cho chế độ tạo mới)
+    document.getElementById('sdtKH').disabled = false;
+    document.getElementById('tenKH').disabled = false;
+    document.getElementById('emailKH').disabled = false;
+    document.getElementById('phongSelect').disabled = false;
+    document.getElementById('thoiGianBatDau').disabled = false;
+    
+    // Xóa style disable
+    document.getElementById('sdtKH').style.backgroundColor = '';
+    document.getElementById('sdtKH').style.cursor = '';
+    document.getElementById('tenKH').style.backgroundColor = '';
+    document.getElementById('tenKH').style.cursor = '';
+    document.getElementById('emailKH').style.backgroundColor = '';
+    document.getElementById('emailKH').style.cursor = '';
+    document.getElementById('phongSelect').style.backgroundColor = '';
+    document.getElementById('phongSelect').style.cursor = '';
+    document.getElementById('thoiGianBatDau').style.backgroundColor = '';
+    document.getElementById('thoiGianBatDau').style.cursor = '';
 
     renderServicesList();
 }
@@ -954,6 +1123,10 @@ async function saveHoaDon() {
 
 // ===== FILTER & SEARCH =====
 function filterHoaDon() {
+    if (invoicePagination) {
+      invoicePagination.applyFilters();
+    }
+    
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const statusFilter = document.getElementById('statusFilter').value;
     const dateFrom = document.getElementById('dateFromFilter').value;
@@ -1017,14 +1190,19 @@ function clearFilters() {
 
 function toggleEmptyState(show) {
     const emptyState = document.getElementById('emptyState');
-    const grid = document.getElementById('hoaDonGrid');
+    const table = document.getElementById('hoaDonTable');
+    const paginationContainer = document.getElementById('paginationContainer');
 
-    if (!emptyState || !grid) return;
+    if (!emptyState || !table) return;
 
     if (show) {
+        table.style.display = 'none';
+        paginationContainer.style.display = 'none';
         grid.style.display = 'none';
         emptyState.style.display = 'block';
     } else {
+        table.style.display = 'block';
+        paginationContainer.style.display = 'flex';
         grid.style.display = 'grid';
         emptyState.style.display = 'none';
     }
@@ -2130,6 +2308,26 @@ function populateHoaDonEdit(hoaDonData) {
     }
     // Cập nhật UI để hiển thị đang edit mode
     document.getElementById('modalTitle').textContent = 'Chỉnh sửa hóa đơn';
+    
+    // Disable các trường không cho phép sửa trong edit mode
+    document.getElementById('sdtKH').disabled = true;
+    document.getElementById('tenKH').disabled = true;
+    document.getElementById('emailKH').disabled = true;
+    document.getElementById('phongSelect').disabled = true;
+    document.getElementById('thoiGianBatDau').disabled = true;
+    
+    // Thêm style để hiển thị rõ các trường bị disable
+    document.getElementById('sdtKH').style.backgroundColor = '#f1f5f9';
+    document.getElementById('sdtKH').style.cursor = 'not-allowed';
+    document.getElementById('tenKH').style.backgroundColor = '#f1f5f9';
+    document.getElementById('tenKH').style.cursor = 'not-allowed';
+    document.getElementById('emailKH').style.backgroundColor = '#f1f5f9';
+    document.getElementById('emailKH').style.cursor = 'not-allowed';
+    document.getElementById('phongSelect').style.backgroundColor = '#f1f5f9';
+    document.getElementById('phongSelect').style.cursor = 'not-allowed';
+    document.getElementById('thoiGianBatDau').style.backgroundColor = '#f1f5f9';
+    document.getElementById('thoiGianBatDau').style.cursor = 'not-allowed';
+    
     setTimeout(() => {
         updateRoomPrice();
         calculateTotal();
@@ -2512,7 +2710,308 @@ window.updateServiceQuantity = updateServiceQuantity;
   font-weight: 500;
 }
 
-/* ===== LƯỚI HÓA ĐƠN ===== */
+/* ===== BẢNG HÓA ĐƠN ===== */
+.table-container {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.data-table thead {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.data-table thead th {
+  padding: 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  border-bottom: 3px solid rgba(255, 255, 255, 0.2);
+}
+
+.data-table tbody tr {
+  border-bottom: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.data-table tbody tr:hover {
+  background: linear-gradient(to right, #f8fafc, #ffffff);
+  transform: scale(1.01);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+}
+
+.data-table tbody tr:nth-child(even) {
+  background: #f9fafb;
+}
+
+.data-table tbody tr:nth-child(even):hover {
+  background: linear-gradient(to right, #f8fafc, #ffffff);
+}
+
+.data-table tbody td {
+  padding: 16px;
+  vertical-align: middle;
+  color: #1e293b;
+}
+
+.invoice-code {
+  font-family: 'Courier New', monospace;
+  background: #f1f5f9;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  color: #475569;
+  font-size: 0.85rem;
+}
+
+.booking-code {
+  font-family: 'Courier New', monospace;
+  background: #fef3c7;
+  color: #92400e;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.direct-call {
+  color: #64748b;
+  font-style: italic;
+  font-size: 0.85rem;
+}
+
+.room-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #e9d8fd, #d6bcfa);
+  color: #6b46c1;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.using-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #92400e;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.price-text {
+  font-weight: 700;
+  color: #059669;
+  font-size: 1rem;
+}
+
+.text-muted {
+  color: #94a3b8;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.status-badge.status-success {
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  color: #065f46;
+}
+
+.status-badge.status-warning {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #92400e;
+}
+
+.status-badge.status-danger {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  color: #991b1b;
+}
+
+.table-actions {
+  width: 200px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.btn-table-action {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  color: white;
+}
+
+.btn-table-action.btn-detail {
+  background: linear-gradient(135deg, #4299e1, #3182ce);
+}
+
+.btn-table-action.btn-pay {
+  background: linear-gradient(135deg, #48bb78, #38a169);
+}
+
+.btn-table-action.btn-print {
+  background: linear-gradient(135deg, #ed8936, #dd6b20);
+}
+
+.btn-table-action.btn-edit {
+  background: linear-gradient(135deg, #9f7aea, #805ad5);
+}
+
+.btn-table-action.btn-delete-table {
+  background: linear-gradient(135deg, #f56565, #e53e3e);
+}
+
+.btn-table-action:hover {
+  transform: translateY(-2px) scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* ===== PAGINATION ===== */
+.pagination-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 32px;
+  padding: 20px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.pagination-info {
+  color: #64748b;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.pagination-info span {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-numbers {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-direction: row;
+}
+
+.pagination-btn {
+  background: white;
+  border: 2px solid #e2e8f0;
+  color: #64748b;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  font-weight: 600;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #667eea;
+  border-color: #667eea;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.pagination-btn:disabled {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #cbd5e0;
+  cursor: not-allowed;
+}
+
+.pagination-page {
+  background: white;
+  border: 2px solid #e2e8f0;
+  color: #64748b;
+  min-width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.pagination-page:hover:not(.active) {
+  background: #f8fafc;
+  border-color: #667eea;
+  color: #667eea;
+  transform: translateY(-1px);
+}
+
+.pagination-page.active {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-color: #667eea;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.pagination-ellipsis {
+  color: #94a3b8;
+  padding: 0 8px;
+  font-weight: 600;
+}
+
+/* ===== OLD CARD STYLES (Keep for compatibility) ===== */
 .employees-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
@@ -3753,6 +4252,55 @@ window.updateServiceQuantity = updateServiceQuantity;
     margin: 0;
   }
   
+  /* Table Responsive */
+  .table-container {
+    border-radius: 12px;
+    margin: 0 -16px;
+  }
+
+  .data-table {
+    font-size: 0.8rem;
+  }
+
+  .data-table thead th,
+  .data-table tbody td {
+    padding: 10px 8px;
+  }
+
+  .btn-table-action {
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
+  }
+
+  .action-buttons {
+    gap: 4px;
+  }
+
+  .status-badge,
+  .room-badge,
+  .using-badge,
+  .booking-code {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+  }
+
+  .pagination-container {
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+  }
+
+  .pagination-info {
+    width: 100%;
+    text-align: center;
+    order: 2;
+  }
+
+  .pagination-controls {
+    order: 1;
+  }
+
   .service-actions {
     justify-content: space-between;
   }

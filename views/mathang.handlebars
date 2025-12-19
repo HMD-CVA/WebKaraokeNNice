@@ -86,62 +86,62 @@
       </div>
     </div>
 
-    <!-- Products Grid -->
-    <div class="rooms-grid" id="productsGrid">
-      {{#each mathangs}}
-      <div class="room-card" data-id="{{this._id}}" data-name="{{this.TenHang}}" data-category="{{this.LoaiHang}}"
-           data-stock="{{this.SoLuongTon}}" data-price="{{this.DonGia}}">
-        <div class="room-image">
-          <img src="{{this.LinkAnh}}" alt="{{this.TenHang}}">
-          <div class="room-overlay">
-            <div class="room-actions">
-              <button class="btn-edit" data-product='{{{json this}}}'>
-                <i class="fas fa-edit"></i>
-              </button>
-              <button class="btn-delete" data-id="{{this._id}}" data-name="{{this.TenHang}}">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-          </div>
-          <div class="room-badge {{#if (gt this.SoLuongTon 10)}}inStock{{else if (and (lte this.SoLuongTon 10) (gt this.SoLuongTon 0))}}lowStock{{else}}outOfStock{{/if}}">
-            {{#if (gt this.SoLuongTon 10)}}🟢 Còn hàng{{/if}}
-            {{#if (and (lte this.SoLuongTon 10) (gt this.SoLuongTon 0))}}🟡 Sắp hết{{/if}}
-            {{#if (eq this.SoLuongTon 0)}}🔴 Hết hàng{{/if}}
-          </div>
-          <div class="room-type">{{this.LoaiHang}}</div>
-        </div>
-
-        <div class="room-content">
-          <h3 class="room-title">{{this.TenHang}}</h3>
-          <p class="room-description">Mã hàng: {{this.MaHang}}</p>
-
-          <div class="room-details">
-            <div class="detail-item">
-              <i class="fas fa-money-bill-wave"></i>
-              <span>{{formatNumber this.DonGia}} VNĐ / {{this.DonViTinh}}</span>
-            </div>
-            <div class="detail-item">
-              <i class="fas fa-box"></i>
-              <span>Tồn kho: {{this.SoLuongTon}} {{this.DonViTinh}}</span>
-            </div>
-          </div>
-
-          <div class="product-footer">
-            <div class="price-tag">
-              <strong>{{formatNumber this.DonGia}} VNĐ</strong>
-            </div>
-            <div class="stock-actions">
-              <button class="btn-stock-in" data-id="{{this._id}}" data-action="in" title="Nhập hàng">
-                <i class="fas fa-arrow-down"></i>
-              </button>
-              <button class="btn-stock-out" data-id="{{this._id}}" data-action="out" title="Xuất hàng">
-                <i class="fas fa-arrow-up"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      {{/each}}
+    <!-- Products Table -->
+    <div class="table-container" id="productsTable">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 80px;">Hình ảnh</th>
+            <th style="width: 100px;">Mã hàng</th>
+            <th style="width: 200px;">Tên hàng</th>
+            <th style="width: 120px;">Loại hàng</th>
+            <th style="width: 100px;">Đơn vị</th>
+            <th style="width: 120px;">Đơn giá</th>
+            <th style="width: 100px;">Tồn kho</th>
+            <th style="width: 120px;">Trạng thái</th>
+            <th style="width: 180px;">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="productsTableBody">
+          {{#each mathangs}}
+          <tr data-id="{{this._id}}" data-name="{{this.TenHang}}" data-category="{{this.LoaiHang}}"
+              data-stock="{{this.SoLuongTon}}" data-price="{{this.DonGia}}">
+            <td class="table-image">
+              <img src="{{this.LinkAnh}}" alt="{{this.TenHang}}" class="product-thumbnail">
+            </td>
+            <td><span class="product-code">{{this.MaHang}}</span></td>
+            <td><strong>{{this.TenHang}}</strong></td>
+            <td><span class="category-badge">{{this.LoaiHang}}</span></td>
+            <td>{{this.DonViTinh}}</td>
+            <td><span class="price-text">{{formatNumber this.DonGia}} VNĐ</span></td>
+            <td><strong class="stock-number">{{this.SoLuongTon}}</strong></td>
+            <td>
+              <span class="status-badge {{#if (gt this.SoLuongTon 10)}}status-success{{else if (and (lte this.SoLuongTon 10) (gt this.SoLuongTon 0))}}status-warning{{else}}status-danger{{/if}}">
+                {{#if (gt this.SoLuongTon 10)}}🟢 Còn hàng{{/if}}
+                {{#if (and (lte this.SoLuongTon 10) (gt this.SoLuongTon 0))}}🟡 Sắp hết{{/if}}
+                {{#if (eq this.SoLuongTon 0)}}🔴 Hết hàng{{/if}}
+              </span>
+            </td>
+            <td class="table-actions">
+              <div class="action-buttons">
+                <button class="btn-table-action btn-stock-in" data-id="{{this._id}}" title="Nhập hàng">
+                  <i class="fas fa-arrow-down"></i>
+                </button>
+                <button class="btn-table-action btn-stock-out" data-id="{{this._id}}" title="Xuất hàng">
+                  <i class="fas fa-arrow-up"></i>
+                </button>
+                <button class="btn-table-action btn-edit" data-product='{{{json this}}}' title="Sửa">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn-table-action btn-delete-table" data-id="{{this._id}}" data-name="{{this.TenHang}}" title="Xóa">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
     </div>
 
     <!-- Empty State -->
@@ -153,6 +153,24 @@
         <i class="fas fa-plus"></i>
         Thêm mặt hàng đầu tiên
       </button>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-container" id="paginationContainer" style="{{#if mathangs.length}}display: flex;{{else}}display: none;{{/if}}">
+      <div class="pagination-info">
+        Hiển thị <span id="startIndex">1</span> - <span id="endIndex">10</span> trong tổng số <span id="totalProducts">{{mathangs.length}}</span> mặt hàng
+      </div>
+      <div class="pagination-controls">
+        <button class="pagination-btn" id="prevPageBtn">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="page-numbers" id="pageNumbers">
+          <!-- Page numbers will be generated by JavaScript -->
+        </div>
+        <button class="pagination-btn" id="nextPageBtn">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -531,36 +549,166 @@
     }
   }
 
+  // Pagination Class
+  class ProductPagination {
+    constructor() {
+      this.currentPage = 1;
+      this.itemsPerPage = 10;
+      this.maxVisiblePages = 5;
+      this.allRows = [];
+      this.filteredRows = [];
+    }
+
+    init() {
+      this.allRows = Array.from(document.querySelectorAll('#productsTableBody tr'));
+      this.filteredRows = [...this.allRows];
+      this.setupEventListeners();
+      this.applyFilters();
+    }
+
+    setupEventListeners() {
+      document.getElementById('prevPageBtn').addEventListener('click', () => {
+        if (this.currentPage > 1) {
+          this.showPage(this.currentPage - 1);
+        }
+      });
+
+      document.getElementById('nextPageBtn').addEventListener('click', () => {
+        if (this.currentPage < this.getTotalPages()) {
+          this.showPage(this.currentPage + 1);
+        }
+      });
+    }
+
+    applyFilters() {
+      const searchTerm = document.getElementById('searchProductInput').value.toLowerCase();
+      const categoryFilter = document.getElementById('categoryFilter').value;
+      const stockFilter = document.getElementById('stockFilter').value;
+
+      this.filteredRows = this.allRows.filter(row => {
+        const name = row.getAttribute('data-name').toLowerCase();
+        const code = row.querySelector('.product-code').textContent.toLowerCase();
+        const category = row.getAttribute('data-category');
+        const stock = parseInt(row.getAttribute('data-stock'));
+        const stockStatus = getStockStatus(stock);
+
+        const matchesSearch = !searchTerm || name.includes(searchTerm) || code.includes(searchTerm);
+        const matchesCategory = !categoryFilter || category === categoryFilter;
+        let matchesStock = true;
+
+        if (stockFilter === 'inStock') matchesStock = stockStatus === 'inStock';
+        else if (stockFilter === 'lowStock') matchesStock = stockStatus === 'lowStock';
+        else if (stockFilter === 'outOfStock') matchesStock = stockStatus === 'outOfStock';
+
+        return matchesSearch && matchesCategory && matchesStock;
+      });
+
+      this.currentPage = 1;
+      this.showPage(1);
+      toggleProductEmptyState(this.filteredRows.length === 0);
+    }
+
+    getTotalPages() {
+      return Math.ceil(this.filteredRows.length / this.itemsPerPage);
+    }
+
+    showPage(pageNum) {
+      this.currentPage = pageNum;
+      const startIndex = (pageNum - 1) * this.itemsPerPage;
+      const endIndex = startIndex + this.itemsPerPage;
+
+      // Hide all rows
+      this.allRows.forEach(row => row.style.display = 'none');
+
+      // Show only filtered rows for current page
+      this.filteredRows.forEach((row, index) => {
+        if (index >= startIndex && index < endIndex) {
+          row.style.display = '';
+        }
+      });
+
+      this.updatePaginationUI();
+    }
+
+    updatePaginationUI() {
+      const totalPages = this.getTotalPages();
+      const startIndex = (this.currentPage - 1) * this.itemsPerPage + 1;
+      const endIndex = Math.min(this.currentPage * this.itemsPerPage, this.filteredRows.length);
+
+      // Update info
+      document.getElementById('startIndex').textContent = this.filteredRows.length > 0 ? startIndex : 0;
+      document.getElementById('endIndex').textContent = endIndex;
+      document.getElementById('totalProducts').textContent = this.filteredRows.length;
+
+      // Update buttons
+      document.getElementById('prevPageBtn').disabled = this.currentPage === 1;
+      document.getElementById('nextPageBtn').disabled = this.currentPage === totalPages || totalPages === 0;
+
+      // Render page numbers
+      this.renderPageNumbers();
+
+      // Show/hide pagination
+      const paginationContainer = document.getElementById('paginationContainer');
+      paginationContainer.style.display = this.filteredRows.length > 0 ? 'flex' : 'none';
+    }
+
+    renderPageNumbers() {
+      const pageNumbersContainer = document.getElementById('pageNumbers');
+      pageNumbersContainer.innerHTML = '';
+      
+      const totalPages = this.getTotalPages();
+      if (totalPages <= 1) return;
+
+      const createPageButton = (pageNum) => {
+        const btn = document.createElement('button');
+        btn.className = 'pagination-page' + (pageNum === this.currentPage ? ' active' : '');
+        btn.textContent = pageNum;
+        btn.addEventListener('click', () => this.showPage(pageNum));
+        return btn;
+      };
+
+      const createEllipsis = () => {
+        const span = document.createElement('span');
+        span.className = 'pagination-ellipsis';
+        span.textContent = '...';
+        return span;
+      };
+
+      if (totalPages <= this.maxVisiblePages) {
+        for (let i = 1; i <= totalPages; i++) {
+          pageNumbersContainer.appendChild(createPageButton(i));
+        }
+      } else {
+        pageNumbersContainer.appendChild(createPageButton(1));
+
+        if (this.currentPage > 3) {
+          pageNumbersContainer.appendChild(createEllipsis());
+        }
+
+        const startPage = Math.max(2, this.currentPage - 1);
+        const endPage = Math.min(totalPages - 1, this.currentPage + 1);
+
+        for (let i = startPage; i <= endPage; i++) {
+          pageNumbersContainer.appendChild(createPageButton(i));
+        }
+
+        if (this.currentPage < totalPages - 2) {
+          pageNumbersContainer.appendChild(createEllipsis());
+        }
+
+        pageNumbersContainer.appendChild(createPageButton(totalPages));
+      }
+    }
+  }
+
+  // Initialize pagination instance
+  let productPagination;
+
   // Filter & Search
   function filterProducts() {
-    const searchTerm = document.getElementById('searchProductInput').value.toLowerCase();
-    const categoryFilter = document.getElementById('categoryFilter').value;
-    const stockFilter = document.getElementById('stockFilter').value;
-
-    const productCards = document.querySelectorAll('.room-card');
-    let visibleCount = 0;
-    
-    productCards.forEach(card => {
-      const name = card.getAttribute('data-name').toLowerCase();
-      const code = card.querySelector('.room-description').textContent.toLowerCase();
-      const category = card.getAttribute('data-category');
-      const stock = parseInt(card.getAttribute('data-stock'));
-      const stockStatus = getStockStatus(stock);
-      
-      const matchesSearch = !searchTerm || name.includes(searchTerm) || code.includes(searchTerm);
-      const matchesCategory = !categoryFilter || category === categoryFilter;
-      let matchesStock = true;
-      
-      if (stockFilter === 'inStock') matchesStock = stockStatus === 'inStock';
-      else if (stockFilter === 'lowStock') matchesStock = stockStatus === 'lowStock';
-      else if (stockFilter === 'outOfStock') matchesStock = stockStatus === 'outOfStock';
-
-      const shouldShow = matchesSearch && matchesCategory && matchesStock;
-      card.style.display = shouldShow ? 'block' : 'none';
-      if (shouldShow) visibleCount++;
-    });
-
-    toggleProductEmptyState(visibleCount === 0);
+    if (productPagination) {
+      productPagination.applyFilters();
+    }
   }
 
   function clearProductFilters() {
@@ -572,23 +720,26 @@
 
   function toggleProductEmptyState(show) {
     const emptyState = document.getElementById('emptyState');
-    const productsGrid = document.getElementById('productsGrid');
+    const productsTable = document.getElementById('productsTable');
+    const paginationContainer = document.getElementById('paginationContainer');
     
     if (show) {
-      productsGrid.style.display = 'none';
+      productsTable.style.display = 'none';
       emptyState.style.display = 'flex';
+      paginationContainer.style.display = 'none';
     } else {
-      productsGrid.style.display = 'grid';
+      productsTable.style.display = 'block';
       emptyState.style.display = 'none';
+      paginationContainer.style.display = 'flex';
     }
   }
 
   function updateStats() {
-    const productCards = document.querySelectorAll('.room-card');
+    const productRows = document.querySelectorAll('#productsTableBody tr');
     let inStockCount = 0, lowStockCount = 0, outOfStockCount = 0;
 
-    productCards.forEach(card => {
-      const stock = parseInt(card.getAttribute('data-stock'));
+    productRows.forEach(row => {
+      const stock = parseInt(row.getAttribute('data-stock'));
       const status = getStockStatus(stock);
       
       if (status === 'inStock') inStockCount++;
@@ -663,7 +814,7 @@
     });
     });
 
-  document.querySelectorAll('.btn-delete[data-id]').forEach(btn => {
+  document.querySelectorAll('.btn-delete-table[data-id]').forEach(btn => {
     btn.addEventListener('click', function() {
       const productId = this.getAttribute('data-id');
       const productName = this.getAttribute('data-name');
@@ -675,7 +826,7 @@
   document.querySelectorAll('.btn-stock-in, .btn-stock-out').forEach(btn => {
     btn.addEventListener('click', function() {
       const productId = this.getAttribute('data-id');
-      const action = this.getAttribute('data-action');
+      const action = this.classList.contains('btn-stock-in') ? 'in' : 'out';
       updateStock(productId, action);
     });
   });
@@ -692,8 +843,10 @@
   // Initialize when DOM is loaded
   document.addEventListener('DOMContentLoaded', function() {
     updateStats();
+    productPagination = new ProductPagination();
+    productPagination.init();
     initializeEventListeners();
-    console.log('Product management app initialized');
+    console.log('Product management app initialized with pagination');
   });
 </script>
 
@@ -1519,6 +1672,13 @@
     gap: 8px;
   }
 
+  .page-numbers {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-direction: row;
+  }
+
   .pagination-btn {
     background: white;
     border: 2px solid #e2e8f0;
@@ -1686,13 +1846,19 @@
     }
 
     .pagination-container {
-      flex-direction: column;
+      flex-wrap: wrap;
       gap: 16px;
-      text-align: center;
+      justify-content: center;
     }
 
-    .pagination-pages {
-      order: -1;
+    .pagination-info {
+      width: 100%;
+      text-align: center;
+      order: 2;
+    }
+
+    .pagination-controls {
+      order: 1;
     }
 
     .pagination-info {
@@ -1860,6 +2026,276 @@
   .category-actions .btn-delete:hover {
     background: #e53e3e;
     transform: scale(1.1);
+  }
+
+  /* ===== TABLE STYLES ===== */
+  .table-container {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.03);
+    overflow-x: auto;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+  }
+
+  .data-table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .data-table thead th {
+    padding: 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    border-bottom: 3px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .data-table tbody tr {
+    border-bottom: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+  }
+
+  .data-table tbody tr:hover {
+    background: linear-gradient(to right, #f8fafc, #ffffff);
+    transform: scale(1.01);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+  }
+
+  .data-table tbody tr:nth-child(even) {
+    background: #f9fafb;
+  }
+
+  .data-table tbody tr:nth-child(even):hover {
+    background: linear-gradient(to right, #f8fafc, #ffffff);
+  }
+
+  .data-table tbody td {
+    padding: 16px;
+    vertical-align: middle;
+    color: #1e293b;
+  }
+
+  /* Table Image Cell */
+  .table-image {
+    width: 80px;
+  }
+
+  .product-thumbnail {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+  }
+
+  .product-thumbnail:hover {
+    transform: scale(1.5);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    z-index: 100;
+    cursor: pointer;
+  }
+
+  /* Product Code */
+  .product-code {
+    font-family: 'Courier New', monospace;
+    background: #f1f5f9;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    color: #475569;
+    font-size: 0.85rem;
+  }
+
+  /* Category Badge */
+  .category-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    color: #92400e;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
+  /* Price Text */
+  .price-text {
+    font-weight: 700;
+    color: #059669;
+    font-size: 1rem;
+  }
+
+  /* Stock Number */
+  .stock-number {
+    font-size: 1.1rem;
+    color: #1e293b;
+  }
+
+  /* Status Badge */
+  .status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
+  .status-badge.status-success {
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    color: #065f46;
+  }
+
+  .status-badge.status-warning {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    color: #92400e;
+  }
+
+  .status-badge.status-danger {
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    color: #991b1b;
+  }
+
+  /* Table Actions */
+  .table-actions {
+    width: 180px;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .btn-table-action {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    color: white;
+  }
+
+  .btn-table-action.btn-stock-in {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+  }
+
+  .btn-table-action.btn-stock-out {
+    background: linear-gradient(135deg, #ed8936, #dd6b20);
+  }
+
+  .btn-table-action.btn-edit {
+    background: linear-gradient(135deg, #4299e1, #3182ce);
+  }
+
+  .btn-table-action.btn-delete-table {
+    background: linear-gradient(135deg, #f56565, #e53e3e);
+  }
+
+  .btn-table-action:hover {
+    transform: translateY(-2px) scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  .btn-table-action.btn-stock-in:hover {
+    background: linear-gradient(135deg, #38a169, #2f855a);
+  }
+
+  .btn-table-action.btn-stock-out:hover {
+    background: linear-gradient(135deg, #dd6b20, #c05621);
+  }
+
+  .btn-table-action.btn-edit:hover {
+    background: linear-gradient(135deg, #3182ce, #2c5282);
+  }
+
+  .btn-table-action.btn-delete-table:hover {
+    background: linear-gradient(135deg, #e53e3e, #c53030);
+  }
+
+  /* Table Responsive */
+  @media (max-width: 1024px) {
+    .data-table {
+      font-size: 0.85rem;
+    }
+
+    .data-table thead th,
+    .data-table tbody td {
+      padding: 12px;
+    }
+
+    .product-thumbnail {
+      width: 50px;
+      height: 50px;
+    }
+
+    .btn-table-action {
+      width: 32px;
+      height: 32px;
+      font-size: 0.85rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .table-container {
+      border-radius: 12px;
+      margin: 0 -16px;
+    }
+
+    .data-table {
+      font-size: 0.8rem;
+    }
+
+    .data-table thead th,
+    .data-table tbody td {
+      padding: 10px 8px;
+    }
+
+    .product-thumbnail {
+      width: 40px;
+      height: 40px;
+    }
+
+    .btn-table-action {
+      width: 30px;
+      height: 30px;
+      font-size: 0.75rem;
+    }
+
+    .action-buttons {
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .category-badge,
+    .status-badge {
+      font-size: 0.75rem;
+      padding: 4px 8px;
+    }
+
+    .price-text {
+      font-size: 0.9rem;
+    }
   }
 
   /* CSS còn lại giữ nguyên */

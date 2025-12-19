@@ -131,85 +131,73 @@
       </div>
     </div>
 
-    <!-- Employees Grid -->
-    <div class="employees-grid" id="employeesGrid">
-      {{#each nhanviens}}
-      <div class="employee-card" 
-           data-id="{{this._id}}" 
-           data-manv="{{this.MaNV}}"
-           data-name="{{this.TenNV}}" 
-           data-phone="{{this.SĐT}}" 
-           data-email="{{this.Email}}" 
-           data-role="{{this.VaiTro}}" 
-           data-status="{{this.TrangThai}}" 
-           data-shift="{{this.CaTruc}}">
-        <div class="employee-image">
-          {{#if this.LinkAvatar}}
-          <img src="{{this.LinkAvatar}}" alt="{{this.TenNV}}">
-          {{else}}
-          <div class="employee-avatar-placeholder">
-            <i class="fas fa-user"></i>
-          </div>
-          {{/if}}
-          <div class="employee-overlay">
-            <div class="employee-actions">
-              <button class="btn-edit" onclick="editEmployee('{{this.MaNV}}')">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button class="btn-delete" onclick="deleteEmployee('{{this.MaNV}}', '{{this.TenNV}}')">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-          </div>
-          <div class="employee-badge {{this.VaiTro}}">
-            {{this.VaiTro}}
-          </div>
-          <div class="employee-status {{#if (eq this.TrangThai 'Đang làm việc')}}active{{else if (eq this.TrangThai 'Nghỉ phép')}}onleave{{else}}inactive{{/if}}">
-            {{this.TrangThai}}
-          </div>
+    <!-- Employees Table -->
+    <div class="table-container">
+      <table class="data-table" id="employeesTable">
+        <thead>
+          <tr>
+            <th>Ảnh</th>
+            <th>Mã NV</th>
+            <th>Tên nhân viên</th>
+            <th>SĐT</th>
+            <th>Vai trò</th>
+            <th>Ca trực</th>
+            <th>Lương CB</th>
+            <th>Trạng thái</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="employeesTableBody">
+          {{#each nhanviens}}
+          <tr class="employee-row" 
+              data-id="{{this._id}}" 
+              data-manv="{{this.MaNV}}"
+              data-name="{{this.TenNV}}" 
+              data-phone="{{this.SĐT}}" 
+              data-email="{{this.Email}}" 
+              data-role="{{this.VaiTro}}" 
+              data-status="{{this.TrangThai}}" 
+              data-shift="{{this.CaTruc}}">
+            <td>
+              <div class="employee-avatar">
+                {{#if this.LinkAvatar}}
+                <img src="{{this.LinkAvatar}}" alt="{{this.TenNV}}">
+                {{else}}
+                <div class="avatar-placeholder">
+                  <i class="fas fa-user"></i>
+                </div>
+                {{/if}}
+              </div>
+            </td>
+            <td><span class="employee-code">{{this.MaNV}}</span></td>
+            <td><strong>{{this.TenNV}}</strong></td>
+            <td>{{this.SĐT}}</td>
+            <td><span class="role-badge {{this.VaiTro}}">{{this.VaiTro}}</span></td>
+            <td>{{this.CaTruc}}</td>
+            <td><strong>{{formatCurrency this.LuongCoBan}}</strong></td>
+            <td>
+              <span class="status-badge {{#if (eq this.TrangThai 'Đang làm việc')}}active{{else if (eq this.TrangThai 'Nghỉ phép')}}onleave{{else}}inactive{{/if}}">
+                {{this.TrangThai}}
+              </span>
+            </td>
+            <td>
+              <div class="table-actions">
+                <button class="btn-table-action btn-delete" onclick="deleteEmployee('{{this.MaNV}}', '{{this.TenNV}}')" title="Xóa">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+      
+      <div class="pagination-controls">
+        <div class="pagination-info">
+          Hiển thị <span id="currentRange">1-10</span> trong tổng số <span id="totalEmployees">{{nhanviens.length}}</span> nhân viên
         </div>
-
-        <div class="employee-content">
-          <h3 class="employee-name">{{this.TenNV}}</h3>
-          <p class="employee-code">Mã: {{this.MaNV}}</p>
-
-          <div class="employee-details">
-            <div class="detail-item">
-              <i class="fas fa-phone"></i>
-              <span>{{this.SĐT}}</span>
-            </div>
-            <div class="detail-item">
-              <i class="fas fa-envelope"></i>
-              <span>{{this.Email}}</span>
-            </div>
-            <div class="detail-item">
-              <i class="fas fa-calendar-alt"></i>
-              <span>{{formatDate this.NgayVaoLam}}</span>
-            </div>
-            <div class="detail-item">
-              <i class="fas fa-clock"></i>
-              <span>{{this.CaTruc}}</span>
-            </div>
-            <div class="detail-item">
-              <i class="fas fa-money-bill-wave"></i>
-              <span>{{formatCurrency this.LuongCoBan}}</span>
-            </div>
-            {{#if this.DoanhSo}}
-            <div class="detail-item">
-              <i class="fas fa-chart-line"></i>
-              <span>Doanh số: {{formatCurrency this.DoanhSo}}</span>
-            </div>
-            {{/if}}
-            {{#if this.DanhGia}}
-            <div class="detail-item">
-              <i class="fas fa-star"></i>
-              <span>Đánh giá: {{this.DanhGia}}/5</span>
-            </div>
-            {{/if}}
-          </div>
-        </div>
+        <div class="page-numbers" id="pageNumbers"></div>
       </div>
-      {{/each}}
     </div>
 
     <!-- Empty State -->
@@ -388,6 +376,130 @@
   // ===== CONFIGURATION & STATE =====
   let allEmployees = [];
   let filteredEmployees = [];
+  let employeePagination;
+
+  // ===== PAGINATION CLASS =====
+  class EmployeePagination {
+    constructor(itemsPerPage = 10) {
+      this.itemsPerPage = itemsPerPage;
+      this.currentPage = 1;
+      this.allRows = [];
+      this.filteredRows = [];
+      this.totalPages = 1;
+      this.maxVisiblePages = 5;
+    }
+
+    init() {
+      this.allRows = Array.from(document.querySelectorAll('.employee-row'));
+      this.filteredRows = [...this.allRows];
+      this.updatePagination();
+      this.renderPageNumbers();
+    }
+
+    applyFilters() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      const roleFilter = document.getElementById('roleFilter').value;
+      const shiftFilter = document.getElementById('shiftFilter').value;
+      const statusFilter = document.getElementById('statusFilter').value;
+
+      this.filteredRows = this.allRows.filter(row => {
+        const name = row.getAttribute('data-name').toLowerCase();
+        const phone = row.getAttribute('data-phone').toLowerCase();
+        const email = row.getAttribute('data-email').toLowerCase();
+        const role = row.getAttribute('data-role');
+        const shift = row.getAttribute('data-shift');
+        const status = row.getAttribute('data-status');
+
+        const matchesSearch = !searchTerm || 
+          name.includes(searchTerm) || 
+          phone.includes(searchTerm) ||
+          email.includes(searchTerm);
+        const matchesRole = !roleFilter || role === roleFilter;
+        const matchesShift = !shiftFilter || shift === shiftFilter;
+        const matchesStatus = !statusFilter || status === statusFilter;
+
+        return matchesSearch && matchesRole && matchesShift && matchesStatus;
+      });
+
+      this.currentPage = 1;
+      this.updatePagination();
+      this.renderPageNumbers();
+    }
+
+    updatePagination() {
+      this.totalPages = Math.ceil(this.filteredRows.length / this.itemsPerPage);
+      
+      const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+      const endIndex = startIndex + this.itemsPerPage;
+
+      this.allRows.forEach(row => row.style.display = 'none');
+      
+      this.filteredRows.forEach((row, index) => {
+        if (index >= startIndex && index < endIndex) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+
+      const start = Math.min(startIndex + 1, this.filteredRows.length);
+      const end = Math.min(endIndex, this.filteredRows.length);
+      document.getElementById('currentRange').textContent = this.filteredRows.length > 0 ? `${start}-${end}` : '0';
+      document.getElementById('totalEmployees').textContent = this.filteredRows.length;
+
+      toggleEmptyState(this.filteredRows.length === 0);
+      calculateFilteredStatisticsFromRows(this.filteredRows);
+    }
+
+    renderPageNumbers() {
+      const container = document.getElementById('pageNumbers');
+      if (!container) return;
+
+      container.innerHTML = '';
+
+      if (this.totalPages <= 1) return;
+
+      const createButton = (page, text = page, isActive = false) => {
+        const button = document.createElement('button');
+        button.textContent = text;
+        button.className = 'page-btn' + (isActive ? ' active' : '');
+        if (!isActive && page !== '...') {
+          button.onclick = () => this.goToPage(page);
+        }
+        if (page === '...') button.disabled = true;
+        return button;
+      };
+
+      container.appendChild(createButton(Math.max(1, this.currentPage - 1), '‹'));
+
+      let pages = [];
+      if (this.totalPages <= this.maxVisiblePages) {
+        pages = Array.from({length: this.totalPages}, (_, i) => i + 1);
+      } else {
+        if (this.currentPage <= 3) {
+          pages = [1, 2, 3, 4, '...', this.totalPages];
+        } else if (this.currentPage >= this.totalPages - 2) {
+          pages = [1, '...', this.totalPages - 3, this.totalPages - 2, this.totalPages - 1, this.totalPages];
+        } else {
+          pages = [1, '...', this.currentPage - 1, this.currentPage, this.currentPage + 1, '...', this.totalPages];
+        }
+      }
+
+      pages.forEach(page => {
+        container.appendChild(createButton(page, page, page === this.currentPage));
+      });
+
+      container.appendChild(createButton(Math.min(this.totalPages, this.currentPage + 1), '›'));
+    }
+
+    goToPage(page) {
+      if (page < 1 || page > this.totalPages) return;
+      this.currentPage = page;
+      this.updatePagination();
+      this.renderPageNumbers();
+      document.getElementById('employeesTable').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
 
   // ===== STATISTICS CALCULATION =====
   function calculateStatistics() {
@@ -485,6 +597,47 @@
     updateStatCard('#statSecurity', countSecurity);
     updateStatCard('#statFullTime', countFullTime);
   }
+
+  function calculateFilteredStatisticsFromRows(rows) {
+    const totalEmployees = rows.length;
+    
+    const countActive = rows.filter(row => 
+      row.getAttribute('data-status') === 'Đang làm việc'
+    ).length;
+    
+    const countReception = rows.filter(row => 
+      row.getAttribute('data-role') === 'Lễ tân'
+    ).length;
+    
+    const countService = rows.filter(row => 
+      row.getAttribute('data-role') === 'Phục vụ'
+    ).length;
+    
+    const countTechnical = rows.filter(row => 
+      row.getAttribute('data-role') === 'Kỹ thuật'
+    ).length;
+    
+    const countManager = rows.filter(row => 
+      row.getAttribute('data-role') === 'Quản lý'
+    ).length;
+    
+    const countSecurity = rows.filter(row => 
+      row.getAttribute('data-role') === 'Bảo vệ'
+    ).length;
+    
+    const countFullTime = rows.filter(row => 
+      row.getAttribute('data-shift') === 'Full-time'
+    ).length;
+    
+    updateStatCard('#statTotal', totalEmployees);
+    updateStatCard('#statActive', countActive);
+    updateStatCard('#statReception', countReception);
+    updateStatCard('#statService', countService);
+    updateStatCard('#statTechnical', countTechnical);
+    updateStatCard('#statManager', countManager);
+    updateStatCard('#statSecurity', countSecurity);
+    updateStatCard('#statFullTime', countFullTime);
+  }
   
   function updateStatCard(selector, value) {
     const element = document.querySelector(selector);
@@ -542,23 +695,6 @@
     } else {
       resetEmployeeForm();
     }
-  }
-
-  function editEmployee(maNV) {
-    // Gửi yêu cầu API để lấy thông tin chi tiết nhân viên
-    fetch(`/api/nhanvien/${maNV}`)
-      .then(response => response.json())
-      .then(employeeData => {
-        openEmployeeModal(employeeData);
-      })
-      .catch(error => {
-        console.error('Lỗi khi lấy thông tin nhân viên:', error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Lỗi!',
-          text: 'Không thể tải thông tin nhân viên'
-        });
-      });
   }
 
   function closeEmployeeModal() {
@@ -742,35 +878,9 @@
 
   // ===== FILTER & SEARCH =====
   function filterEmployees() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const roleFilter = document.getElementById('roleFilter').value;
-    const shiftFilter = document.getElementById('shiftFilter').value;
-    const statusFilter = document.getElementById('statusFilter').value;
-
-    filteredEmployees = allEmployees.filter(card => {
-      const name = card.getAttribute('data-name').toLowerCase();
-      const phone = card.getAttribute('data-phone').toLowerCase();
-      const email = card.getAttribute('data-email').toLowerCase();
-      const role = card.getAttribute('data-role');
-      const shift = card.getAttribute('data-shift');
-      const status = card.getAttribute('data-status');
-
-      const matchesSearch = !searchTerm || 
-        name.includes(searchTerm) || 
-        phone.includes(searchTerm) ||
-        email.includes(searchTerm);
-      const matchesRole = !roleFilter || role === roleFilter;
-      const matchesShift = !shiftFilter || shift === shiftFilter;
-      const matchesStatus = !statusFilter || status === statusFilter;
-
-      const shouldShow = matchesSearch && matchesRole && matchesShift && matchesStatus;
-      card.style.display = shouldShow ? 'block' : 'none';
-      return shouldShow;
-    });
-
-    // Tính toán lại thống kê dựa trên kết quả lọc
-    calculateFilteredStatistics();
-    toggleEmptyState(filteredEmployees.length === 0);
+    if (employeePagination) {
+      employeePagination.applyFilters();
+    }
   }
 
   function clearFilters() {
@@ -779,28 +889,22 @@
     document.getElementById('shiftFilter').value = '';
     document.getElementById('statusFilter').value = '';
 
-    allEmployees.forEach(card => {
-      card.style.display = 'block';
-    });
-
-    filteredEmployees = [...allEmployees];
-    
-    // Tính toán lại thống kê toàn bộ
-    calculateStatistics();
-    toggleEmptyState(false);
+    if (employeePagination) {
+      employeePagination.applyFilters();
+    }
   }
 
   function toggleEmptyState(show) {
     const emptyState = document.getElementById('emptyState');
-    const employeesGrid = document.getElementById('employeesGrid');
+    const tableContainer = document.querySelector('.table-container');
 
-    if (!emptyState || !employeesGrid) return;
+    if (!emptyState || !tableContainer) return;
 
     if (show) {
-      employeesGrid.style.display = 'none';
+      tableContainer.style.display = 'none';
       emptyState.style.display = 'block';
     } else {
-      employeesGrid.style.display = 'grid';
+      tableContainer.style.display = 'block';
       emptyState.style.display = 'none';
     }
   }
@@ -834,8 +938,12 @@
     console.log('👨‍💼 DOM đã load xong');
 
     // Khởi tạo dữ liệu
-    allEmployees = Array.from(document.querySelectorAll('.employee-card'));
+    allEmployees = Array.from(document.querySelectorAll('.employee-row'));
     filteredEmployees = [...allEmployees];
+
+    // Khởi tạo pagination
+    employeePagination = new EmployeePagination(10);
+    employeePagination.init();
 
     // Tính toán thống kê
     calculateStatistics();
@@ -1190,211 +1298,237 @@
     font-weight: 500;
   }
 
-  /* ===== EMPLOYEES GRID ===== */
-  .employees-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 24px;
-  }
-
-  .employee-card {
+  /* ===== TABLE STYLES ===== */
+  .table-container {
     background: white;
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
-    transition: all 0.4s ease;
-    border: 1px solid rgba(0, 0, 0, 0.03);
-    position: relative;
-  }
-
-  .employee-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-  }
-
-  .employee-image {
-    position: relative;
-    height: 200px;
+    border-radius: 16px;
+    padding: 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     overflow: hidden;
   }
 
-  .employee-image img {
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+  }
+
+  .data-table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .data-table thead th {
+    padding: 18px 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  .data-table tbody tr {
+    border-bottom: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+  }
+
+  .data-table tbody tr:hover {
+    background: #f8fafc;
+    transform: scale(1.001);
+  }
+
+  .data-table tbody td {
+    padding: 16px;
+    color: #475569;
+    vertical-align: middle;
+  }
+
+  .employee-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+
+  .employee-avatar img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.6s ease;
   }
 
-  .employee-card:hover .employee-image img {
-    transform: scale(1.1);
-  }
-
-  .employee-avatar-placeholder {
+  .avatar-placeholder {
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 4rem;
-  }
-
-  .employee-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: all 0.4s ease;
-  }
-
-  .employee-card:hover .employee-overlay {
-    opacity: 1;
-  }
-
-  .employee-actions {
-    display: flex;
-    gap: 16px;
-  }
-
-  .btn-edit,
-  .btn-delete {
-    width: 48px;
-    height: 48px;
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  }
-
-  .btn-edit {
-    background: linear-gradient(135deg, #48bb78, #38a169);
-    color: white;
-  }
-
-  .btn-delete {
-    background: linear-gradient(135deg, #f56565, #e53e3e);
-    color: white;
-  }
-
-  .btn-edit:hover,
-  .btn-delete:hover {
-    transform: scale(1.1) translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-  }
-
-  .employee-badge {
-    position: absolute;
-    top: 16px;
-    left: 16px;
-    padding: 8px 16px;
-    border-radius: 25px;
-    font-size: 0.85rem;
-    font-weight: 700;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    z-index: 2;
-  }
-
-  .employee-badge.Lễtân {
-    background: linear-gradient(135deg, rgba(72, 187, 120, 0.95), rgba(56, 161, 105, 0.95));
-    color: white;
-  }
-
-  .employee-badge.Phụcvụ {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.95), rgba(118, 75, 162, 0.95));
-    color: white;
-  }
-
-  .employee-badge.Kỹthuật {
-    background: linear-gradient(135deg, rgba(245, 101, 101, 0.95), rgba(229, 62, 62, 0.95));
-    color: white;
-  }
-
-  .employee-badge.Quảnlý {
-    background: linear-gradient(135deg, rgba(237, 137, 54, 0.95), rgba(217, 119, 6, 0.95));
-    color: white;
-  }
-
-  .employee-badge.Bảovệ {
-    background: linear-gradient(135deg, rgba(108, 117, 125, 0.95), rgba(73, 80, 87, 0.95));
-    color: white;
-  }
-
-  .employee-status {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    padding: 8px 16px;
-    border-radius: 25px;
-    font-size: 0.85rem;
-    font-weight: 700;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    z-index: 2;
-  }
-
-  .employee-status.active {
-    background: linear-gradient(135deg, rgba(72, 187, 120, 0.95), rgba(56, 161, 105, 0.95));
-    color: white;
-  }
-
-  .employee-status.onleave {
-    background: linear-gradient(135deg, rgba(246, 194, 62, 0.95), rgba(237, 137, 54, 0.95));
-    color: white;
-  }
-
-  .employee-status.inactive {
-    background: linear-gradient(135deg, rgba(245, 101, 101, 0.95), rgba(229, 62, 62, 0.95));
-    color: white;
-  }
-
-  .employee-content {
-    padding: 20px;
-  }
-
-  .employee-name {
-    margin: 0 0 8px 0;
-    color: #1e293b;
-    font-size: 1.3rem;
-    font-weight: 700;
+    font-size: 1.5rem;
   }
 
   .employee-code {
-    margin: 0 0 16px 0;
     color: #667eea;
     font-weight: 600;
     font-size: 0.9rem;
   }
 
-  .employee-details {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+  .role-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
   }
 
-  .detail-item {
+  .role-badge.Lễ.tân,
+  .role-badge[class*="Lễ"] {
+    background: linear-gradient(135deg, #c6f6d5, #9ae6b4);
+    color: #276749;
+  }
+
+  .role-badge.Phục.vụ,
+  .role-badge[class*="Phục"] {
+    background: linear-gradient(135deg, #bee3f8, #90cdf4);
+    color: #2b6cb0;
+  }
+
+  .role-badge.Kỹ.thuật,
+  .role-badge[class*="Kỹ"] {
+    background: linear-gradient(135deg, #fed7d7, #feb2b2);
+    color: #c53030;
+  }
+
+  .role-badge.Quản.lý,
+  .role-badge[class*="Quản"] {
+    background: linear-gradient(135deg, #fbd38d, #f6ad55);
+    color: #dd6b20;
+  }
+
+  .role-badge.Bảo.vệ,
+  .role-badge[class*="Bảo"] {
+    background: linear-gradient(135deg, #e2e8f0, #cbd5e0);
+    color: #2d3748;
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .status-badge.active {
+    background: linear-gradient(135deg, #c6f6d5, #9ae6b4);
+    color: #276749;
+  }
+
+  .status-badge.onleave {
+    background: linear-gradient(135deg, #fbd38d, #f6ad55);
+    color: #dd6b20;
+  }
+
+  .status-badge.inactive {
+    background: linear-gradient(135deg, #fed7d7, #feb2b2);
+    color: #c53030;
+  }
+
+  .table-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-start;
+  }
+
+  .btn-table-action {
+    width: 36px !important;
+    height: 36px !important;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 12px;
-    color: #475569;
-    font-size: 0.95rem;
+    justify-content: center;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
   }
 
-  .detail-item i {
+  .btn-table-action.btn-edit {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+    color: white;
+  }
+
+  .btn-table-action.btn-delete {
+    background: linear-gradient(135deg, #f56565, #e53e3e);
+    color: white;
+  }
+
+  .btn-table-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  /* ===== PAGINATION STYLES ===== */
+  .pagination-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .pagination-info {
+    color: #64748b;
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+
+  .page-numbers {
+    display: flex;
+    gap: 4px;
+    flex-direction: row;
+  }
+
+  .page-btn {
+    min-width: 36px;
+    height: 36px;
+    border: 2px solid #e2e8f0;
+    background: white;
+    color: #475569;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    padding: 0 12px;
+  }
+
+  .page-btn:hover:not(:disabled):not(.active) {
+    border-color: #667eea;
     color: #667eea;
-    width: 20px;
-    font-size: 1rem;
+    transform: translateY(-1px);
+  }
+
+  .page-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: transparent;
+  }
+
+  .page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   /* ===== EMPTY STATE ===== */
@@ -1661,9 +1795,17 @@
       max-width: none;
     }
 
-    .employees-grid {
-      grid-template-columns: 1fr;
-      gap: 20px;
+    .table-container {
+      overflow-x: auto;
+    }
+
+    .data-table {
+      min-width: 900px;
+    }
+
+    .pagination-controls {
+      flex-direction: column;
+      align-items: flex-start;
     }
   }
 
@@ -1700,8 +1842,13 @@
       font-size: 1.8rem;
     }
 
-    .employee-content {
-      padding: 16px;
+    .data-table {
+      font-size: 0.85rem;
+    }
+
+    .data-table thead th,
+    .data-table tbody td {
+      padding: 12px 10px;
     }
   }
 

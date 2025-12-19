@@ -1,13 +1,14 @@
 <div id="container">
   <!-- BANNER GIỚI THIỆU -->
-  <div class="banner-container">
-    <div class="banner-viewport">
-      <div class="liquid-border"></div>
-      <div class="liquid-bubble"></div>
-      <div class="banner-track">
-        <div class="banner-item">
-          <img src="" alt="Không gian N'Nice">
-      </div>
+  <div class="about-banner">
+    <div class="about-banner-overlay"></div>
+    <div class="about-banner-content">
+      <h1 class="about-banner-title">
+        <i class="fas fa-crown"></i>
+        CHÀO MỪNG ĐẾN VỚI N'NICE KARAOKE
+        <i class="fas fa-crown"></i>
+      </h1>
+      <p class="about-banner-subtitle">Nơi âm nhạc và đam mê hòa quyện</p>
     </div>
   </div>
 
@@ -26,32 +27,40 @@
         <div class="about-hero">
           <div class="hero-text">
             <h2>NÂNG TẦM TRẢI NGHIỆM GIẢI TRÍ</h2>
-            <p class="lead">N'Nice Karaoke - Điểm đến lý tưởng cho những ai đam mê âm nhạc và giải trí</p>
-            <div class="stats-grid">
-              <div class="stat-item">
-                <i class="fas fa-microphone-alt"></i>
-                <span class="stat-number">50+</span>
-                <span class="stat-label">Phòng hát</span>
-              </div>
-              <div class="stat-item">
-                <i class="fas fa-users"></i>
-                <span class="stat-number">10,000+</span>
-                <span class="stat-label">Khách hàng</span>
-              </div>
-              <div class="stat-item">
-                <i class="fas fa-star"></i>
-                <span class="stat-number">4.9/5</span>
-                <span class="stat-label">Đánh giá</span>
-              </div>
-              <div class="stat-item">
-                <i class="fas fa-calendar-alt"></i>
-                <span class="stat-number">5+</span>
-                <span class="stat-label">Năm kinh nghiệm</span>
-              </div>
-            </div>
+            <p class="lead">N'Nice Karaoke - Điểm đến lý tưởng cho những ai đam mê âm nhạc và giải trí. 
+            Với không gian sang trọng, hệ thống âm thanh hiện đại và dịch vụ chuyên nghiệp, 
+            chúng tôi cam kết mang đến những phút giây giải trí tuyệt vời nhất cho bạn.</p>
           </div>
-          <div class="hero-image">
-            <img src="/image/about_hero.jpg" alt="Không gian N'Nice">
+          
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-icon">
+                <i class="fas fa-microphone-alt"></i>
+              </div>
+              <span class="stat-number">50+</span>
+              <span class="stat-label">Phòng hát</span>
+            </div>
+            <div class="stat-item">
+              <div class="stat-icon">
+                <i class="fas fa-users"></i>
+              </div>
+              <span class="stat-number">10,000+</span>
+              <span class="stat-label">Khách hàng</span>
+            </div>
+            <div class="stat-item">
+              <div class="stat-icon">
+                <i class="fas fa-star"></i>
+              </div>
+              <span class="stat-number">4.9/5</span>
+              <span class="stat-label">Đánh giá</span>
+            </div>
+            <div class="stat-item">
+              <div class="stat-icon">
+                <i class="fas fa-calendar-alt"></i>
+              </div>
+              <span class="stat-number">5+</span>
+              <span class="stat-label">Năm kinh nghiệm</span>
+            </div>
           </div>
         </div>
       </div>
@@ -110,25 +119,33 @@
           
           <div class="vision-goals">
             <div class="goal-item">
-              <i class="fas fa-check-circle"></i>
-              <span>Mở rộng 10 chi nhánh mới trong 3 năm tới</span>
+              <div class="goal-icon">
+                <i class="fas fa-store"></i>
+              </div>
+              <div class="goal-content">
+                <h4>Mở rộng hệ thống</h4>
+                <p>10 chi nhánh mới trong 3 năm tới</p>
+              </div>
             </div>
             <div class="goal-item">
-              <i class="fas fa-check-circle"></i>
-              <span>Ứng dụng công nghệ 4.0 vào quản lý và dịch vụ</span>
+              <div class="goal-icon">
+                <i class="fas fa-cog"></i>
+              </div>
+              <div class="goal-content">
+                <h4>Công nghệ 4.0</h4>
+                <p>Ứng dụng vào quản lý và dịch vụ</p>
+              </div>
             </div>
             <div class="goal-item">
-              <i class="fas fa-check-circle"></i>
-              <span>Phát triển ứng dụng đặt phòng thông minh</span>
-            </div>
-            <div class="goal-item">
-              <i class="fas fa-check-circle"></i>
-              <span>Tiên phong trong dịch vụ Karaoke cao cấp</span>
+              <div class="goal-icon">
+                <i class="fas fa-mobile-alt"></i>
+              </div>
+              <div class="goal-content">
+                <h4>Ứng dụng thông minh</h4>
+                <p>Đặt phòng online tiện lợi</p>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="vision-image">
-          <img src="/image/vision.jpg" alt="Tầm nhìn tương lai">
         </div>
       </div>
     </div>
@@ -136,196 +153,421 @@
 </div>
 
 <style>
+/* ===== ABOUT BANNER ===== */
+.about-banner {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  background: linear-gradient(135deg, 
+    rgba(122, 0, 255, 0.8) 0%, 
+    rgba(0, 240, 255, 0.6) 50%, 
+    rgba(255, 0, 200, 0.8) 100%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: 3rem;
+}
+
+.about-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(122, 0, 255, 0.4) 0%, transparent 50%),
+    radial-gradient(circle at 80% 50%, rgba(0, 240, 255, 0.4) 0%, transparent 50%);
+  animation: gradientShift 10s ease-in-out infinite;
+}
+
+@keyframes gradientShift {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.about-banner-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(2px);
+}
+
+.about-banner-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 2rem;
+}
+
+.about-banner-title {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  color: white;
+  text-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+  margin-bottom: 1rem;
+  animation: titleGlow 3s ease-in-out infinite;
+}
+
+@keyframes titleGlow {
+  0%, 100% { text-shadow: 0 0 30px rgba(255, 215, 0, 0.8); }
+  50% { text-shadow: 0 0 50px rgba(255, 215, 0, 1), 0 0 80px rgba(122, 0, 255, 0.6); }
+}
+
+.about-banner-title i {
+  color: var(--cyber-yellow);
+  margin: 0 1rem;
+  animation: crownBounce 2s ease-in-out infinite;
+}
+
+@keyframes crownBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.about-banner-subtitle {
+  font-size: clamp(1rem, 2.5vw, 1.5rem);
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* ===== ABOUT CONTENT ===== */
 .about-content {
   padding: 2rem 0;
 }
 
 .about-hero {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 3rem;
-  align-items: center;
   margin-bottom: 3rem;
+}
+
+.hero-text {
+  text-align: center;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .hero-text h2 {
   color: var(--cyber-cyan);
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
+  font-size: clamp(2rem, 4vw, 3rem);
+  margin-bottom: 1.5rem;
   text-shadow: 0 0 20px rgba(0, 240, 255, 0.7);
+  animation: fadeInUp 1s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .hero-text .lead {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 1.3rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  line-height: 1.8;
   margin-bottom: 2rem;
-  line-height: 1.6;
 }
 
+/* ===== STATS GRID ===== */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
-  margin-top: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem;
+  margin-top: 3rem;
 }
 
 .stat-item {
-  background: rgba(255, 255, 255, 0.05);
-  padding: 1.5rem;
-  border-radius: 15px;
+  background: linear-gradient(135deg, rgba(122, 0, 255, 0.1), rgba(0, 240, 255, 0.1));
+  padding: 2rem;
+  border-radius: 20px;
   text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(122, 0, 255, 0.3);
   backdrop-filter: blur(10px);
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.stat-item i {
+.stat-item::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.stat-item:hover::before {
+  opacity: 1;
+}
+
+.stat-item:hover {
+  transform: translateY(-10px);
+  border-color: var(--cyber-cyan);
+  box-shadow: 0 20px 40px rgba(0, 240, 255, 0.3);
+}
+
+.stat-icon {
+  width: 70px;
+  height: 70px;
+  margin: 0 auto 1rem;
+  background: linear-gradient(135deg, var(--cyber-purple), var(--cyber-pink));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.4s ease;
+}
+
+.stat-item:hover .stat-icon {
+  transform: scale(1.1) rotate(360deg);
+}
+
+.stat-icon i {
   font-size: 2rem;
-  color: var(--cyber-yellow);
-  margin-bottom: 0.5rem;
-  display: block;
+  color: white;
 }
 
 .stat-number {
   display: block;
-  font-size: 2rem;
-  font-weight: 800;
-  color: var(--cyber-cyan);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--cyber-cyan), var(--cyber-yellow));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin-bottom: 0.5rem;
 }
 
 .stat-label {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
-.hero-image img {
-  width: 100%;
-  border-radius: 20px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-}
-
-/* Mission Cards */
+/* ===== MISSION CARDS ===== */
 .mission-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 2rem;
   margin-top: 2rem;
 }
 
 .mission-card {
-  background: rgba(255, 255, 255, 0.05);
-  padding: 2rem;
-  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(43, 0, 51, 0.8), rgba(0, 20, 40, 0.8));
+  padding: 2.5rem;
+  border-radius: 25px;
   text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(122, 0, 255, 0.2);
   backdrop-filter: blur(15px);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  overflow: hidden;
+}
+
+.mission-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.6s ease;
+}
+
+.mission-card:hover::before {
+  left: 100%;
 }
 
 .mission-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 20px 40px rgba(122, 0, 255, 0.3);
+  transform: translateY(-15px) scale(1.02);
+  border-color: var(--cyber-cyan);
+  box-shadow: 0 25px 50px rgba(122, 0, 255, 0.4);
 }
 
 .mission-icon {
-  width: 80px;
-  height: 80px;
+  width: 90px;
+  height: 90px;
   background: linear-gradient(135deg, var(--cyber-purple), var(--cyber-cyan));
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 1.5rem;
+  transition: all 0.4s ease;
+  box-shadow: 0 10px 30px rgba(122, 0, 255, 0.4);
+}
+
+.mission-card:hover .mission-icon {
+  transform: rotateY(360deg) scale(1.1);
 }
 
 .mission-icon i {
-  font-size: 2rem;
+  font-size: 2.5rem;
   color: white;
 }
 
 .mission-card h3 {
   color: var(--cyber-yellow);
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   margin-bottom: 1rem;
+  text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
 }
 
 .mission-card p {
-  color: rgba(255, 255, 255, 0.8);
-  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.7;
+  font-size: 1rem;
 }
 
-/* Vision Content */
+/* ===== VISION CONTENT ===== */
 .vision-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3rem;
-  align-items: center;
+  margin-top: 2rem;
+}
+
+.vision-text {
+  text-align: center;
+  max-width: 900px;
+  margin: 0 auto 3rem;
 }
 
 .vision-text h2 {
   color: var(--cyber-yellow);
-  font-size: 2.2rem;
+  font-size: clamp(2rem, 4vw, 2.8rem);
   margin-bottom: 1.5rem;
-  text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  text-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
 }
 
 .vision-text p {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 1.1rem;
-  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: clamp(1rem, 2vw, 1.15rem);
+  line-height: 1.8;
   margin-bottom: 2rem;
 }
 
+/* ===== VISION GOALS ===== */
 .vision-goals {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
 }
 
 .goal-item {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 10px;
-  border-left: 4px solid var(--cyber-cyan);
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, rgba(122, 0, 255, 0.1), rgba(0, 240, 255, 0.05));
+  border-radius: 15px;
+  border: 2px solid transparent;
+  border-left: 5px solid var(--cyber-cyan);
+  transition: all 0.3s ease;
 }
 
-.goal-item i {
-  color: var(--cyber-cyan);
+.goal-item:hover {
+  background: linear-gradient(135deg, rgba(122, 0, 255, 0.2), rgba(0, 240, 255, 0.1));
+  border-color: var(--cyber-cyan);
+  transform: translateX(10px);
+  box-shadow: 0 10px 30px rgba(0, 240, 255, 0.2);
+}
+
+.goal-icon {
+  width: 60px;
+  height: 60px;
+  min-width: 60px;
+  background: linear-gradient(135deg, var(--cyber-purple), var(--cyber-pink));
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+}
+
+.goal-item:hover .goal-icon {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.goal-icon i {
+  color: white;
+  font-size: 1.8rem;
+}
+
+.goal-content {
+  flex: 1;
+  text-align: left;
+}
+
+.goal-content h4 {
+  color: var(--cyber-yellow);
   font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
 }
 
-.goal-item span {
-  color: rgba(255, 255, 255, 0.9);
-  font-weight: 500;
+.goal-content p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
 
-.vision-image img {
-  width: 100%;
-  border-radius: 20px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-}
-
-/* Responsive */
+/* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
-  .about-hero,
-  .vision-content {
-    grid-template-columns: 1fr;
-    gap: 2rem;
+  .about-banner {
+    height: 300px;
   }
   
-  .hero-text h2 {
-    font-size: 2rem;
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+  
+  .mission-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .vision-goals {
+    grid-template-columns: 1fr;
+  }
+  
+  .goal-item {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .goal-content {
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .about-banner {
+    height: 250px;
   }
   
   .stats-grid {
     grid-template-columns: 1fr;
   }
   
-  .mission-cards {
-    grid-template-columns: 1fr;
+  .stat-item {
+    padding: 1.5rem;
+  }
+  
+  .mission-card {
+    padding: 2rem;
   }
 }
 </style>

@@ -1071,13 +1071,72 @@ class ProductPagination {
     }
     
     updatePaginationUI() {
-        const currentPageEl = document.getElementById('currentPage');
-        const totalPagesEl = document.getElementById('totalPages');
-        
-        if (currentPageEl) currentPageEl.textContent = this.currentPage;
-        if (totalPagesEl) totalPagesEl.textContent = this.totalPages;
-        
+        this.renderPageNumbers();
         this.updateButtonStates();
+    }
+    
+    renderPageNumbers() {
+        const pageNumbersContainer = document.getElementById('pageNumbers');
+        if (!pageNumbersContainer) return;
+        
+        pageNumbersContainer.innerHTML = '';
+        
+        const maxVisiblePages = 5;
+        let startPage = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(this.totalPages, startPage + maxVisiblePages - 1);
+        
+        // Điều chỉnh lại startPage nếu endPage đạt giới hạn
+        if (endPage - startPage < maxVisiblePages - 1) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+        
+        // Nút trang đầu tiên
+        if (startPage > 1) {
+            pageNumbersContainer.appendChild(this.createPageButton(1));
+            if (startPage > 2) {
+                pageNumbersContainer.appendChild(this.createEllipsis());
+            }
+        }
+        
+        // Các nút trang chính
+        for (let i = startPage; i <= endPage; i++) {
+            pageNumbersContainer.appendChild(this.createPageButton(i));
+        }
+        
+        // Nút trang cuối cùng
+        if (endPage < this.totalPages) {
+            if (endPage < this.totalPages - 1) {
+                pageNumbersContainer.appendChild(this.createEllipsis());
+            }
+            pageNumbersContainer.appendChild(this.createPageButton(this.totalPages));
+        }
+    }
+    
+    createPageButton(pageNum) {
+        const button = document.createElement('button');
+        button.className = 'page-number-btn';
+        button.textContent = pageNum;
+        button.dataset.page = pageNum;
+        
+        if (pageNum === this.currentPage) {
+            button.classList.add('active');
+        }
+        
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log(`🔢 Đã click vào trang ${pageNum}`);
+            this.showPage(pageNum, true);
+        });
+        
+        return button;
+    }
+    
+    createEllipsis() {
+        const span = document.createElement('span');
+        span.className = 'page-ellipsis';
+        span.textContent = '...';
+        return span;
     }
     
     updateButtonStates() {
@@ -1805,12 +1864,18 @@ class BookingModal {
             const bookingResult = await this.sendBookingData(formData);
             
             this.hideLoading();
+            this.close();
+            
             this.showSuccess(
                 'Đặt phòng thành công!', 
                 'Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.',
                 bookingResult.data
             );
-            this.close();
+            
+            // Reload page sau 1.5 giây
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
             
         } catch (error) {
             this.hideLoading();
