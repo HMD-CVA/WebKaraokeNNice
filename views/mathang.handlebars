@@ -91,7 +91,6 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th style="width: 80px;">Hình ảnh</th>
             <th style="width: 100px;">Mã hàng</th>
             <th style="width: 200px;">Tên hàng</th>
             <th style="width: 120px;">Loại hàng</th>
@@ -104,11 +103,8 @@
         </thead>
         <tbody id="productsTableBody">
           {{#each mathangs}}
-          <tr data-id="{{this._id}}" data-name="{{this.TenHang}}" data-category="{{this.LoaiHang}}"
+          <tr data-id="{{this.MaHang}}" data-name="{{this.TenHang}}" data-category="{{this.LoaiHang}}"
               data-stock="{{this.SoLuongTon}}" data-price="{{this.DonGia}}">
-            <td class="table-image">
-              <img src="{{this.LinkAnh}}" alt="{{this.TenHang}}" class="product-thumbnail">
-            </td>
             <td><span class="product-code">{{this.MaHang}}</span></td>
             <td><strong>{{this.TenHang}}</strong></td>
             <td><span class="category-badge">{{this.LoaiHang}}</span></td>
@@ -124,16 +120,16 @@
             </td>
             <td class="table-actions">
               <div class="action-buttons">
-                <button class="btn-table-action btn-stock-in" data-id="{{this._id}}" title="Nhập hàng">
+                <button class="btn-table-action btn-stock-in" data-id="{{this.MaHang}}" title="Nhập hàng">
                   <i class="fas fa-arrow-down"></i>
                 </button>
-                <button class="btn-table-action btn-stock-out" data-id="{{this._id}}" title="Xuất hàng">
+                <button class="btn-table-action btn-stock-out" data-id="{{this.MaHang}}" title="Xuất hàng">
                   <i class="fas fa-arrow-up"></i>
                 </button>
                 <button class="btn-table-action btn-edit" data-product='{{{json this}}}' title="Sửa">
                   <i class="fas fa-edit"></i>
                 </button>
-                <button class="btn-table-action btn-delete-table" data-id="{{this._id}}" data-name="{{this.TenHang}}" title="Xóa">
+                <button class="btn-table-action btn-delete-table" data-id="{{this.MaHang}}" data-name="{{this.TenHang}}" title="Xóa">
                   <i class="fas fa-trash"></i>
                 </button>
               </div>
@@ -519,6 +515,32 @@
     }
 
     try {
+      // Lấy số lượng tồn kho hiện tại từ row
+      const productRow = document.querySelector(`tr[data-id="${productId}"]`);
+      if (!productRow) {
+        showError('Không tìm thấy thông tin sản phẩm');
+        return;
+      }
+
+      const currentStock = parseInt(productRow.dataset.stock) || 0;
+      let newStock;
+
+      // Tính số lượng mới dựa vào action
+      if (action === 'in') {
+        newStock = currentStock + quantity; // Nhập hàng: cộng thêm
+      } else if (action === 'out') {
+        newStock = currentStock - quantity; // Xuất hàng: trừ đi
+        
+        // Kiểm tra không cho xuất âm
+        if (newStock < 0) {
+          showError(`Không đủ hàng trong kho! Tồn kho hiện tại: ${currentStock}`);
+          return;
+        }
+      } else {
+        showError('Action không hợp lệ');
+        return;
+      }
+
       Swal.fire({
         title: 'Đang cập nhật...',
         text: 'Vui lòng chờ trong giây lát',
@@ -526,16 +548,17 @@
         didOpen: () => Swal.showLoading()
       });
 
-      const response = await fetch(`/admin/mathang/${productId}/stock`, {
+      const response = await fetch(`/api/mathang/${productId}/tonkho`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, quantity, note })
+        body: JSON.stringify({ soLuong: newStock })
       });
 
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || result.message || 'Lỗi server');
+      if (!response.ok) throw new Error(result.message || 'Lỗi server');
 
-      showSuccess(`Đã ${action === 'in' ? 'nhập' : 'xuất'} ${quantity} thành công!`);
+      showSuccess(result.message || `Đã ${action === 'in' ? 'nhập' : 'xuất'} ${quantity} thành công!`);
+      closeStockModal();
       setTimeout(() => location.reload(), 1500);
 
     } catch (error) {

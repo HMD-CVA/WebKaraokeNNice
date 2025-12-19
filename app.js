@@ -24,8 +24,8 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 // Kiểm tra biến môi trường
-console.log('🔧 Environment check:')
-console.log('📁 GOOGLE_DRIVE_FOLDER_ID:', process.env.GOOGLE_DRIVE_FOLDER_ID)
+console.log('Environment check:')
+console.log('GOOGLE_DRIVE_FOLDER_ID:', process.env.GOOGLE_DRIVE_FOLDER_ID)
 console.log('🌐 NODE_ENV:', process.env.NODE_ENV)
 
 db.connectDB()
@@ -457,7 +457,7 @@ app.engine(
 app.set('view engine', 'handlebars')
 app.set('views', './views')
 
-console.log('🔧 Checking Cloudinary environment variables...')
+console.log('Checking Cloudinary environment variables...')
 console.log(
     'CLOUDINARY_CLOUD_NAME:',
     process.env.CLOUDINARY_CLOUD_NAME ? '✅ Set' : '❌ Missing'
@@ -476,8 +476,8 @@ if (
     !process.env.CLOUDINARY_API_KEY ||
     !process.env.CLOUDINARY_API_SECRET
 ) {
-    console.error('❌ CLOUDINARY environment variables are missing!')
-    console.log('👉 Please check your .env file')
+    console.error('CLOUDINARY environment variables are missing!')
+    console.log('Please check your .env file')
 } else {
     // Cấu hình Cloudinary
     cloudinary.config({
@@ -485,7 +485,7 @@ if (
         api_key: process.env.CLOUDINARY_API_KEY,
         api_secret: process.env.CLOUDINARY_API_SECRET,
     })
-    console.log('✅ Cloudinary configured successfully')
+    console.log('Cloudinary configured successfully')
 }
 
 // Cấu hình multer cho upload file
@@ -532,7 +532,7 @@ router.post('/api/upload/image', upload.single('image'), async (req, res) => {
 
         // 🔥 NHẬN THÔNG TIN ẢNH CŨ TỪ CLIENT
         const { oldImageUrl } = req.body
-        console.log('🗑️ Old image to delete:', oldImageUrl)
+        console.log('Old image to delete:', oldImageUrl)
 
         // 🔥 XOÁ ẢNH CŨ TRƯỚC KHI UPLOAD ẢNH MỚI
         if (oldImageUrl) {
@@ -556,7 +556,7 @@ router.post('/api/upload/image', upload.single('image'), async (req, res) => {
             message: 'Upload ảnh thành công',
         })
     } catch (error) {
-        console.error('❌ Upload error:', error)
+        console.error('Upload error:', error)
         res.status(500).json({
             success: false,
             error: 'Lỗi khi upload ảnh: ' + error.message,
@@ -568,7 +568,7 @@ router.post('/api/upload/image', upload.single('image'), async (req, res) => {
 async function deleteOldImage(oldImageUrl) {
     if (!oldImageUrl) return
 
-    console.log('🗑️ Deleting old image:', oldImageUrl)
+    console.log('Deleting old image:', oldImageUrl)
 
     // Nếu là ảnh Cloudinary
     if (
@@ -580,7 +580,7 @@ async function deleteOldImage(oldImageUrl) {
             const publicId = extractPublicIdFromUrl(oldImageUrl)
             if (publicId) {
                 await cloudinary.uploader.destroy(publicId)
-                console.log('✅ Deleted old Cloudinary image:', publicId)
+                console.log('Deleted old Cloudinary image:', publicId)
             }
         } catch (cloudinaryError) {
             console.warn(
@@ -598,7 +598,7 @@ async function deleteOldImage(oldImageUrl) {
 
             if (fs.existsSync(oldFilePath)) {
                 fs.unlinkSync(oldFilePath)
-                console.log('✅ Deleted old local image:', oldFileName)
+                console.log('Deleted old local image:', oldFileName)
             }
         } catch (localError) {
             console.warn('⚠️ Could not delete local image:', localError.message)
@@ -645,7 +645,7 @@ async function uploadNewImage(file) {
     }
 
     // Fallback: upload local
-    console.log('📁 Uploading locally...')
+    console.log('Uploading locally...')
     const fileName = `room-${Date.now()}-${file.originalname}`
     const filePath = path.join('public', 'uploads', fileName)
 
@@ -737,7 +737,7 @@ router.delete('/api/upload/image', async (req, res) => {
             })
         }
 
-        console.log('🗑️ Nhận yêu cầu xoá ảnh:', imageUrl)
+        console.log('Nhận yêu cầu xoá ảnh:', imageUrl)
 
         // Gọi hàm xoá ảnh cũ (đã có sẵn trong code)
         await deleteOldImage(imageUrl)
@@ -747,7 +747,7 @@ router.delete('/api/upload/image', async (req, res) => {
             message: 'Đã xoá ảnh thành công',
         })
     } catch (error) {
-        console.error('❌ Lỗi xoá ảnh:', error)
+        console.error('Lỗi xoá ảnh:', error)
         res.status(500).json({
             success: false,
             error: 'Lỗi khi xoá ảnh: ' + error.message,
@@ -1444,7 +1444,7 @@ app.get('/admin/thietbi', async (req, res) => {
 app.get('/api/thietbi/:maTB', async (req, res) => {
     try {
         const { maTB } = req.params
-        console.log('📦 Loại phòng nhận được:', maTB)
+        console.log('Loại phòng nhận được:', maTB)
 
         const thietbis = await DataModel.Data_ThietBi_Model.findOne({
             MaThietBi: maTB,
@@ -1466,8 +1466,8 @@ app.get('/api/thietbi/:maTB', async (req, res) => {
 app.get('/api/loaiphong/check-loai-phong/:loaiPhong', async (req, res) => {
     try {
         const { loaiPhong } = req.params
-        console.log('📦 Loại phòng nhận được:', loaiPhong)
-        console.log('🔍 Kiểu dữ liệu:', typeof loaiPhong)
+        console.log('Loại phòng nhận được:', loaiPhong)
+        console.log('Kiểu dữ liệu:', typeof loaiPhong)
 
         // Kiểm tra xem có phòng nào đang sử dụng loại phòng này không
         const roomsUsingType = await DataModel.Data_BangGiaPhong_Model.find({
@@ -1514,7 +1514,7 @@ app.get('/api/phonghat/check-loai-phong/:loaiPhong', async (req, res) => {
 app.get('/api/hoadon/banggia/:maPhong', async (req, res) => {
     try {
         const { maPhong } = req.params
-        console.log('🔍 Bắt đầu tìm Bảng giá cho Mã phòng:', maPhong)
+        console.log('Bắt đầu tìm Bảng giá cho Mã phòng:', maPhong)
 
         // 1. TÌM KIẾM LOẠI PHÒNG: Tìm thông tin phòng để lấy LoaiPhong
         const phong = await DataModel.Data_PhongHat_Model.findOne({
@@ -1549,7 +1549,7 @@ app.get('/api/hoadon/banggia/:maPhong', async (req, res) => {
 
         res.json(bangGia) // Trả về mảng bảng giá
     } catch (err) {
-        console.error('❌ Lỗi Server khi truy vấn bảng giá:', err)
+        console.error('Lỗi Server khi truy vấn bảng giá:', err)
         res.status(500).json({
             success: false,
             error: 'Lỗi server khi truy vấn bảng giá.',
@@ -1576,7 +1576,9 @@ app.get('/api/banggia/:loaiPhong', async (req, res) => {
 // Quản lý nhân viên
 app.get('/admin/nhanvien', async (req, res) => {
     try {
-        const nhanviens = await DataModel.Data_NhanVien_Model.find({}).lean()
+        const nhanviens = await DataModel.Data_NhanVien_Model.find({})
+            .sort({ MaNV: 1 }) // Sắp xếp tăng dần theo MaNV
+            .lean()
         res.render('nhanvien', {
             layout: 'AdminMain',
             title: 'Quản lý nhân viên',
@@ -1590,7 +1592,7 @@ app.get('/admin/nhanvien', async (req, res) => {
 app.get('/api/nhanvien/:maNV', async (req, res) => {
     try {
         const { maNV } = req.params
-        console.log('🔍 Đang tìm nhân viên với mã:', maNV)
+        console.log('Đang tìm nhân viên với mã:', maNV)
         const nhanVien = await DataModel.Data_NhanVien_Model.findOne({
             MaNV: maNV,
         })
@@ -1797,7 +1799,7 @@ app.get('/admin/datphong', async (req, res) => {
 app.get('/api/datphong/:maDatPhong', async (req, res) => {
     try {
         const { maDatPhong } = req.params
-        console.log('🔍 Tìm đặt phòng với mã:', maDatPhong)
+        console.log('Tìm đặt phòng với mã:', maDatPhong)
 
         // Tìm đặt phòng theo mã - SỬA: dùng findOne thay vì find
         const datphong = await DataModel.Data_DatPhong_Model.findOne({
@@ -1839,7 +1841,7 @@ app.get('/api/phonghat/:maPhong/gia', async (req, res) => {
         const { maPhong } = req.params
         const { khungGio } = req.query
 
-        console.log('🔍 Lấy giá phòng:', maPhong, 'Khung giờ:', khungGio)
+        console.log('Lấy giá phòng:', maPhong, 'Khung giờ:', khungGio)
 
         // Tìm phòng
         const phong = await DataModel.Data_PhongHat_Model.findOne({
@@ -1931,7 +1933,7 @@ app.get('/api/hoadon/phongtrong', async (req, res) => {
 app.get('/api/hoadon/:maHoaDon', async (req, res) => {
     try {
         const { maHoaDon } = req.params
-        console.log('🔍 Tìm hóa đơn với mã:', maHoaDon)
+        console.log('Tìm hóa đơn với mã:', maHoaDon)
 
         const hoadons = await DataModel.Data_HoaDon_Model.findOne({
             MaHoaDon: maHoaDon,
@@ -1952,14 +1954,14 @@ app.get('/api/hoadon/:maHoaDon', async (req, res) => {
 app.get('/api/hoadon/edit/:maHoaDon', async (req, res) => {
     try {
         const { maHoaDon } = req.params
-        console.log('🔍 Tìm hóa đơn với mã:', maHoaDon)
+        console.log('Tìm hóa đơn với mã:', maHoaDon)
 
         // Tìm hóa đơn
         const hoaDon = await DataModel.Data_HoaDon_Model.findOne({
             MaHoaDon: maHoaDon,
         }).lean()
         if (!hoaDon) {
-            console.log('❌ Không tìm thấy hóa đơn')
+            console.log('Không tìm thấy hóa đơn')
             return res.status(404).json({
                 success: false,
                 message: 'Không tìm thấy hóa đơn',
@@ -2053,7 +2055,7 @@ app.get('/api/hoadon/edit/:maHoaDon', async (req, res) => {
 app.get('/api/chitiethoadon/:maHoaDon', async (req, res) => {
     try {
         const { maHoaDon } = req.params
-        console.log('🔍 Tìm chi tiết hóa đơn với mã:', maHoaDon)
+        console.log('Tìm chi tiết hóa đơn với mã:', maHoaDon)
         const ctHD = await DataModel.Data_ChiTietHD_Model.find({
             MaHoaDon: maHoaDon,
         })
@@ -2133,7 +2135,7 @@ app.get('/api/phong/:maPhong/banggia', async (req, res) => {
             },
         })
     } catch (error) {
-        console.error('❌ Lỗi API bảng giá phòng:', error)
+        console.error('Lỗi API bảng giá phòng:', error)
         res.status(500).json({ error: error.message })
     }
 })
@@ -2293,7 +2295,7 @@ app.post('/api/phonghat', async (req, res) => {
         const { TenPhong, LoaiPhong, SucChua, TrangThai, GhiChu, LinkAnh } =
             req.body
 
-        console.log('📥 Nhận dữ liệu phòng:', TenPhong)
+        console.log('Nhận dữ liệu phòng:', TenPhong)
 
         // Tạo mã phòng tự động sử dụng hàm generateCode
         const maPhong = await generateCode(
@@ -2313,8 +2315,8 @@ app.post('/api/phonghat', async (req, res) => {
             createdAt: new Date(),
         })
 
-        console.log('✅ Đã thêm phòng:', ph.TenPhong)
-        console.log('📝 Mã phòng được tạo:', ph.MaPhong)
+        console.log('Đã thêm phòng:', ph.TenPhong)
+        console.log('Mã phòng được tạo:', ph.MaPhong)
 
         res.status(200).json({
             success: true,
@@ -2322,7 +2324,7 @@ app.post('/api/phonghat', async (req, res) => {
             data: ph,
         })
     } catch (err) {
-        console.error('❌ Lỗi thêm phòng:', err)
+        console.error('Lỗi thêm phòng:', err)
         res.status(400).json({
             success: false,
             error: err.message,
@@ -2335,7 +2337,7 @@ app.post('/api/banggia/:loaiPhong', async (req, res) => {
     try {
         const { loaiPhong, bangGia } = req.body
 
-        console.log('📥 Nhận dữ liệu bảng giá:', {
+        console.log('Nhận dữ liệu bảng giá:', {
             loaiPhong: loaiPhong,
             soKhungGio: bangGia ? bangGia.length : 0,
         })
@@ -2378,7 +2380,7 @@ app.post('/api/banggia/:loaiPhong', async (req, res) => {
             }
         }
 
-        console.log('🗑️ Đang xóa khung giờ cũ cho loại phòng:', loaiPhong)
+        console.log('Đang xóa khung giờ cũ cho loại phòng:', loaiPhong)
 
         // Xóa các khung giờ cũ - GIỮ NGUYÊN LOGIC CŨ
         const deleteResult = await DataModel.Data_BangGiaPhong_Model.deleteMany(
@@ -2387,7 +2389,7 @@ app.post('/api/banggia/:loaiPhong', async (req, res) => {
             }
         )
 
-        console.log('✅ Đã xóa:', deleteResult.deletedCount, 'khung giờ cũ')
+        console.log('Đã xóa:', deleteResult.deletedCount, 'khung giờ cũ')
 
         // Tạo mã cho từng khung giờ - GIỮ NGUYÊN LOGIC CŨ
         const newBangGia = []
@@ -2400,7 +2402,7 @@ app.post('/api/banggia/:loaiPhong', async (req, res) => {
         )
         const lastNumber = parseInt(lastMaGia.replace('PG', '')) || 0
 
-        console.log('🔢 Mã cuối cùng:', lastMaGia, 'Số:', lastNumber)
+        console.log('Mã cuối cùng:', lastMaGia, 'Số:', lastNumber)
 
         // Tạo dữ liệu mới - GIỮ NGUYÊN LOGIC CŨ
         for (let i = 0; i < bangGia.length; i++) {
@@ -2423,14 +2425,14 @@ app.post('/api/banggia/:loaiPhong', async (req, res) => {
             })
         }
 
-        console.log('💾 Đang lưu', newBangGia.length, 'khung giờ mới...')
+        console.log('Đang lưu', newBangGia.length, 'khung giờ mới...')
 
         // Lưu dữ liệu mới - GIỮ NGUYÊN LOGIC CŨ
         const result = await DataModel.Data_BangGiaPhong_Model.insertMany(
             newBangGia
         )
 
-        console.log('✅ Đã thêm thành công:', result.length, 'khung giờ')
+        console.log('Đã thêm thành công:', result.length, 'khung giờ')
         console.log(
             '📋 Mã được tạo:',
             result.map((item) => item.MaGia)
@@ -2447,7 +2449,7 @@ app.post('/api/banggia/:loaiPhong', async (req, res) => {
             },
         })
     } catch (error) {
-        console.error('❌ Lỗi lưu bảng giá:', error)
+        console.error('Lỗi lưu bảng giá:', error)
         res.status(500).json({
             success: false,
             message: 'Lỗi khi lưu bảng giá: ' + error.message,
@@ -2462,7 +2464,7 @@ app.post('/api/banggia/:loaiPhong', async (req, res) => {
 app.post('/api/loaiphong', async (req, res) => {
     try {
         console.log('=== 🚨 API /api/loaiphong ===')
-        console.log('📦 Request body:', req.body)
+        console.log('Request body:', req.body)
 
         const { TenLoaiPhong, Action, OldRoomType } = req.body
 
@@ -2474,7 +2476,7 @@ app.post('/api/loaiphong', async (req, res) => {
         }
 
         if (Action === 'add') {
-            console.log('🔍 Kiểm tra loại phòng tồn tại:', TenLoaiPhong)
+            console.log('Kiểm tra loại phòng tồn tại:', TenLoaiPhong)
 
             // Kiểm tra trùng
             const existing = await DataModel.Data_BangGiaPhong_Model.findOne({
@@ -2482,11 +2484,11 @@ app.post('/api/loaiphong', async (req, res) => {
             })
 
             if (existing) {
-                console.log('❌ Loại phòng đã tồn tại')
+                console.log('Loại phòng đã tồn tại')
                 return res.status(400).json({ error: 'Loại phòng đã tồn tại!' })
             }
 
-            console.log('💾 Đang tạo loại phòng mới...')
+            console.log('Đang tạo loại phòng mới...')
 
             const lastMaGia = await generateCode(
                 'PG',
@@ -2508,7 +2510,7 @@ app.post('/api/loaiphong', async (req, res) => {
             })
 
             await newRoomType.save()
-            console.log('✅ Đã lưu loại phòng mới thành công')
+            console.log('Đã lưu loại phòng mới thành công')
 
             res.json({
                 success: true,
@@ -2624,7 +2626,7 @@ app.post('/api/loaiphong', async (req, res) => {
             return res.status(400).json({ error: 'Action không hợp lệ!' })
         }
     } catch (err) {
-        console.error('💥 LỖI SERVER CHI TIẾT:')
+        console.error('LỖI SERVER CHI TIẾT:')
         console.error('Message:', err.message)
         console.error('Stack:', err.stack)
 
@@ -2636,11 +2638,11 @@ app.post('/api/loaiphong', async (req, res) => {
 
 app.post('/api/thietbi', async (req, res) => {
     try {
-        console.log('🎯 API /api/thietbi ĐƯỢC GỌI!')
-        console.log('📦 Body received:', req.body)
+        console.log('API /api/thietbi ĐƯỢC GỌI!')
+        console.log('Body received:', req.body)
 
         const formData = req.body
-        console.log('💾 FormData:', formData)
+        console.log('FormData:', formData)
 
         // VALIDATION
         if (
@@ -2661,7 +2663,7 @@ app.post('/api/thietbi', async (req, res) => {
             DataModel.Data_ThietBi_Model,
             'MaThietBi'
         )
-        console.log('🔢 Mã thiết bị mới:', maThietBi)
+        console.log('Mã thiết bị mới:', maThietBi)
 
         // Tạo thiết bị mới
         const newThietBi = new DataModel.Data_ThietBi_Model({
@@ -2680,12 +2682,12 @@ app.post('/api/thietbi', async (req, res) => {
             // GhiChu: formData.GhiChu || ''
         })
 
-        console.log('💾 Đang lưu thiết bị:', newThietBi)
+        console.log('Đang lưu thiết bị:', newThietBi)
 
         // Lưu vào database
         const savedThietBi = await newThietBi.save()
 
-        console.log('✅ Đã lưu thiết bị thành công:', savedThietBi)
+        console.log('Đã lưu thiết bị thành công:', savedThietBi)
 
         res.json({
             success: true,
@@ -2693,7 +2695,7 @@ app.post('/api/thietbi', async (req, res) => {
             data: savedThietBi,
         })
     } catch (error) {
-        console.error('❌ Lỗi lưu thiết bị:', error)
+        console.error('Lỗi lưu thiết bị:', error)
         res.status(500).json({
             success: false,
             message: 'Lỗi khi lưu thiết bị: ' + error.message,
@@ -2870,7 +2872,7 @@ app.post('/api/hoadon', async (req, res) => {
             tongTien,
         } = req.body
 
-        console.log('📥 Nhận dữ liệu hóa đơn:', {
+        console.log('Nhận dữ liệu hóa đơn:', {
             tenKH,
             sdtKH,
             emailKH,
@@ -2898,9 +2900,9 @@ app.post('/api/hoadon', async (req, res) => {
                 createdAt: new Date(),
             })
             await khachHang.save()
-            console.log('✅ Đã tạo khách hàng mới:', khachHang.TenKH)
+            console.log('Đã tạo khách hàng mới:', khachHang.TenKH)
         } else {
-            console.log('✅ Đã tìm thấy khách hàng:', khachHang.TenKH)
+            console.log('Đã tìm thấy khách hàng:', khachHang.TenKH)
         }
 
         // Tạo mã hoá đơn tự động sử dụng hàm generateCode
@@ -2921,7 +2923,7 @@ app.post('/api/hoadon', async (req, res) => {
             createdAt: new Date(),
         })
         await hoaDon.save()
-        console.log('✅ Đã tạo hóa đơn:', maHD)
+        console.log('Đã tạo hóa đơn:', maHD)
 
         let chiTietHoaDons = []
         for (const [index, dv] of dichVu.entries()) {
@@ -2976,14 +2978,14 @@ app.post('/api/hoadon', async (req, res) => {
                 updatedAt: new Date(),
             }
         )
-        console.log('✅ Đã cập nhật trạng thái phòng thành "Đang sử dụng"')
+        console.log('Đã cập nhật trạng thái phòng thành "Đang sử dụng"')
 
         res.status(200).json({
             success: true,
             message: `Thêm phòng "${maHD}" thành công với mã ${maHD}!`,
         })
     } catch (err) {
-        console.error('❌ Lỗi thêm phòng:', err)
+        console.error('Lỗi thêm phòng:', err)
         res.status(400).json({
             success: false,
             error: err.message,
@@ -3038,7 +3040,7 @@ app.put('/api/phonghat/:id', async (req, res) => {
         const { TenPhong, LoaiPhong, SucChua, TrangThai, GhiChu, LinkAnh } =
             req.body
 
-        console.log('📥 Cập nhật phòng ID:', id)
+        console.log('Cập nhật phòng ID:', id)
 
         // KHÔNG cập nhật MaPhong khi sửa, chỉ cập nhật các trường khác
         const ph = await DataModel.Data_PhongHat_Model.findByIdAndUpdate(
@@ -3062,7 +3064,7 @@ app.put('/api/phonghat/:id', async (req, res) => {
             })
         }
 
-        console.log('✅ Đã cập nhật phòng:', ph.TenPhong)
+        console.log('Đã cập nhật phòng:', ph.TenPhong)
 
         res.status(200).json({
             success: true,
@@ -3070,7 +3072,7 @@ app.put('/api/phonghat/:id', async (req, res) => {
             data: ph,
         })
     } catch (err) {
-        console.error('❌ Lỗi cập nhật phòng:', err)
+        console.error('Lỗi cập nhật phòng:', err)
         res.status(400).json({
             success: false,
             error: err.message,
@@ -3082,7 +3084,7 @@ app.put('/api/banggia/:loaiPhong', async (req, res) => {
     try {
         const { loaiPhong, bangGia } = req.body
 
-        console.log('📥 Nhận dữ liệu bảng giá:', {
+        console.log('Nhận dữ liệu bảng giá:', {
             loaiPhong: loaiPhong,
             soKhungGio: bangGia ? bangGia.length : 0,
         })
@@ -3125,7 +3127,7 @@ app.put('/api/banggia/:loaiPhong', async (req, res) => {
             }
         }
 
-        console.log('🗑️ Đang xóa khung giờ cũ cho loại phòng:', loaiPhong)
+        console.log('Đang xóa khung giờ cũ cho loại phòng:', loaiPhong)
 
         // Xóa các khung giờ cũ - GIỮ NGUYÊN LOGIC CŨ
         const deleteResult = await DataModel.Data_BangGiaPhong_Model.deleteMany(
@@ -3134,7 +3136,7 @@ app.put('/api/banggia/:loaiPhong', async (req, res) => {
             }
         )
 
-        console.log('✅ Đã xóa:', deleteResult.deletedCount, 'khung giờ cũ')
+        console.log('Đã xóa:', deleteResult.deletedCount, 'khung giờ cũ')
 
         // Tạo mã cho từng khung giờ - GIỮ NGUYÊN LOGIC CŨ
         const newBangGia = []
@@ -3147,7 +3149,7 @@ app.put('/api/banggia/:loaiPhong', async (req, res) => {
         )
         const lastNumber = parseInt(lastMaGia.replace('PG', '')) || 0
 
-        console.log('🔢 Mã cuối cùng:', lastMaGia, 'Số:', lastNumber)
+        console.log('Mã cuối cùng:', lastMaGia, 'Số:', lastNumber)
 
         // Tạo dữ liệu mới - GIỮ NGUYÊN LOGIC CŨ
         for (let i = 0; i < bangGia.length; i++) {
@@ -3170,14 +3172,14 @@ app.put('/api/banggia/:loaiPhong', async (req, res) => {
             })
         }
 
-        console.log('💾 Đang lưu', newBangGia.length, 'khung giờ mới...')
+        console.log('Đang lưu', newBangGia.length, 'khung giờ mới...')
 
         // Lưu dữ liệu mới - GIỮ NGUYÊN LOGIC CŨ
         const result = await DataModel.Data_BangGiaPhong_Model.insertMany(
             newBangGia
         )
 
-        console.log('✅ Đã thêm thành công:', result.length, 'khung giờ')
+        console.log('Đã thêm thành công:', result.length, 'khung giờ')
         console.log(
             '📋 Mã được tạo:',
             result.map((item) => item.MaGia)
@@ -3194,7 +3196,7 @@ app.put('/api/banggia/:loaiPhong', async (req, res) => {
             },
         })
     } catch (error) {
-        console.error('❌ Lỗi lưu bảng giá:', error)
+        console.error('Lỗi lưu bảng giá:', error)
         res.status(500).json({
             success: false,
             message: 'Lỗi khi lưu bảng giá: ' + error.message,
@@ -3209,7 +3211,7 @@ app.put('/api/banggia/:loaiPhong', async (req, res) => {
 // Thêm vào routes của bạn
 app.put('/banggia/all', async (req, res) => {
     try {
-        console.log('📥 NHẬN REQUEST TỪ CLIENT:', {
+        console.log('NHẬN REQUEST TỪ CLIENT:', {
             body: req.body,
             headers: req.headers,
         })
@@ -3250,7 +3252,7 @@ app.put('/banggia/all', async (req, res) => {
             })
         })
 
-        console.log('📦 Dữ liệu đã nhóm:', groupedByRoomType)
+        console.log('Dữ liệu đã nhóm:', groupedByRoomType)
 
         // Lưu từng loại phòng
         for (const [loaiPhong, giaData] of Object.entries(groupedByRoomType)) {
@@ -3313,7 +3315,7 @@ app.put('/banggia/all', async (req, res) => {
             totalCount,
         })
     } catch (error) {
-        console.error('💥 Lỗi tổng khi lưu bảng giá:', error)
+        console.error('Lỗi tổng khi lưu bảng giá:', error)
         res.status(500).json({
             error: 'Lỗi server khi lưu bảng giá',
             details: error.message,
@@ -3491,7 +3493,7 @@ app.put('/api/datphong/:maDatPhong/checkin', async (req, res) => {
             DataModel.Data_HoaDon_Model,
             'MaHoaDon'
         )
-        console.log('🔢 Mã hoá đơn mới:', maHD)
+        console.log('Mã hoá đơn mới:', maHD)
 
         // Lấy thông tin phòng để lấy giá
         // const phong = await DataModel.Data_BangGiaPhong_Model.findOne({ MaPhong: datPhong.MaPhong });
@@ -3551,7 +3553,7 @@ app.put('/api/datphong/:maDatPhong', async (req, res) => {
         const { maDatPhong } = req.params
         const { MaPhong, SoNguoi, ThoiGianBatDau, GhiChu } = req.body
 
-        console.log('📝 Cập nhật đặt phòng:', { maDatPhong, MaPhong, SoNguoi, ThoiGianBatDau })
+        console.log('Cập nhật đặt phòng:', { maDatPhong, MaPhong, SoNguoi, ThoiGianBatDau })
 
         // 1. Tìm đơn đặt phòng hiện tại
         const datPhong = await DataModel.Data_DatPhong_Model.findOne({
@@ -3614,7 +3616,7 @@ app.put('/api/datphong/:maDatPhong', async (req, res) => {
         
         await datPhong.save()
 
-        console.log('✅ Đã cập nhật đơn đặt phòng:', datPhong.MaDatPhong)
+        console.log('Đã cập nhật đơn đặt phòng:', datPhong.MaDatPhong)
 
         res.status(200).json({
             success: true,
@@ -3627,7 +3629,7 @@ app.put('/api/datphong/:maDatPhong', async (req, res) => {
             },
         })
     } catch (error) {
-        console.error('❌ Lỗi cập nhật đặt phòng:', error)
+        console.error('Lỗi cập nhật đặt phòng:', error)
         res.status(500).json({
             success: false,
             error: 'Lỗi khi cập nhật đặt phòng: ' + error.message,
@@ -3743,19 +3745,35 @@ app.put('/api/mathang/:maMH', async (req, res) => {
 app.put('/api/mathang/:maHang/tonkho', async (req, res) => {
     try {
         const { soLuong } = req.body
+        const { maHang } = req.params
 
+        console.log('Tìm mặt hàng với ID:', maHang)
+        console.log('Số lượng mới:', soLuong)
+
+        // Cập nhật trực tiếp mà không cần load document (tránh lỗi validation _id)
         const mathang = await DataModel.Data_MatHang_Model.findOneAndUpdate(
-            { MaHang: req.params.maHang },
+            { MaHang: maHang },
             { SoLuongTon: soLuong },
-            { new: true }
+            { 
+                new: true,           // Trả về document sau khi update
+                runValidators: false // Bỏ qua validation để tránh lỗi _id
+            }
         )
 
         if (!mathang) {
+            console.log('Không tìm thấy mặt hàng với MaHang:', maHang)
             return res.status(404).json({
                 success: false,
                 message: 'Không tìm thấy mặt hàng',
             })
         }
+
+        console.log('Đã cập nhật tồn kho thành công')
+        console.log('Mặt hàng:', {
+            MaHang: mathang.MaHang,
+            TenHang: mathang.TenHang,
+            SoLuongTonMoi: mathang.SoLuongTon
+        })
 
         res.json({
             success: true,
@@ -3786,7 +3804,7 @@ app.put('/api/hoadon/edit/:maHoaDon', async (req, res) => {
             dichVu,
             tongTien,
         } = req.body
-        console.log('📥 Nhận dữ liệu hóa đơn:', {
+        console.log('Nhận dữ liệu hóa đơn:', {
             maHoaDon,
             maKH,
             tenKH,
@@ -3867,7 +3885,7 @@ app.put('/api/hoadon/edit/:maHoaDon', async (req, res) => {
         const existingChiTiet = await DataModel.Data_ChiTietHD_Model.find({
             MaHoaDon: maHoaDon,
         })
-        console.log('📋 Chi tiết hiện tại trong DB:', existingChiTiet.length)
+        console.log('Chi tiết hiện tại trong DB:', existingChiTiet.length)
 
         const existingChiTietMap = new Map()
         existingChiTiet.forEach((ct) => {
@@ -3990,7 +4008,7 @@ app.put('/api/hoadon/edit/:maHoaDon', async (req, res) => {
             }
         }
 
-        console.log('✅ Cập nhật hóa đơn thành công')
+        console.log('Cập nhật hóa đơn thành công')
 
         res.status(200).json({
             success: true,
@@ -4002,7 +4020,7 @@ app.put('/api/hoadon/edit/:maHoaDon', async (req, res) => {
             },
         })
     } catch (error) {
-        console.error('❌ Lỗi cập nhật hóa đơn:', error)
+        console.error('Lỗi cập nhật hóa đơn:', error)
         res.status(500).json({
             success: false,
             message: 'Lỗi cập nhật hóa đơn',
@@ -4017,7 +4035,7 @@ app.put('/api/hoadon/thanhtoan/:maHoaDon', async (req, res) => {
         const { maHoaDon } = req.params
         const { thoiGianKetThuc, tienPhong, tongTien, trangThai } = req.body
 
-        console.log('💰 Nhận yêu cầu thanh toán:', {
+        console.log('Nhận yêu cầu thanh toán:', {
             maHoaDon,
             thoiGianKetThuc,
             tienPhong,
@@ -4071,7 +4089,7 @@ app.put('/api/hoadon/thanhtoan/:maHoaDon', async (req, res) => {
             },
         })
     } catch (error) {
-        console.error('❌ Lỗi khi thanh toán hóa đơn:', error)
+        console.error('Lỗi khi thanh toán hóa đơn:', error)
         res.status(500).json({
             success: false,
             message: 'Lỗi khi thanh toán hóa đơn',
@@ -4115,7 +4133,7 @@ app.delete('/api/banggia/:loaiPhong', async (req, res) => {
     try {
         const { loaiPhong } = req.params
 
-        console.log('🗑️ Đang xóa bảng giá cho:', loaiPhong)
+        console.log('Đang xóa bảng giá cho:', loaiPhong)
 
         const roomsUsingType = await DataModel.Data_PhongHat_Model.find({
             LoaiPhong: loaiPhong,
@@ -4134,7 +4152,7 @@ app.delete('/api/banggia/:loaiPhong', async (req, res) => {
             }
         )
 
-        console.log('✅ Đã xóa:', deleteResult.deletedCount, 'khung giờ')
+        console.log('Đã xóa:', deleteResult.deletedCount, 'khung giờ')
 
         res.json({
             success: true,
@@ -4142,7 +4160,7 @@ app.delete('/api/banggia/:loaiPhong', async (req, res) => {
             deletedCount: deleteResult.deletedCount,
         })
     } catch (error) {
-        console.error('❌ Lỗi xóa bảng giá:', error)
+        console.error('Lỗi xóa bảng giá:', error)
         res.status(500).json({
             success: false,
             message: 'Lỗi khi xóa bảng giá: ' + error.message,
@@ -4160,7 +4178,7 @@ app.delete('/api/banggiaphong/:loaiPhong', async (req, res) => {
             }
         )
 
-        console.log('✅ Đã xóa:', deleteResult.deletedCount, 'khung giờ')
+        console.log('Đã xóa:', deleteResult.deletedCount, 'khung giờ')
 
         res.json({
             success: true,
@@ -4168,7 +4186,7 @@ app.delete('/api/banggiaphong/:loaiPhong', async (req, res) => {
             deletedCount: deleteResult.deletedCount,
         })
     } catch (error) {
-        console.error('❌ Lỗi xóa bảng giá:', error)
+        console.error('Lỗi xóa bảng giá:', error)
         res.status(500).json({
             success: false,
             message: 'Lỗi khi xóa bảng giá: ' + error.message,
@@ -4185,7 +4203,7 @@ app.delete('/api/phonghatt', async (req, res) => {
             }
         )
 
-        console.log('✅ Đã xóa:', deleteResult.deletedCount, 'khung giờ')
+        console.log('Đã xóa:', deleteResult.deletedCount, 'khung giờ')
 
         res.json({
             success: true,
@@ -4193,7 +4211,7 @@ app.delete('/api/phonghatt', async (req, res) => {
             deletedCount: deleteResult.deletedCount,
         })
     } catch (error) {
-        console.error('❌ Lỗi xóa bảng giá:', error)
+        console.error('Lỗi xóa bảng giá:', error)
         res.status(500).json({
             success: false,
             message: 'Lỗi khi xóa bảng giá: ' + error.message,
@@ -4205,16 +4223,24 @@ app.delete('/api/phonghatt', async (req, res) => {
 app.delete('/api/phonghat/:id', async (req, res) => {
     try {
         const { id } = req.params
-        const ph = await DataModel.Data_PhongHat_Model.findOneAndDelete({
-            _id: id,
-            trangThai: 'Trống',
-        })
-        if (!ph)
-            return res
-                .status(404)
-                .json({ error: 'Phòng hát đang được sử dụng!' })
+        
+        // Kiểm tra phòng có đang được sử dụng không
+        const phong = await DataModel.Data_PhongHat_Model.findById(id)
+        if (!phong) {
+            return res.status(404).json({ error: 'Không tìm thấy phòng hát!' })
+        }
+        
+        if (phong.TrangThai === 'Đang sử dụng') {
+            return res.status(400).json({ 
+                error: 'Không thể xóa phòng đang được sử dụng!' 
+            })
+        }
+        
+        // Xóa phòng
+        await DataModel.Data_PhongHat_Model.findByIdAndDelete(id)
         res.json({ message: 'Xóa phòng hát thành công' })
     } catch (err) {
+        console.error('Lỗi xóa phòng:', err)
         res.status(400).json({ error: err.message })
     }
 })
@@ -4383,7 +4409,7 @@ app.delete('/api/delete/hoadon/:maHoaDon', async (req, res) => {
             },
         })
     } catch (error) {
-        console.error('❌ Lỗi khi xóa hóa đơn:', error)
+        console.error('Lỗi khi xóa hóa đơn:', error)
         res.status(500).json({
             success: false,
             message: 'Lỗi khi xóa hóa đơn',
@@ -4398,7 +4424,7 @@ app.put('/api/phonghat/:id/image', async (req, res) => {
         const { id } = req.params
         const { LinkAnh } = req.body
 
-        console.log('🔄 Cập nhật ảnh phòng:', { id, LinkAnh })
+        console.log('Cập nhật ảnh phòng:', { id, LinkAnh })
 
         // Chỉ cập nhật trường LinkAnh
         const phong = await DataModel.Data_PhongHat_Model.findByIdAndUpdate(
@@ -4431,7 +4457,7 @@ app.put('/api/phonghat/:id/image', async (req, res) => {
             },
         })
     } catch (error) {
-        console.error('❌ Lỗi cập nhật ảnh phòng:', error)
+        console.error('Lỗi cập nhật ảnh phòng:', error)
         res.status(500).json({
             success: false,
             error: 'Lỗi server khi cập nhật ảnh phòng',
