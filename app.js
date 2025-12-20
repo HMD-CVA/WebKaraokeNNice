@@ -55,7 +55,7 @@ const authentication = (req, res, next) => {
 
 const authorization = (req, res, next) => {}
 
-app.use('/admin', authentication)
+// app.use('/admin', authentication)
 
 // Handlebars setup
 app.engine(
