@@ -1573,6 +1573,44 @@ app.get('/api/banggia/:loaiPhong', async (req, res) => {
     }
 })
 
+// ===== KHÁCH HÀNG ROUTES =====
+app.get('/admin/khachhang', async (req, res) => {
+    try {
+        const khachhangs = await DataModel.Data_KhachHang_Model.find({})
+            .sort({ MaKH: 1 })
+            .lean()
+        
+        res.render('khachhang', {
+            layout: 'AdminMain',
+            title: 'Thông tin khách hàng',
+            khachhangs,
+        })
+    } catch (err) {
+        console.error('Lỗi khi lấy danh sách khách hàng:', err)
+        res.status(500).send('Lỗi server!')
+    }
+})
+
+app.get('/api/khachhang/:maKH', async (req, res) => {
+    try {
+        const { maKH } = req.params
+        const khachHang = await DataModel.Data_KhachHang_Model.findOne({
+            MaKH: maKH,
+        })
+            .lean()
+            .exec()
+
+        if (!khachHang) {
+            return res.status(404).json({ error: 'Không tìm thấy khách hàng' })
+        }
+
+        res.json(khachHang)
+    } catch (err) {
+        console.error('Error:', err)
+        res.status(500).json({ error: 'Lỗi server!' })
+    }
+})
+
 // Quản lý nhân viên
 app.get('/admin/nhanvien', async (req, res) => {
     try {

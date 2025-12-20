@@ -86,33 +86,6 @@
                     <p>Đã hủy</p>
                 </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon manager">
-                    <i class="fas fa-calendar-day"></i>
-                </div>
-                <div class="stat-info">
-                    <h3 id="statToday">0</h3>
-                    <p>Hôm nay</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon security">
-                    <i class="fas fa-calendar-week"></i>
-                </div>
-                <div class="stat-info">
-                    <h3 id="statWeek">0</h3>
-                    <p>Tuần này</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon fulltime">
-                    <i class="fas fa-calendar-month"></i>
-                </div>
-                <div class="stat-info">
-                    <h3 id="statMonth">0</h3>
-                    <p>Tháng này</p>
-                </div>
-            </div>
         </div>
 
         <!-- DatPhong Table -->
@@ -379,7 +352,6 @@
         const datPhongs = allDatPhongs;
 
         const totalDatPhongs = datPhongs.length;
-        const today = new Date().toDateString();
         // Cập nhật: Tính đơn "Sắp tới" (bao gồm cả "Đã đặt")
         const countActive = datPhongs.filter(dp => {
             const status = dp.getAttribute('data-status');
@@ -389,18 +361,12 @@
         // Cập nhật: Tính đơn "Hoàn thành" (đã check-in và tạo hóa đơn)
         const countCompleted = datPhongs.filter(dp => dp.getAttribute('data-status') === 'Hoàn thành').length;
         const countCancelled = datPhongs.filter(dp => dp.getAttribute('data-status') === 'Đã hủy').length;
-        const countToday = datPhongs.filter(dp =>
-            new Date(dp.getAttribute('data-date')).toDateString() === today
-        ).length;
 
         updateStatCard('#statTotal', totalDatPhongs);
         updateStatCard('#statActive', countActive);
         updateStatCard('#statUpcoming', countUpcoming);
         updateStatCard('#statCompleted', countCompleted);
         updateStatCard('#statCancelled', countCancelled);
-        updateStatCard('#statToday', countToday);
-        updateStatCard('#statWeek', Math.floor(countToday * 1.5)); // Giả lập
-        updateStatCard('#statMonth', Math.floor(countToday * 6)); // Giả lập
     }
 
     function updateStatCard(selector, value) {

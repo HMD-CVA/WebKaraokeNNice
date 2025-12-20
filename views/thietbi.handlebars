@@ -15,10 +15,6 @@
             <i class="fas fa-plus"></i>
             <span>Thêm thiết bị</span>
           </button>
-          <button class="btn-secondary" onclick="openBaoTriModal()">
-            <i class="fas fa-tools"></i>
-            <span>Thêm bảo trì</span>
-          </button>
         </div>
       </div>
     </div>
@@ -102,10 +98,8 @@
       <table class="data-table" id="thietBiTable">
         <thead>
           <tr>
-            <th>Ảnh</th>
             <th>Mã TB</th>
             <th>Tên thiết bị</th>
-            <th>Phòng</th>
             <th>Loại</th>
             <th>Ngày nhập</th>
             <th>Tình trạng</th>
@@ -121,20 +115,8 @@
               data-tenthietbi="{{this.TenThietBi}}" 
               data-tinhtrang="{{this.TinhTrang}}" 
               data-loai="{{this.LoaiThietBi}}">
-            <td>
-              <div class="device-avatar">
-                {{#if this.LinkAnh}}
-                <img src="{{this.LinkAnh}}" alt="{{this.TenThietBi}}">
-                {{else}}
-                <div class="avatar-placeholder {{this.LoaiThietBi}}">
-                  <i class="{{getDeviceIcon this.LoaiThietBi}}"></i>
-                </div>
-                {{/if}}
-              </div>
-            </td>
             <td><span class="device-code">{{this.MaThietBi}}</span></td>
             <td><strong>{{this.TenThietBi}}</strong></td>
-            <td><span class="room-badge">{{this.MaPhong}}</span></td>
             <td><span class="type-badge {{this.LoaiThietBi}}">{{this.LoaiThietBi}}</span></td>
             <td>{{formatDate this.NgayNhap}}</td>
             <td>
@@ -144,9 +126,6 @@
             </td>
             <td>
               <div class="table-actions">
-                <button class="btn-table-action btn-history" onclick="viewBaoTriHistory('{{this.MaThietBi}}')" title="Lịch sử">
-                  <i class="fas fa-history"></i>
-                </button>
                 <button class="btn-table-action btn-edit" onclick="editThietBi('{{this.MaThietBi}}')" title="Chỉnh sửa">
                   <i class="fas fa-edit"></i>
                 </button>
@@ -259,104 +238,6 @@
       <div class="modal-footer">
         <button class="btn-secondary" type="button" onclick="closeThietBiModal()">Hủy</button>
         <button class="btn-primary" type="submit" form="thietBiForm">Lưu thông tin</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- BaoTri Modal -->
-  <div class="modal-overlay" id="baoTriModal" style="display: none;">
-    <div class="modal-container">
-      <div class="modal-header">
-        <h2>Thêm lịch sử bảo trì</h2>
-        <button class="modal-close" onclick="closeBaoTriModal()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <form id="baoTriForm" onsubmit="saveBaoTri(event)">
-          <input type="hidden" id="baoTriId">
-
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="baoTriMaThietBi">Thiết bị *</label>
-              <select id="baoTriMaThietBi" required onchange="updateThietBiInfo()">
-                <option value="">Chọn thiết bị</option>
-                {{#each thietbis}}
-                <option value="{{this.MaThietBi}}" data-tenthietbi="{{this.TenThietBi}}" data-maphong="{{this.MaPhong}}">
-                  {{this.MaThietBi}} - {{this.TenThietBi}} ({{this.MaPhong}})
-                </option>
-                {{/each}}
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="baoTriTenThietBi">Tên thiết bị</label>
-              <input type="text" id="baoTriTenThietBi" readonly>
-            </div>
-
-            <div class="form-group">
-              <label for="baoTriMaPhong">Phòng</label>
-              <input type="text" id="baoTriMaPhong" readonly>
-            </div>
-
-            <div class="form-group">
-              <label for="baoTriChiPhi">Chi phí (VND) *</label>
-              <input type="number" id="baoTriChiPhi" required placeholder="Nhập chi phí bảo trì">
-            </div>
-
-            <div class="form-group">
-              <label for="baoTriThoiGian">Thời gian bảo trì *</label>
-              <input type="datetime-local" id="baoTriThoiGian" required>
-            </div>
-
-            <div class="form-group full-width">
-              <label for="baoTriMoTa">Mô tả bảo trì *</label>
-              <textarea id="baoTriMoTa" required placeholder="Mô tả công việc bảo trì/sửa chữa" rows="3"></textarea>
-            </div>
-
-            <div class="form-group full-width">
-              <label for="baoTriNhanVien">Nhân viên thực hiện</label>
-              <input type="text" id="baoTriNhanVien" placeholder="Tên nhân viên bảo trì">
-            </div>
-
-            <div class="form-group full-width">
-              <label for="baoTriKetQua">Kết quả bảo trì</label>
-              <select id="baoTriKetQua">
-                <option value="">Chọn kết quả</option>
-                <option value="Đã sửa xong">Đã sửa xong</option>
-                <option value="Cần thay thế linh kiện">Cần thay thế linh kiện</option>
-                <option value="Chờ xử lý">Chờ xử lý</option>
-                <option value="Không thể sửa">Không thể sửa</option>
-              </select>
-            </div>
-          </div>
-        </form>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn-secondary" type="button" onclick="closeBaoTriModal()">Hủy</button>
-        <button class="btn-primary" type="submit" form="baoTriForm">Lưu bảo trì</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Lịch sử bảo trì Modal -->
-  <div class="modal-overlay" id="historyModal" style="display: none;">
-    <div class="modal-container large">
-      <div class="modal-header">
-        <h2 id="historyTitle">Lịch sử bảo trì</h2>
-        <button class="modal-close" onclick="closeHistoryModal()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      <div class="modal-body">
-        <div class="history-list" id="historyList">
-          <!-- Danh sách lịch sử bảo trì sẽ được điền bằng JS -->
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-secondary" onclick="closeHistoryModal()">Đóng</button>
       </div>
     </div>
   </div>
@@ -539,20 +420,14 @@
     // Close modals when clicking outside
     document.addEventListener('click', function(event) {
       const thietBiModal = document.getElementById('thietBiModal');
-      const baoTriModal = document.getElementById('baoTriModal');
-      const historyModal = document.getElementById('historyModal');
       
       if (event.target === thietBiModal) closeThietBiModal();
-      if (event.target === baoTriModal) closeBaoTriModal();
-      if (event.target === historyModal) closeHistoryModal();
     });
 
     // Close modals with Escape key
     document.addEventListener('keydown', function(event) {
       if (event.key === 'Escape') {
         closeThietBiModal();
-        closeBaoTriModal();
-        closeHistoryModal();
       }
     });
   }
@@ -827,156 +702,6 @@
         handleError('Lỗi khi xóa thiết bị:', error);
       }
     }
-  }
-
-  // ===== BAO TRI MANAGEMENT =====
-  function openBaoTriModal(baoTriData = null) {
-    document.getElementById('baoTriModal').style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-
-    if (baoTriData) {
-      populateBaoTriForm(baoTriData);
-    } else {
-      resetBaoTriForm();
-    }
-  }
-
-  function closeBaoTriModal() {
-    document.getElementById('baoTriModal').style.display = 'none';
-    document.body.style.overflow = 'auto';
-  }
-
-  function resetBaoTriForm() {
-    document.getElementById('baoTriForm').reset();
-    document.getElementById('baoTriId').value = '';
-    document.getElementById('baoTriThoiGian').value = new Date().toISOString().slice(0, 16);
-  }
-
-  function populateBaoTriForm(data) {
-    document.getElementById('baoTriId').value = data._id || '';
-    document.getElementById('baoTriMaThietBi').value = data.MaThietBi || '';
-    document.getElementById('baoTriChiPhi').value = data.ChiPhi || '';
-    document.getElementById('baoTriThoiGian').value = data.ThoiGian ? new Date(data.ThoiGian).toISOString().slice(0, 16) : '';
-    document.getElementById('baoTriMoTa').value = data.MoTa || '';
-    document.getElementById('baoTriNhanVien').value = data.NhanVien || '';
-    document.getElementById('baoTriKetQua').value = data.KetQua || '';
-    updateThietBiInfo();
-  }
-
-  function updateThietBiInfo() {
-    const selectedOption = document.querySelector('#baoTriMaThietBi option:checked');
-    if (selectedOption && selectedOption.value) {
-      document.getElementById('baoTriTenThietBi').value = selectedOption.getAttribute('data-tenthietbi') || '';
-      document.getElementById('baoTriMaPhong').value = selectedOption.getAttribute('data-maphong') || '';
-    }
-  }
-
-  async function saveBaoTri(event) {
-    event.preventDefault();
-
-    const formData = getBaoTriFormData();
-    const validation = validateBaoTriForm(formData);
-    
-    if (!validation.isValid) {
-      showError(validation.message);
-      return;
-    }
-
-    try {
-      await showLoading('Đang lưu thông tin bảo trì...');
-      
-      const response = await fetch('/api/baotri', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      const result = await handleResponse(response);
-      await showSuccess(result.message || 'Thông tin bảo trì đã được lưu thành công!');
-
-      setTimeout(() => {
-        closeBaoTriModal();
-        location.reload();
-      }, 1500);
-
-    } catch (error) {
-      handleError('Lỗi khi lưu bảo trì:', error);
-    }
-  }
-
-  function getBaoTriFormData() {
-    return {
-      MaThietBi: document.getElementById('baoTriMaThietBi').value,
-      ChiPhi: document.getElementById('baoTriChiPhi').value ? parseInt(document.getElementById('baoTriChiPhi').value) : 0,
-      ThoiGian: document.getElementById('baoTriThoiGian').value,
-      MoTa: document.getElementById('baoTriMoTa').value.trim(),
-      NhanVien: document.getElementById('baoTriNhanVien').value.trim() || '',
-      KetQua: document.getElementById('baoTriKetQua').value || ''
-    };
-  }
-
-  function validateBaoTriForm(data) {
-    if (!data.MaThietBi) {
-      return { isValid: false, message: 'Vui lòng chọn thiết bị' };
-    }
-    if (!data.ChiPhi || data.ChiPhi <= 0) {
-      return { isValid: false, message: 'Vui lòng nhập chi phí bảo trì hợp lệ' };
-    }
-    if (!data.MoTa) {
-      return { isValid: false, message: 'Vui lòng nhập mô tả bảo trì' };
-    }
-    return { isValid: true };
-  }
-
-  // ===== LICH SU BAO TRI =====
-  async function viewBaoTriHistory(maThietBi) {
-    try {
-      const response = await fetch(`/api/baotri/thietbi/${maThietBi}`);
-      const history = await response.json();
-
-      if (!response.ok) throw new Error(history.error || 'Không thể tải lịch sử bảo trì');
-
-      currentThietBiHistory = history;
-      showHistoryModal(maThietBi, history);
-      
-    } catch (error) {
-      handleError('Lỗi khi lấy lịch sử bảo trì:', error);
-    }
-  }
-
-  function showHistoryModal(maThietBi, history) {
-    document.getElementById('historyTitle').textContent = `Lịch sử bảo trì - ${maThietBi}`;
-    renderBaoTriHistory(history);
-    document.getElementById('historyModal').style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-  }
-
-  function renderBaoTriHistory(history) {
-    const historyList = document.getElementById('historyList');
-    
-    if (!history || history.length === 0) {
-      historyList.innerHTML = '<div class="empty-history">Chưa có lịch sử bảo trì</div>';
-      return;
-    }
-
-    historyList.innerHTML = history.map(item => `
-      <div class="history-item">
-        <div class="history-header">
-          <span class="history-date">${formatDateTime(item.ThoiGian)}</span>
-          <span class="history-cost">${formatCurrency(item.ChiPhi)}</span>
-        </div>
-        <div class="history-details">
-          <p class="history-desc">${item.MoTa}</p>
-          ${item.NhanVien ? `<p class="history-staff"><strong>Nhân viên:</strong> ${item.NhanVien}</p>` : ''}
-          ${item.KetQua ? `<p class="history-result"><strong>Kết quả:</strong> ${item.KetQua}</p>` : ''}
-        </div>
-      </div>
-    `).join('');
-  }
-
-  function closeHistoryModal() {
-    document.getElementById('historyModal').style.display = 'none';
-    document.body.style.overflow = 'auto';
   }
 
   // ===== FILTER & SEARCH =====

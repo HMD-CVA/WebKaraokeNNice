@@ -153,9 +153,6 @@
 
           <div class="room-footer">
             <span class="room-id">#{{this.MaPhong}}</span>
-            <button class="btn-status" onclick="toggleStatus('{{this._id}}', '{{this.TrangThai}}')">
-              <i class="fas fa-sync-alt"></i>
-            </button>
           </div>
         </div>
       </div>
@@ -1381,56 +1378,6 @@ async function updateRoomTypeInUI(newRoomType, action, oldRoomType = null) {
         break;
     }
   });
-}
-
-async function toggleStatus(roomId, currentStatus) {
-  const statusMap = {
-    'Trống': { next: 'Đã đặt trước', text: '🟢 Trống' },
-    'Đã đặt trước': { next: 'Đang sử dụng', text: '🟡 Đã đặt' },
-    'Đang sử dụng': { next: 'Trống', text: '🔴 Bận' }
-  };
-
-  const currentStatusInfo = statusMap[currentStatus];
-  const nextStatusInfo = statusMap[currentStatusInfo.next];
-
-  const result = await Swal.fire({
-    title: 'Đổi trạng thái?',
-    html: `Chuyển từ <strong>${currentStatusInfo.text}</strong> sang <strong>${nextStatusInfo.text}</strong>?`,
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonColor: '#667eea',
-    cancelButtonColor: '#a0aec0',
-    confirmButtonText: 'Đồng ý',
-    cancelButtonText: 'Hủy'
-  });
-
-  if (result.isConfirmed) {
-    try {
-      const response = await fetch(`/api/phonghat/${roomId}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ TrangThai: currentStatusInfo.next })
-      });
-
-      if (!response.ok) throw new Error('Lỗi khi cập nhật trạng thái');
-
-      await Swal.fire({
-        icon: 'success',
-        title: 'Đã cập nhật!',
-        text: 'Trạng thái phòng đã được thay đổi',
-        timer: 1500,
-        showConfirmButton: false
-      });
-
-      location.reload();
-    } catch (error) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Lỗi!',
-        text: 'Không thể cập nhật trạng thái'
-      });
-    }
-  }
 }
 
 // ===== FILTER & SEARCH =====
@@ -3811,28 +3758,7 @@ document.addEventListener('DOMContentLoaded', initializeApp);
     font-weight: 600;
   }
 
-  .btn-status {
-    background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
-    border: none;
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #475569;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  .btn-status:hover {
-    background: linear-gradient(135deg, #e2e8f0, #cbd5e0);
-    transform: rotate(15deg);
-    color: #667eea;
-  }
-
-  /* ===== EMPTY STATE ===== */
+  /* ===== EMPTY STATE ===== */ */
   .empty-state {
     text-align: center;
     padding: 80px 40px;

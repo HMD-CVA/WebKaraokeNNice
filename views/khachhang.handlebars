@@ -1,0 +1,797 @@
+<div class="main-content">
+  <div class="admin-dashboard">
+    <!-- Header Premium -->
+    <div class="dashboard-header">
+      <div class="header-content">
+        <div class="header-title">
+          <div class="title-icon">👥</div>
+          <div>
+            <h1>THÔNG TIN KHÁCH HÀNG</h1>
+            <p>Xem danh sách và thông tin khách hàng</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search and Filter Bar -->
+    <div class="search-filter-bar">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" placeholder="Tìm kiếm khách hàng..." onkeyup="filterCustomers()">
+        <button class="search-btn" onclick="filterCustomers()">Tìm kiếm</button>
+      </div>
+      <div class="filter-controls">
+        <button class="clear-filters" onclick="clearFilters()">
+          <i class="fas fa-times"></i>
+          Xóa lọc
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="stats-overview">
+      <div class="stat-card">
+        <div class="stat-icon total">
+          <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="statTotal">0</h3>
+          <p>Tổng khách hàng</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Customer Table -->
+    <div class="table-container" id="customerTable">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Mã KH</th>
+            <th>Họ tên</th>
+            <th>Số điện thoại</th>
+            <th>Email</th>
+            <th>Ngày tạo</th>
+          </tr>
+        </thead>
+        <tbody id="customerTableBody">
+          {{#each khachhangs}}
+          <tr data-id="{{this._id}}" 
+              data-makh="{{this.MaKH}}"
+              data-tenkh="{{this.TenKH}}"
+              data-sdt="{{this.SDT}}">
+            <td><span class="customer-code">{{this.MaKH}}</span></td>
+            <td><strong>{{this.TenKH}}</strong></td>
+            <td>{{this.SDT}}</td>
+            <td>{{#if this.Email}}{{this.Email}}{{else}}<span class="text-muted">Chưa có</span>{{/if}}</td>
+            <td>{{formatDate this.createdAt}}</td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" id="emptyState" style="display: none;">
+      <div class="empty-icon">
+        <i class="fas fa-users"></i>
+      </div>
+      <h3>Không tìm thấy khách hàng</h3>
+      <p>Không có khách hàng nào phù hợp với bộ lọc của bạn</p>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-container" id="paginationContainer">
+      <div class="pagination-info">
+        Hiển thị <span id="currentRange">1-10</span> của <span id="totalCount">0</span> khách hàng
+      </div>
+      <div class="pagination-controls">
+        <button class="pagination-btn" onclick="changePage(-1)" id="prevBtn">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="page-numbers" id="pageNumbers"></div>
+        <button class="pagination-btn" onclick="changePage(1)" id="nextBtn">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+  // ===== CONFIGURATION & STATE =====
+  let allCustomers = [];
+  let filteredCustomers = [];
+  let currentPage = 1;
+  const itemsPerPage = 10;
+
+  // ===== INITIALIZATION =====
+  document.addEventListener('DOMContentLoaded', function () {
+    loadCustomerData();
+    calculateStatistics();
+  });
+
+  function loadCustomerData() {
+    allCustomers = Array.from(document.querySelectorAll('#customerTableBody tr'));
+    filteredCustomers = [...allCustomers];
+    updatePagination();
+    showPage(1);
+  }
+
+  // ===== STATISTICS CALCULATION =====
+  function calculateStatistics() {
+    const customers = allCustomers;
+    const totalCustomers = customers.length;
+
+    updateStatCard('#statTotal', totalCustomers);
+  }
+
+  function updateStatCard(selector, value) {
+    const element = document.querySelector(selector);
+    if (element) {
+      element.textContent = value;
+    }
+  }
+
+  // ===== FILTER & SEARCH =====
+  function filterCustomers() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+    filteredCustomers = allCustomers.filter(row => {
+      const tenKH = row.getAttribute('data-tenkh').toLowerCase();
+      const maKH = row.getAttribute('data-makh').toLowerCase();
+      const sdt = row.getAttribute('data-sdt').toLowerCase();
+
+      const matchesSearch = !searchTerm || 
+        tenKH.includes(searchTerm) || 
+        maKH.includes(searchTerm) || 
+        sdt.includes(searchTerm);
+
+      return matchesSearch;
+    });
+
+    currentPage = 1;
+    updatePagination();
+    showPage(1);
+    toggleEmptyState(filteredCustomers.length === 0);
+  }
+
+  function clearFilters() {
+    document.getElementById('searchInput').value = '';
+    filterCustomers();
+  }
+
+  function toggleEmptyState(show) {
+    const emptyState = document.getElementById('emptyState');
+    const table = document.getElementById('customerTable');
+    const pagination = document.getElementById('paginationContainer');
+
+    if (show) {
+      emptyState.style.display = 'block';
+      table.style.display = 'none';
+      pagination.style.display = 'none';
+    } else {
+      emptyState.style.display = 'none';
+      table.style.display = 'block';
+      pagination.style.display = 'flex';
+    }
+  }
+
+  // ===== PAGINATION =====
+  function updatePagination() {
+    const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, filteredCustomers.length);
+
+    document.getElementById('currentRange').textContent = 
+      filteredCustomers.length > 0 ? `${startIndex + 1}-${endIndex}` : '0';
+    document.getElementById('totalCount').textContent = filteredCustomers.length;
+
+    renderPageNumbers(totalPages);
+    updatePaginationButtons(totalPages);
+  }
+
+  function renderPageNumbers(totalPages) {
+    const pageNumbersContainer = document.getElementById('pageNumbers');
+    pageNumbersContainer.innerHTML = '';
+
+    for (let i = 1; i <= totalPages; i++) {
+      const pageBtn = document.createElement('button');
+      pageBtn.className = 'pagination-page' + (i === currentPage ? ' active' : '');
+      pageBtn.textContent = i;
+      pageBtn.onclick = () => showPage(i);
+      pageNumbersContainer.appendChild(pageBtn);
+    }
+  }
+
+  function updatePaginationButtons(totalPages) {
+    document.getElementById('prevBtn').disabled = currentPage === 1;
+    document.getElementById('nextBtn').disabled = currentPage === totalPages || totalPages === 0;
+  }
+
+  function showPage(pageNum) {
+    const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
+    if (pageNum < 1 || pageNum > totalPages) return;
+
+    currentPage = pageNum;
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+
+    allCustomers.forEach(row => row.style.display = 'none');
+    filteredCustomers.slice(startIndex, endIndex).forEach(row => row.style.display = '');
+
+    updatePagination();
+  }
+
+  function changePage(delta) {
+    showPage(currentPage + delta);
+  }
+
+  // ===== FORMAT FUNCTIONS =====
+  function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN');
+  }
+</script>
+
+<style>
+  /* ===== RESET & VARIABLES ===== */
+  :root {
+    --primary-color: #667eea;
+    --secondary-color: #764ba2;
+    --success-color: #48bb78;
+    --danger-color: #f56565;
+    --warning-color: #ed8936;
+    --info-color: #4299e1;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --bg-light: #f8fafc;
+    --border-color: #e2e8f0;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  /* ===== LAYOUT CHÍNH ===== */
+  .main-content {
+    margin-left: 280px;
+    transition: margin-left 0.3s ease;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  }
+
+  .sidebar-collapsed .main-content {
+    margin-left: 80px;
+  }
+
+  .admin-dashboard {
+    padding: 24px;
+    min-height: 100vh;
+  }
+
+  /* ===== HEADER DASHBOARD ===== */
+  .dashboard-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 28px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 200px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transform: translate(30%, -30%);
+  }
+
+  .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .header-title {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .title-icon {
+    font-size: 3rem;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+  }
+
+  .header-title h1 {
+    color: white;
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .header-title p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+    margin: 8px 0 0 0;
+  }
+
+  /* ===== THANH TÌM KIẾM & BỘ LỌC ===== */
+  .search-filter-bar {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 28px;
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  .search-box {
+    flex: 1;
+    min-width: 320px;
+    display: flex;
+    align-items: center;
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 12px 20px;
+    border: 2px solid #e2e8f0;
+    transition: all 0.3s ease;
+  }
+
+  .search-box:focus-within {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .search-box i {
+    color: #64748b;
+    margin-right: 12px;
+    font-size: 1.1rem;
+  }
+
+  .search-box input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 8px 0;
+    font-size: 1rem;
+    outline: none;
+    color: #1e293b;
+  }
+
+  .search-box input::placeholder {
+    color: #94a3b8;
+  }
+
+  .search-btn {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-left: 16px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  }
+
+  .search-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  }
+
+  .filter-controls {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .clear-filters {
+    background: #f1f5f9;
+    border: 2px solid #e2e8f0;
+    padding: 12px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    color: #64748b;
+    transition: all 0.3s ease;
+  }
+
+  .clear-filters:hover {
+    background: #e2e8f0;
+    color: #475569;
+    transform: translateY(-1px);
+  }
+
+  /* ===== THỐNG KÊ ===== */
+  .stats-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+
+  .stat-card {
+    background: white;
+    padding: 32px;
+    border-radius: 20px;
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.03);
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+  }
+
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 35px rgba(0, 0, 0, 0.12);
+  }
+
+  .stat-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .stat-icon.total {
+    background: linear-gradient(135deg, #fed7d7, #feb2b2);
+    color: #c53030;
+  }
+
+  .stat-info h3 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+  }
+
+  .stat-info p {
+    color: #64748b;
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin: 8px 0 0 0;
+  }
+
+  /* ===== BẢNG KHÁCH HÀNG ===== */
+  .table-container {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+    margin-bottom: 32px;
+    border: 1px solid rgba(0, 0, 0, 0.03);
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .data-table thead {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+  }
+
+  .data-table thead th {
+    padding: 18px 15px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .data-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    transition: all 0.2s ease;
+  }
+
+  .data-table tbody tr:hover {
+    background: #f8fafc;
+    transform: scale(1.002);
+  }
+
+  .data-table tbody td {
+    padding: 16px 15px;
+    font-size: 0.95rem;
+    color: #475569;
+  }
+
+  .customer-code {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: inline-block;
+  }
+
+  .text-muted {
+    color: #94a3b8;
+    font-style: italic;
+  }
+
+  /* ===== EMPTY STATE ===== */
+  .empty-state {
+    text-align: center;
+    padding: 80px 40px;
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    border: 2px dashed #e2e8f0;
+  }
+
+  .empty-icon {
+    font-size: 5rem;
+    color: #cbd5e0;
+    margin-bottom: 24px;
+    opacity: 0.7;
+  }
+
+  .empty-state h3 {
+    font-size: 1.8rem;
+    color: #1e293b;
+    margin: 0 0 12px 0;
+    font-weight: 700;
+  }
+
+  .empty-state p {
+    color: #64748b;
+    font-size: 1.2rem;
+    margin: 0;
+  }
+
+  /* ===== PAGINATION ===== */
+  .pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 20px 30px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    margin-top: 32px;
+  }
+
+  .pagination-info {
+    color: #64748b;
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+
+  .pagination-info span {
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  .pagination-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .page-numbers {
+    display: flex;
+    gap: 4px;
+  }
+
+  .pagination-btn {
+    background: white;
+    border: 2px solid #e2e8f0;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    transition: all 0.3s ease;
+    font-weight: 600;
+  }
+
+  .pagination-btn:hover:not(:disabled) {
+    background: #667eea;
+    border-color: #667eea;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+
+  .pagination-btn:disabled {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+    color: #cbd5e0;
+    cursor: not-allowed;
+  }
+
+  .pagination-page {
+    background: white;
+    border: 2px solid #e2e8f0;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #64748b;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+  }
+
+  .pagination-page:hover:not(.active) {
+    background: #f8fafc;
+    border-color: #667eea;
+    color: #667eea;
+    transform: translateY(-1px);
+  }
+
+  .pagination-page.active {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-color: #667eea;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 1200px) {
+    .main-content {
+      margin-left: 280px;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    .main-content {
+      margin-left: 80px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .main-content {
+      margin-left: 0 !important;
+    }
+
+    .admin-dashboard {
+      padding: 16px;
+    }
+
+    .header-content {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .search-filter-bar {
+      flex-direction: column;
+      align-items: stretch;
+      padding: 20px;
+    }
+
+    .search-box {
+      min-width: 100%;
+    }
+
+    .filter-controls {
+      flex-wrap: wrap;
+    }
+
+    .stats-overview {
+      grid-template-columns: 1fr;
+    }
+
+    .pagination-container {
+      flex-direction: column;
+      gap: 15px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .admin-dashboard {
+      padding: 12px;
+    }
+
+    .dashboard-header {
+      padding: 20px;
+    }
+
+    .header-title h1 {
+      font-size: 1.5rem;
+    }
+
+    .stat-card {
+      padding: 24px;
+    }
+
+    .stat-icon {
+      width: 60px;
+      height: 60px;
+      font-size: 1.5rem;
+    }
+
+    .stat-info h3 {
+      font-size: 2rem;
+    }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    .pagination-controls {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  /* ===== CUSTOM SCROLLBAR ===== */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  /* ===== PAGINATION HIDDEN STATE ===== */
+  .pagination-container.hidden {
+    display: none;
+  }
+</style>

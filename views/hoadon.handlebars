@@ -60,15 +60,6 @@
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon active">
-          <i class="fas fa-money-bill-wave"></i>
-        </div>
-        <div class="stat-info">
-          <h3 id="statRevenue">0</h3>
-          <p>Doanh thu hôm nay</p>
-        </div>
-      </div>
-      <div class="stat-card">
         <div class="stat-icon reception">
           <i class="fas fa-clock"></i>
         </div>
@@ -84,42 +75,6 @@
         <div class="stat-info">
           <h3 id="statPaid">0</h3>
           <p>Đã thanh toán</p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon technical">
-          <i class="fas fa-times-circle"></i>
-        </div>
-        <div class="stat-info">
-          <h3 id="statCancelled">0</h3>
-          <p>Đã hủy</p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon manager">
-          <i class="fas fa-calendar-day"></i>
-        </div>
-        <div class="stat-info">
-          <h3 id="statToday">0</h3>
-          <p>Hóa đơn hôm nay</p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon security">
-          <i class="fas fa-calendar-week"></i>
-        </div>
-        <div class="stat-info">
-          <h3 id="statWeek">0</h3>
-          <p>Tuần này</p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon fulltime">
-          <i class="fas fa-calendar-month"></i>
-        </div>
-        <div class="stat-info">
-          <h3 id="statMonth">0</h3>
-          <p>Tháng này</p>
         </div>
       </div>
     </div>
@@ -683,27 +638,12 @@ function calculateStatistics() {
     const hoaDons = allHoaDons;
     
     const totalHoaDons = hoaDons.length;
-    const today = new Date().toDateString();
-    const todayRevenue = hoaDons
-        .filter(hd => new Date(hd.getAttribute('data-date')).toDateString() === today && 
-                      hd.getAttribute('data-status') === 'Đã thanh toán')
-        .reduce((sum, hd) => sum + parseFloat(hd.getAttribute('data-tongtien')), 0);
-    
     const countPending = hoaDons.filter(hd => hd.getAttribute('data-status') === 'Chưa thanh toán').length;
     const countPaid = hoaDons.filter(hd => hd.getAttribute('data-status') === 'Đã thanh toán').length;
-    const countCancelled = hoaDons.filter(hd => hd.getAttribute('data-status') === 'Đã hủy').length;
-    const countToday = hoaDons.filter(hd => 
-        new Date(hd.getAttribute('data-date')).toDateString() === today
-    ).length;
 
     updateStatCard('#statTotal', totalHoaDons);
-    updateStatCard('#statRevenue', formatNumber(todayRevenue));
     updateStatCard('#statPending', countPending);
     updateStatCard('#statPaid', countPaid);
-    updateStatCard('#statCancelled', countCancelled);
-    updateStatCard('#statToday', countToday);
-    updateStatCard('#statWeek', Math.floor(countToday * 1.5));
-    updateStatCard('#statMonth', Math.floor(countToday * 6));
 }
 
 function updateStatCard(selector, value) {

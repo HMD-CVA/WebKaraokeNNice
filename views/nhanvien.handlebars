@@ -75,60 +75,6 @@
           <p>Đang làm việc</p>
         </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon reception">
-          <i class="fas fa-concierge-bell"></i>
-        </div>
-        <div class="stat-info">
-          <h3 id="statReception">0</h3>
-          <p>Lễ tân</p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon service">
-          <i class="fas fa-utensils"></i>
-        </div>
-        <div class="stat-info">
-          <h3 id="statService">0</h3>
-          <p>Phục vụ</p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon technical">
-          <i class="fas fa-tools"></i>
-        </div>
-        <div class="stat-info">
-          <h3 id="statTechnical">0</h3>
-          <p>Kỹ thuật</p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon manager">
-          <i class="fas fa-user-tie"></i>
-        </div>
-        <div class="stat-info">
-          <h3 id="statManager">0</h3>
-          <p>Quản lý</p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon security">
-          <i class="fas fa-shield-alt"></i>
-        </div>
-        <div class="stat-info">
-          <h3 id="statSecurity">0</h3>
-          <p>Bảo vệ</p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon fulltime">
-          <i class="fas fa-business-time"></i>
-        </div>
-        <div class="stat-info">
-          <h3 id="statFullTime">0</h3>
-          <p>Full-time</p>
-        </div>
-      </div>
     </div>
 
     <!-- Employees Table -->
@@ -513,41 +459,9 @@
       card.getAttribute('data-status') === 'Đang làm việc'
     ).length;
     
-    // Đếm theo vai trò
-    const countReception = employees.filter(card => 
-      card.getAttribute('data-role') === 'Lễ tân'
-    ).length;
-    
-    const countService = employees.filter(card => 
-      card.getAttribute('data-role') === 'Phục vụ'
-    ).length;
-    
-    const countTechnical = employees.filter(card => 
-      card.getAttribute('data-role') === 'Kỹ thuật'
-    ).length;
-    
-    const countManager = employees.filter(card => 
-      card.getAttribute('data-role') === 'Quản lý'
-    ).length;
-    
-    const countSecurity = employees.filter(card => 
-      card.getAttribute('data-role') === 'Bảo vệ'
-    ).length;
-    
-    // Đếm nhân viên full-time
-    const countFullTime = employees.filter(card => 
-      card.getAttribute('data-shift') === 'Full-time'
-    ).length;
-    
     // Cập nhật các stat card
     updateStatCard('#statTotal', totalEmployees);
     updateStatCard('#statActive', countActive);
-    updateStatCard('#statReception', countReception);
-    updateStatCard('#statService', countService);
-    updateStatCard('#statTechnical', countTechnical);
-    updateStatCard('#statManager', countManager);
-    updateStatCard('#statSecurity', countSecurity);
-    updateStatCard('#statFullTime', countFullTime);
   }
   
   function calculateFilteredStatistics() {
@@ -561,41 +475,9 @@
       card.getAttribute('data-status') === 'Đang làm việc'
     ).length;
     
-    // Đếm theo vai trò sau lọc
-    const countReception = employees.filter(card => 
-      card.getAttribute('data-role') === 'Lễ tân'
-    ).length;
-    
-    const countService = employees.filter(card => 
-      card.getAttribute('data-role') === 'Phục vụ'
-    ).length;
-    
-    const countTechnical = employees.filter(card => 
-      card.getAttribute('data-role') === 'Kỹ thuật'
-    ).length;
-    
-    const countManager = employees.filter(card => 
-      card.getAttribute('data-role') === 'Quản lý'
-    ).length;
-    
-    const countSecurity = employees.filter(card => 
-      card.getAttribute('data-role') === 'Bảo vệ'
-    ).length;
-    
-    // Đếm nhân viên full-time sau lọc
-    const countFullTime = employees.filter(card => 
-      card.getAttribute('data-shift') === 'Full-time'
-    ).length;
-    
     // Cập nhật các stat card
     updateStatCard('#statTotal', totalEmployees);
     updateStatCard('#statActive', countActive);
-    updateStatCard('#statReception', countReception);
-    updateStatCard('#statService', countService);
-    updateStatCard('#statTechnical', countTechnical);
-    updateStatCard('#statManager', countManager);
-    updateStatCard('#statSecurity', countSecurity);
-    updateStatCard('#statFullTime', countFullTime);
   }
 
   function calculateFilteredStatisticsFromRows(rows) {
@@ -605,38 +487,8 @@
       row.getAttribute('data-status') === 'Đang làm việc'
     ).length;
     
-    const countReception = rows.filter(row => 
-      row.getAttribute('data-role') === 'Lễ tân'
-    ).length;
-    
-    const countService = rows.filter(row => 
-      row.getAttribute('data-role') === 'Phục vụ'
-    ).length;
-    
-    const countTechnical = rows.filter(row => 
-      row.getAttribute('data-role') === 'Kỹ thuật'
-    ).length;
-    
-    const countManager = rows.filter(row => 
-      row.getAttribute('data-role') === 'Quản lý'
-    ).length;
-    
-    const countSecurity = rows.filter(row => 
-      row.getAttribute('data-role') === 'Bảo vệ'
-    ).length;
-    
-    const countFullTime = rows.filter(row => 
-      row.getAttribute('data-shift') === 'Full-time'
-    ).length;
-    
     updateStatCard('#statTotal', totalEmployees);
     updateStatCard('#statActive', countActive);
-    updateStatCard('#statReception', countReception);
-    updateStatCard('#statService', countService);
-    updateStatCard('#statTechnical', countTechnical);
-    updateStatCard('#statManager', countManager);
-    updateStatCard('#statSecurity', countSecurity);
-    updateStatCard('#statFullTime', countFullTime);
   }
   
   function updateStatCard(selector, value) {
