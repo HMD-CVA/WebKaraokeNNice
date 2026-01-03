@@ -165,7 +165,7 @@ class NhanVienBUS {
         }
 
         // Validate vai trò
-        const validRoles = ['Lễ tân', 'Phục vụ', 'Kỹ thuật', 'Quản lý', 'Bảo vệ'];
+        const validRoles = ['Lễ tân', 'Phục vụ', 'Kỹ thuật', 'Quản lý'];
         if (!validRoles.includes(vaiTro)) {
             throw new Error('Vai trò không hợp lệ');
         }

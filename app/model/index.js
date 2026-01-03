@@ -26,7 +26,7 @@ const NhanVienSchema = new mongoose.Schema({
   VaiTro: { 
     type: String, 
     required: true,
-    enum: ['Lễ tân', 'Phục vụ', 'Kỹ thuật', 'Quản lý', 'Bảo vệ']
+    enum: ['Lễ tân', 'Phục vụ', 'Kỹ thuật', 'Quản lý']
   },
   CaTruc: {
     type: String,
