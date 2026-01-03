@@ -11,6 +11,11 @@ const requireLogin = (req, res, next) => {
 
         // Tạo biến locals để views sử dụng
         res.locals.isManager = decoded.vaiTro === ROLE_MANAGER
+        res.locals.currentUser = {
+            ten: decoded.ten,
+            vaiTro: decoded.vaiTro,
+            email: decoded.email
+        }
 
         next()
     } catch (error) {

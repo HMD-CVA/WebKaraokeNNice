@@ -136,9 +136,11 @@
           <div class="bang-gia-details">
             <div class="bang-gia-header">
               <div class="bang-gia-title">Bảng giá theo giờ:</div>
+              {{#if ../isManager}}
               <button class="btn-edit-banggia" onclick="editBangGia('{{this.LoaiPhong}}', {{json this.BangGia}})">
                 <i class="fas fa-edit"></i> Sửa giá
               </button>
+              {{/if}}
             </div>
             {{#each this.BangGia}}
             <div class="gia-item">

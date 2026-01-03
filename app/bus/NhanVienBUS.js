@@ -99,10 +99,61 @@ class NhanVienBUS {
         return { message: 'Xóa nhân viên thành công' };
     }
 
-    // Lấy thông tin profile admin
+    // Lấy thông tin profile
     async getProfile(userId) {
         const user = await NhanVienDAO.findById(userId);
         return user;
+    }
+
+    // Cập nhật thông tin profile
+    async updateProfile(userId, profileData) {
+        const nhanVien = await NhanVienDAO.findById(userId);
+        
+        if (!nhanVien) {
+            throw new Error('Không tìm thấy nhân viên');
+        }
+
+        // Chỉ cho phép cập nhật các trường thông tin cá nhân
+        const allowedFields = ['TenNV', 'Email', 'SĐT', 'GioiTinh', 'NgaySinh', 'CCCD', 'DiaChi', 'LinkAvatar'];
+        const updateData = {};
+        
+        allowedFields.forEach(field => {
+            if (profileData[field] !== undefined) {
+                updateData[field] = profileData[field];
+            }
+        });
+
+        const updatedNhanVien = await NhanVienDAO.updateById(userId, updateData);
+
+        return {
+            message: 'Cập nhật thông tin thành công',
+            data: updatedNhanVien
+        };
+    }
+
+    // Đổi mật khẩu
+    async updatePassword(userId, currentPassword, newPassword) {
+        const nhanVien = await NhanVienDAO.findByIdWithPassword(userId);
+        
+        if (!nhanVien) {
+            throw new Error('Không tìm thấy nhân viên');
+        }
+
+        // Kiểm tra mật khẩu hiện tại
+        const isMatch = await bcrypt.compare(currentPassword, nhanVien.Password);
+        
+        if (!isMatch) {
+            throw new Error('Mật khẩu hiện tại không đúng');
+        }
+
+        // Mã hóa mật khẩu mới
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        await NhanVienDAO.updateById(userId, { Password: hashedPassword });
+
+        return {
+            message: 'Đổi mật khẩu thành công'
+        };
     }
 }
 

@@ -33,7 +33,10 @@ router.post('/api/login', NhanVienController.login);
 router.post('/api/logout', NhanVienController.logout);
 
 // ==================== ADMIN PROFILE ====================
-router.get('/admin/profile', NhanVienController.getProfile);
+router.get('/admin/profile', NhanVienController.renderProfilePage);
+router.get('/api/profile', requireLogin, NhanVienController.getProfile);
+router.put('/api/profile', requireLogin, NhanVienController.updateProfile);
+router.put('/api/profile/password', requireLogin, NhanVienController.updatePassword);
 
 // ==================== PHÒNG HÁT ====================
 router.get('/admin/phonghat', PhongHatController.renderPhongHatPage);

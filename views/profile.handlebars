@@ -1,0 +1,850 @@
+<div class="main-content">
+  <div class="profile-container">
+    <!-- Header -->
+    <div class="profile-header">
+      <div class="header-content">
+        <div class="header-title">
+          <span class="title-icon">👤</span>
+          <div>
+            <h1>Thông tin cá nhân</h1>
+            <p>Quản lý và cập nhật thông tin của bạn</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile Content -->
+    <div class="profile-content">
+      <!-- Left Column - Avatar & Basic Info -->
+      <div class="profile-sidebar">
+        <div class="avatar-section">
+          <div class="avatar-container">
+            <img id="profileAvatar" src="{{#if nhanvien.LinkAvatar}}{{nhanvien.LinkAvatar}}{{else}}https://ui-avatars.com/api/?name={{nhanvien.TenNV}}&size=200&background=667eea&color=fff{{/if}}" alt="Avatar">
+            <div class="avatar-overlay">
+              <i class="fas fa-camera"></i>
+            </div>
+          </div>
+          <h3 class="profile-name">{{nhanvien.TenNV}}</h3>
+          <p class="profile-role">{{nhanvien.VaiTro}}</p>
+          <span class="profile-status {{#if (eq nhanvien.TrangThai 'Đang làm việc')}}active{{else}}inactive{{/if}}">
+            {{nhanvien.TrangThai}}
+          </span>
+        </div>
+
+        <div class="quick-stats">
+          <div class="stat-item">
+            <i class="fas fa-calendar-alt"></i>
+            <div>
+              <span class="stat-label">Ngày vào làm</span>
+              <span class="stat-value">{{formatDate nhanvien.NgayVaoLam}}</span>
+            </div>
+          </div>
+          <div class="stat-item">
+            <i class="fas fa-clock"></i>
+            <div>
+              <span class="stat-label">Ca trực</span>
+              <span class="stat-value">{{nhanvien.CaTruc}}</span>
+            </div>
+          </div>
+          <div class="stat-item">
+            <i class="fas fa-money-bill-wave"></i>
+            <div>
+              <span class="stat-label">Lương cơ bản</span>
+              <span class="stat-value">{{formatCurrency nhanvien.LuongCoBan}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column - Detailed Info & Edit Form -->
+      <div class="profile-main">
+        <!-- Tabs -->
+        <div class="profile-tabs">
+          <button class="tab-btn active" onclick="switchTab('info')">
+            <i class="fas fa-info-circle"></i> Thông tin chi tiết
+          </button>
+          <button class="tab-btn" onclick="switchTab('edit')">
+            <i class="fas fa-edit"></i> Chỉnh sửa
+          </button>
+          <button class="tab-btn" onclick="switchTab('security')">
+            <i class="fas fa-lock"></i> Bảo mật
+          </button>
+        </div>
+
+        <!-- Tab Content: Thông tin chi tiết -->
+        <div id="infoTab" class="tab-content active">
+          <div class="info-section">
+            <h3 class="section-title">Thông tin cơ bản</h3>
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Mã nhân viên</label>
+                <span>{{nhanvien.MaNV}}</span>
+              </div>
+              <div class="info-item">
+                <label>Họ và tên</label>
+                <span>{{nhanvien.TenNV}}</span>
+              </div>
+              <div class="info-item">
+                <label>Email</label>
+                <span>{{nhanvien.Email}}</span>
+              </div>
+              <div class="info-item">
+                <label>Số điện thoại</label>
+                <span>{{nhanvien.SĐT}}</span>
+              </div>
+              <div class="info-item">
+                <label>Giới tính</label>
+                <span>{{nhanvien.GioiTinh}}</span>
+              </div>
+              <div class="info-item">
+                <label>Ngày sinh</label>
+                <span>{{formatDate nhanvien.NgaySinh}}</span>
+              </div>
+              <div class="info-item">
+                <label>CCCD</label>
+                <span>{{nhanvien.CCCD}}</span>
+              </div>
+              <div class="info-item">
+                <label>Địa chỉ</label>
+                <span>{{nhanvien.DiaChi}}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-section">
+            <h3 class="section-title">Thông tin công việc</h3>
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Vai trò</label>
+                <span class="role-badge">{{nhanvien.VaiTro}}</span>
+              </div>
+              <div class="info-item">
+                <label>Ca trực</label>
+                <span>{{nhanvien.CaTruc}}</span>
+              </div>
+              <div class="info-item">
+                <label>Lương cơ bản</label>
+                <span>{{formatCurrency nhanvien.LuongCoBan}}</span>
+              </div>
+              <div class="info-item">
+                <label>Phụ cấp</label>
+                <span>{{formatCurrency nhanvien.PhuCap}}</span>
+              </div>
+              <div class="info-item">
+                <label>Số giờ làm</label>
+                <span>{{nhanvien.SoGioLam}} giờ</span>
+              </div>
+              <div class="info-item">
+                <label>Doanh số</label>
+                <span>{{formatCurrency nhanvien.DoanhSo}}</span>
+              </div>
+              <div class="info-item">
+                <label>Ngày vào làm</label>
+                <span>{{formatDate nhanvien.NgayVaoLam}}</span>
+              </div>
+              <div class="info-item">
+                <label>Trạng thái</label>
+                <span class="status-badge {{#if (eq nhanvien.TrangThai 'Đang làm việc')}}active{{else}}inactive{{/if}}">
+                  {{nhanvien.TrangThai}}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab Content: Chỉnh sửa -->
+        <div id="editTab" class="tab-content">
+          <form id="profileForm" onsubmit="updateProfile(event)">
+            <div class="info-section">
+              <h3 class="section-title">Chỉnh sửa thông tin cá nhân</h3>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Họ và tên <span class="required">*</span></label>
+                  <input type="text" id="editTenNV" value="{{nhanvien.TenNV}}" required>
+                </div>
+                <div class="form-group">
+                  <label>Email <span class="required">*</span></label>
+                  <input type="email" id="editEmail" value="{{nhanvien.Email}}" required>
+                </div>
+                <div class="form-group">
+                  <label>Số điện thoại <span class="required">*</span></label>
+                  <input type="tel" id="editSDT" value="{{nhanvien.SĐT}}" required>
+                </div>
+                <div class="form-group">
+                  <label>Giới tính</label>
+                  <select id="editGioiTinh">
+                    <option value="Nam" {{#if (eq nhanvien.GioiTinh 'Nam')}}selected{{/if}}>Nam</option>
+                    <option value="Nữ" {{#if (eq nhanvien.GioiTinh 'Nữ')}}selected{{/if}}>Nữ</option>
+                    <option value="Khác" {{#if (eq nhanvien.GioiTinh 'Khác')}}selected{{/if}}>Khác</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Ngày sinh</label>
+                  <input type="date" id="editNgaySinh" value="{{formatDateInput nhanvien.NgaySinh}}">
+                </div>
+                <div class="form-group">
+                  <label>CCCD</label>
+                  <input type="text" id="editCCCD" value="{{nhanvien.CCCD}}">
+                </div>
+                <div class="form-group full-width">
+                  <label>Địa chỉ</label>
+                  <input type="text" id="editDiaChi" value="{{nhanvien.DiaChi}}">
+                </div>
+                <div class="form-group full-width">
+                  <label>Link Avatar</label>
+                  <input type="url" id="editLinkAvatar" value="{{nhanvien.LinkAvatar}}" onchange="updateAvatarPreview()">
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn-primary">
+                  <i class="fas fa-save"></i> Lưu thay đổi
+                </button>
+                <button type="button" class="btn-secondary" onclick="switchTab('info')">
+                  <i class="fas fa-times"></i> Hủy
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Tab Content: Bảo mật -->
+        <div id="securityTab" class="tab-content">
+          <form id="passwordForm" onsubmit="updatePassword(event)">
+            <div class="info-section">
+              <h3 class="section-title">Đổi mật khẩu</h3>
+              <div class="form-grid">
+                <div class="form-group full-width">
+                  <label>Mật khẩu hiện tại <span class="required">*</span></label>
+                  <input type="password" id="currentPassword" required>
+                </div>
+                <div class="form-group">
+                  <label>Mật khẩu mới <span class="required">*</span></label>
+                  <input type="password" id="newPassword" required minlength="6">
+                </div>
+                <div class="form-group">
+                  <label>Xác nhận mật khẩu mới <span class="required">*</span></label>
+                  <input type="password" id="confirmPassword" required minlength="6">
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn-primary">
+                  <i class="fas fa-key"></i> Đổi mật khẩu
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+  // Switch between tabs
+  function switchTab(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(tab => {
+      tab.classList.remove('active');
+    });
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.classList.remove('active');
+    });
+
+    // Show selected tab
+    document.getElementById(tabName + 'Tab').classList.add('active');
+    event.target.closest('.tab-btn').classList.add('active');
+  }
+
+  // Update avatar preview
+  function updateAvatarPreview() {
+    const avatarUrl = document.getElementById('editLinkAvatar').value;
+    if (avatarUrl) {
+      document.getElementById('profileAvatar').src = avatarUrl;
+    }
+  }
+
+  // Format currency
+  function formatCurrency(amount) {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(amount);
+  }
+
+  // Format date
+  function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN');
+  }
+
+  // Update profile
+  async function updateProfile(event) {
+    event.preventDefault();
+
+    const formData = {
+      TenNV: document.getElementById('editTenNV').value,
+      Email: document.getElementById('editEmail').value,
+      SĐT: document.getElementById('editSDT').value,
+      GioiTinh: document.getElementById('editGioiTinh').value,
+      NgaySinh: document.getElementById('editNgaySinh').value,
+      CCCD: document.getElementById('editCCCD').value,
+      DiaChi: document.getElementById('editDiaChi').value,
+      LinkAvatar: document.getElementById('editLinkAvatar').value
+    };
+
+    try {
+      Swal.fire({
+        title: 'Đang cập nhật...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      const response = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Lỗi khi cập nhật thông tin');
+      }
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Thành công!',
+        text: 'Cập nhật thông tin thành công',
+        showConfirmButton: false,
+        timer: 1500
+      });
+
+      setTimeout(() => {
+        location.reload();
+      }, 1500);
+
+    } catch (error) {
+      console.error('Error:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi!',
+        text: error.message,
+        confirmButtonColor: '#667eea'
+      });
+    }
+  }
+
+  // Update password
+  async function updatePassword(event) {
+    event.preventDefault();
+
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    if (newPassword !== confirmPassword) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi!',
+        text: 'Mật khẩu xác nhận không khớp',
+        confirmButtonColor: '#667eea'
+      });
+      return;
+    }
+
+    try {
+      Swal.fire({
+        title: 'Đang cập nhật...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      const response = await fetch('/api/profile/password', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Lỗi khi đổi mật khẩu');
+      }
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Thành công!',
+        text: 'Đổi mật khẩu thành công',
+        showConfirmButton: false,
+        timer: 1500
+      });
+
+      document.getElementById('passwordForm').reset();
+
+    } catch (error) {
+      console.error('Error:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi!',
+        text: error.message,
+        confirmButtonColor: '#667eea'
+      });
+    }
+  }
+</script>
+
+<style>
+  /* Main Content */
+  .main-content {
+    margin-left: 280px;
+    transition: margin-left 0.3s ease;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  }
+
+  .sidebar-collapsed .main-content {
+    margin-left: 80px;
+  }
+
+  /* Profile Container */
+  .profile-container {
+    padding: 24px;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .profile-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 28px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    color: white;
+  }
+
+  .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .header-title {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .title-icon {
+    font-size: 3rem;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+  }
+
+  .header-title h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+  }
+
+  .header-title p {
+    margin: 8px 0 0 0;
+    opacity: 0.9;
+    font-size: 1.1rem;
+  }
+
+  /* Profile Content */
+  .profile-content {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 24px;
+  }
+
+  /* Profile Sidebar */
+  .profile-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .avatar-section {
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  .avatar-container {
+    width: 150px;
+    height: 150px;
+    margin: 0 auto 20px;
+    position: relative;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid #667eea;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  }
+
+  .avatar-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .avatar-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s;
+    cursor: pointer;
+  }
+
+  .avatar-container:hover .avatar-overlay {
+    opacity: 1;
+  }
+
+  .avatar-overlay i {
+    color: white;
+    font-size: 2rem;
+  }
+
+  .profile-name {
+    margin: 0 0 8px 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+  }
+
+  .profile-role {
+    color: #64748b;
+    font-size: 1rem;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .profile-status {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .profile-status.active {
+    background: linear-gradient(135deg, #c6f6d5, #9ae6b4);
+    color: #276749;
+  }
+
+  .profile-status.inactive {
+    background: linear-gradient(135deg, #fed7d7, #feb2b2);
+    color: #c53030;
+  }
+
+  /* Quick Stats */
+  .quick-stats {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .stat-item:last-child {
+    border-bottom: none;
+  }
+
+  .stat-item i {
+    font-size: 1.5rem;
+    color: #667eea;
+    width: 40px;
+    text-align: center;
+  }
+
+  .stat-label {
+    display: block;
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-bottom: 4px;
+  }
+
+  .stat-value {
+    display: block;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  /* Profile Main */
+  .profile-main {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+  }
+
+  /* Tabs */
+  .profile-tabs {
+    display: flex;
+    border-bottom: 2px solid #f1f5f9;
+    background: #f8fafc;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 18px 24px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-bottom: 3px solid transparent;
+  }
+
+  .tab-btn:hover {
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+  }
+
+  .tab-btn.active {
+    color: #667eea;
+    background: white;
+    border-bottom-color: #667eea;
+  }
+
+  /* Tab Content */
+  .tab-content {
+    display: none;
+    padding: 32px;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  /* Info Section */
+  .info-section {
+    margin-bottom: 32px;
+  }
+
+  .info-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .section-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 20px 0;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f1f5f9;
+  }
+
+  /* Info Grid */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+
+  .info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .info-item label {
+    font-size: 0.9rem;
+    color: #64748b;
+    font-weight: 600;
+  }
+
+  .info-item span {
+    font-size: 1rem;
+    color: #1e293b;
+  }
+
+  /* Form Grid */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .form-group.full-width {
+    grid-column: 1 / -1;
+  }
+
+  .form-group label {
+    margin-bottom: 8px;
+    color: #374151;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .required {
+    color: #e53e3e;
+  }
+
+  .form-group input,
+  .form-group select {
+    padding: 12px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  /* Form Actions */
+  .form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding-top: 20px;
+    border-top: 2px solid #f1f5f9;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  }
+
+  .btn-secondary {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 2px solid #e2e8f0;
+    padding: 12px 28px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+  }
+
+  .btn-secondary:hover {
+    background: #e2e8f0;
+    color: #475569;
+  }
+
+  /* Badges */
+  .role-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .status-badge.active {
+    background: linear-gradient(135deg, #c6f6d5, #9ae6b4);
+    color: #276749;
+  }
+
+  .status-badge.inactive {
+    background: linear-gradient(135deg, #fed7d7, #feb2b2);
+    color: #c53030;
+  }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .profile-content {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .main-content {
+      margin-left: 0;
+      padding-top: 60px;
+    }
+
+    .profile-container {
+      padding: 16px;
+    }
+
+    .info-grid,
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .tab-btn {
+      font-size: 0.85rem;
+      padding: 14px 12px;
+    }
+
+    .tab-btn i {
+      display: none;
+    }
+  }
+</style>

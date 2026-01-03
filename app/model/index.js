@@ -21,8 +21,8 @@ const NhanVienSchema = new mongoose.Schema({
   MaNV: { type: String, unique: true, required: true },
   TenNV: { type: String, required: true },
   SĐT: { type: String, required: true },
-  Email: { type: String, required: true, unique: true, select: false },
-  Password: {type: String, require: true},
+  Email: { type: String, required: true, unique: true },
+  Password: { type: String, require: true, select: false },
   VaiTro: { 
     type: String, 
     required: true,

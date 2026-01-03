@@ -14,7 +14,12 @@ class NhanVienDAO {
 
     // Tìm nhân viên theo ID
     async findById(id) {
-        return await DataModel.Data_NhanVien_Model.findById(id).select('-Password');
+        return await DataModel.Data_NhanVien_Model.findById(id).lean();
+    }
+
+    // Tìm nhân viên theo ID (bao gồm Password)
+    async findByIdWithPassword(id) {
+        return await DataModel.Data_NhanVien_Model.findById(id).select('+Password').lean();
     }
 
     // Tìm nhân viên theo MaNV
@@ -24,16 +29,25 @@ class NhanVienDAO {
 
     // Tìm nhân viên theo Email
     async findByEmail(email) {
-        return await DataModel.Data_NhanVien_Model.findOne({ Email: email }).exec();
+        return await DataModel.Data_NhanVien_Model.findOne({ Email: email }).select('+Password').exec();
     }
 
-    // Cập nhật nhân viên
+    // Cập nhật nhân viên theo MaNV
     async update(maNV, nhanVienData) {
         return await DataModel.Data_NhanVien_Model.findOneAndUpdate(
             { MaNV: maNV },
             nhanVienData,
             { new: true, runValidators: true }
         );
+    }
+
+    // Cập nhật nhân viên theo ID
+    async updateById(id, nhanVienData) {
+        return await DataModel.Data_NhanVien_Model.findByIdAndUpdate(
+            id,
+            nhanVienData,
+            { new: true, runValidators: true }
+        ).lean();
     }
 
     // Xóa nhân viên

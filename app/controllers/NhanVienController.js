@@ -106,7 +106,23 @@ class NhanVienController {
         }
     }
 
-    // GET /admin/profile - Lấy thông tin profile admin
+    // GET /admin/profile - Render trang profile
+    async renderProfilePage(req, res) {
+        try {
+            const id = req.user.id;
+            const nhanvien = await NhanVienBUS.getProfile(id);
+
+            res.render('profile', {
+                layout: 'AdminMain',
+                title: 'Thông tin cá nhân',
+                nhanvien
+            });
+        } catch (error) {
+            res.status(500).send('Lỗi server!');
+        }
+    }
+
+    // GET /api/profile - Lấy thông tin profile
     async getProfile(req, res) {
         try {
             const id = req.user.id;
@@ -115,6 +131,32 @@ class NhanVienController {
             res.json(user);
         } catch (error) {
             res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    // PUT /api/profile - Cập nhật thông tin profile
+    async updateProfile(req, res) {
+        try {
+            const id = req.user.id;
+            const result = await NhanVienBUS.updateProfile(id, req.body);
+
+            res.json(result);
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    // PUT /api/profile/password - Đổi mật khẩu
+    async updatePassword(req, res) {
+        try {
+            const id = req.user.id;
+            const { currentPassword, newPassword } = req.body;
+
+            const result = await NhanVienBUS.updatePassword(id, currentPassword, newPassword);
+
+            res.json(result);
+        } catch (error) {
+            res.status(400).json({ error: error.message });
         }
     }
 }

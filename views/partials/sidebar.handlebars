@@ -21,11 +21,15 @@
 
     <!-- AVATAR VÀ INFO -->
     <div class="admin-avatar">
+      {{#if currentUser.ten}}
+      <img src="https://ui-avatars.com/api/?name={{currentUser.ten}}&background=0D8ABC&color=fff" alt="{{currentUser.ten}}">
+      {{else}}
       <img src="https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff" alt="Admin Avatar">
+      {{/if}}
     </div>
     <div class="admin-info">
-      <h5 class="admin-name">Admin Panel</h5>
-      <span class="admin-role">Quản trị viên</span>
+      <h5 class="admin-name">{{#if currentUser.ten}}{{currentUser.ten}}{{else}}Admin Panel{{/if}}</h5>
+      <span class="admin-role">{{#if currentUser.vaiTro}}{{currentUser.vaiTro}}{{else}}Quản trị viên{{/if}}</span>
     </div>
   </div>
 
@@ -108,10 +112,6 @@
       <a href="/admin/profile" class="user-menu-item">
         <i class="fas fa-user-circle"></i>
         <span>Hồ sơ</span>
-      </a>
-      <a href="/settings" class="user-menu-item">
-        <i class="fas fa-cog"></i>
-        <span>Cài đặt</span>
       </a>
       <a href="#" class="user-menu-item logout-btn"
         onclick="document.querySelector('#form-logout').submit(); return false">

@@ -46,6 +46,10 @@ app.engine(
     'handlebars',
     engine({
         defaultLayout: 'AdminMain',
+        runtimeOptions: {
+            allowProtoPropertiesByDefault: true,
+            allowProtoMethodsByDefault: true
+        },
         helpers: {
             // === COMPARISON HELPERS ===
             eq: (a, b) => a === b,
@@ -266,6 +270,19 @@ app.engine(
                 if (!date) return ''
                 try {
                     return new Date(date).toLocaleDateString('vi-VN')
+                } catch {
+                    return ''
+                }
+            },
+
+            formatDateInput: (date) => {
+                if (!date) return ''
+                try {
+                    const d = new Date(date)
+                    const year = d.getFullYear()
+                    const month = String(d.getMonth() + 1).padStart(2, '0')
+                    const day = String(d.getDate()).padStart(2, '0')
+                    return `${year}-${month}-${day}`
                 } catch {
                     return ''
                 }
