@@ -84,6 +84,7 @@ router.get('/admin/nhanvien', requireManager, NhanVienController.renderNhanVienP
 router.get('/api/nhanvien/:maNV', requireManager, NhanVienController.getNhanVien);
 router.post('/api/nhanvien', requireManager, NhanVienController.createNhanVien);
 router.put('/api/nhanvien/:maNV', requireManager, NhanVienController.updateNhanVien);
+router.put('/api/nhanvien/:maNV/permission', requireManager, NhanVienController.updatePermission);
 router.delete('/api/nhanvien/:maNV', requireManager, NhanVienController.deleteNhanVien);
 
 // ==================== MẶT HÀNG ====================

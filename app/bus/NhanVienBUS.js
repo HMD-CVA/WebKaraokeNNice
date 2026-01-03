@@ -155,6 +155,28 @@ class NhanVienBUS {
             message: 'Đổi mật khẩu thành công'
         };
     }
+
+    // Cập nhật quyền (vai trò) nhân viên
+    async updatePermission(maNV, vaiTro) {
+        const nhanVien = await NhanVienDAO.findByMaNV(maNV);
+        
+        if (!nhanVien) {
+            throw new Error('Không tìm thấy nhân viên');
+        }
+
+        // Validate vai trò
+        const validRoles = ['Lễ tân', 'Phục vụ', 'Kỹ thuật', 'Quản lý', 'Bảo vệ'];
+        if (!validRoles.includes(vaiTro)) {
+            throw new Error('Vai trò không hợp lệ');
+        }
+
+        const updatedNhanVien = await NhanVienDAO.update(maNV, { VaiTro: vaiTro });
+
+        return {
+            message: 'Cập nhật quyền thành công',
+            data: updatedNhanVien
+        };
+    }
 }
 
 export default new NhanVienBUS();

@@ -159,6 +159,24 @@ class NhanVienController {
             res.status(400).json({ error: error.message });
         }
     }
+
+    // PUT /api/nhanvien/:maNV/permission - Cập nhật quyền (vai trò) nhân viên
+    async updatePermission(req, res) {
+        try {
+            const { maNV } = req.params;
+            const { VaiTro } = req.body;
+
+            if (!VaiTro) {
+                return res.status(400).json({ error: 'Vai trò không được để trống' });
+            }
+
+            const result = await NhanVienBUS.updatePermission(maNV, VaiTro);
+
+            res.json(result);
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    }
 }
 
 export default new NhanVienController();

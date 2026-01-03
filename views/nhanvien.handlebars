@@ -128,6 +128,11 @@
             </td>
             <td>
               <div class="table-actions">
+                {{#if ../isManager}}
+                <button class="btn-table-action btn-permission" onclick="openPermissionModal('{{this.MaNV}}', '{{this.TenNV}}', '{{this.VaiTro}}')" title="Phân quyền">
+                  <i class="fas fa-user-shield"></i>
+                </button>
+                {{/if}}
                 <button class="btn-table-action btn-delete" onclick="deleteEmployee('{{this.MaNV}}', '{{this.TenNV}}')" title="Xóa">
                   <i class="fas fa-trash"></i>
                 </button>
@@ -312,6 +317,56 @@
         <button class="btn-secondary" type="button" onclick="closeEmployeeModal()">Hủy</button>
         <button class="btn-primary" type="submit" form="employeeForm">Lưu thông tin</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Permission Modal -->
+<div class="modal-overlay" id="permissionModal" style="display: none;">
+  <div class="modal-container" style="max-width: 500px;">
+    <div class="modal-header">
+      <h2 id="permissionModalTitle">Phân quyền nhân viên</h2>
+      <button class="modal-close" onclick="closePermissionModal()">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="permission-info">
+        <div class="info-item">
+          <label>Mã nhân viên:</label>
+          <span id="permissionMaNV" style="font-weight: 600; color: #667eea;"></span>
+        </div>
+        <div class="info-item">
+          <label>Tên nhân viên:</label>
+          <span id="permissionTenNV" style="font-weight: 600;"></span>
+        </div>
+      </div>
+
+      <form id="permissionForm" onsubmit="updatePermission(event)">
+        <div class="form-group">
+          <label>Vai trò <span class="required">*</span></label>
+          <select id="permissionVaiTro" required>
+            <option value="Lễ tân">Lễ tân</option>
+            <option value="Phục vụ">Phục vụ</option>
+            <option value="Kỹ thuật">Kỹ thuật</option>
+            <option value="Quản lý">Quản lý</option>
+            <option value="Bảo vệ">Bảo vệ</option>
+          </select>
+        </div>
+
+        <div class="permission-warning">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>Lưu ý: Thay đổi vai trò sẽ ảnh hưởng đến quyền truy cập của nhân viên!</span>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn-primary">
+            <i class="fas fa-save"></i> Lưu thay đổi
+          </button>
+          <button type="button" class="btn-secondary" onclick="closePermissionModal()">
+            <i class="fas fa-times"></i> Hủy
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -725,6 +780,70 @@
           text: 'Không thể xóa nhân viên'
         });
       }
+    }
+  }
+
+  // ===== PERMISSION MANAGEMENT =====
+  function openPermissionModal(maNV, tenNV, vaiTro) {
+    document.getElementById('permissionMaNV').textContent = maNV;
+    document.getElementById('permissionTenNV').textContent = tenNV;
+    document.getElementById('permissionVaiTro').value = vaiTro;
+    document.getElementById('permissionModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closePermissionModal() {
+    document.getElementById('permissionModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+  }
+
+  async function updatePermission(event) {
+    event.preventDefault();
+
+    const maNV = document.getElementById('permissionMaNV').textContent;
+    const vaiTro = document.getElementById('permissionVaiTro').value;
+
+    try {
+      Swal.fire({
+        title: 'Đang cập nhật...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      const response = await fetch(`/api/nhanvien/${maNV}/permission`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ VaiTro: vaiTro })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Lỗi khi cập nhật quyền');
+      }
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Thành công!',
+        text: 'Cập nhật quyền thành công',
+        showConfirmButton: false,
+        timer: 1500
+      });
+
+      setTimeout(() => {
+        location.reload();
+      }, 1500);
+
+    } catch (error) {
+      console.error('Lỗi:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi!',
+        text: error.message,
+        confirmButtonColor: '#667eea'
+      });
     }
   }
 
@@ -1314,6 +1433,11 @@
     transition: all 0.2s ease;
   }
 
+  .btn-table-action.btn-permission {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+  }
+
   .btn-table-action.btn-edit {
     background: linear-gradient(135deg, #48bb78, #38a169);
     color: white;
@@ -1573,6 +1697,51 @@
     border-top: 2px solid #f1f5f9;
     background: #f8fafc;
     border-radius: 0 0 24px 24px;
+  }
+
+  /* Permission Modal Styles */
+  .permission-info {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+
+  .permission-info .info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .permission-info .info-item:last-child {
+    border-bottom: none;
+  }
+
+  .permission-info label {
+    color: #64748b;
+    font-weight: 600;
+  }
+
+  .permission-warning {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border-left: 4px solid #f59e0b;
+    padding: 16px;
+    border-radius: 8px;
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #92400e;
+  }
+
+  .permission-warning i {
+    font-size: 1.2rem;
+  }
+
+  .permission-warning span {
+    font-size: 0.9rem;
   }
 
   /* ===== RESPONSIVE STYLES ===== */
