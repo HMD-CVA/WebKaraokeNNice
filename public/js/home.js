@@ -1866,16 +1866,15 @@ class BookingModal {
             this.hideLoading();
             this.close();
             
-            this.showSuccess(
+            // Hiển thị thông báo và chờ người dùng bấm OK
+            await this.showSuccess(
                 'Đặt phòng thành công!', 
                 'Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.',
                 bookingResult.data
             );
             
-            // Reload page sau 1.5 giây
-            setTimeout(() => {
-                location.reload();
-            }, 1500);
+            // Reload trang sau khi người dùng bấm OK
+            location.reload();
             
         } catch (error) {
             this.hideLoading();
@@ -2068,13 +2067,15 @@ class BookingModal {
 
         html += `</div>`;
 
-        Swal.fire({
+        return Swal.fire({
             title: '',
             html: html,
             icon: 'success',
-            confirmButtonText: 'Đóng',
+            confirmButtonText: 'OK',
             confirmButtonColor: '#3085d6',
             width: '500px',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
             customClass: {
                 popup: 'booking-success-popup'
             }

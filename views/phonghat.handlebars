@@ -10,16 +10,18 @@
             <p>Theo dõi và quản lý trạng thái phòng karaoke</p>
           </div>
         </div>
-        <div class="header-actions">
-          <button class="btn-primary" onclick="openRoomModal()">
-            <i class="fas fa-plus"></i>
-            <span>Thêm phòng</span>
-          </button>
-          <button class="btn-primary" onclick="openPriceModal()">
-            <i class="fas fa-money-bill"></i>
-            <span>Bảng giá</span>
-          </button>
-        </div>
+        {{#if isManager}} 
+          <div class="header-actions">
+            <button class="btn-primary" onclick="openRoomModal()">
+              <i class="fas fa-plus"></i>
+              <span>Thêm phòng</span>
+            </button>
+            <button class="btn-primary" onclick="openPriceModal()">
+              <i class="fas fa-money-bill"></i>
+              <span>Bảng giá</span>
+            </button>
+          </div>
+        {{/if}}
       </div>
     </div>
 
@@ -98,15 +100,17 @@
         <div class="room-image">
           <img src="{{this.LinkAnh}}" alt="{{this.TenPhong}}">
           <div class="room-overlay">
-            <div class="room-actions">
-              <button class="btn-edit"
-                onclick="editRoom('{{this._id}}', '{{this.TenPhong}}', '{{this.LoaiPhong}}', '{{this.SucChua}}', '{{this.TrangThai}}', `{{this.GhiChu}}`, '{{this.LinkAnh}}')">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button class="btn-delete" onclick="deleteRoom('{{this._id}}', '{{this.TenPhong}}')">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
+            {{#if ../isManager}}
+              <div class="room-actions">
+                <button class="btn-edit"
+                  onclick="editRoom('{{this._id}}', '{{this.TenPhong}}', '{{this.LoaiPhong}}', '{{this.SucChua}}', '{{this.TrangThai}}', `{{this.GhiChu}}`, '{{this.LinkAnh}}')">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn-delete" onclick="deleteRoom('{{this._id}}', '{{this.TenPhong}}')">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            {{/if}}
           </div>
           <div class="room-badge {{this.TrangThai}}">
             {{#if (eq this.TrangThai "Trống")}}🟢 Trống{{/if}}

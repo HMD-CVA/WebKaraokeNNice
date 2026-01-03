@@ -80,14 +80,16 @@
           <span class="nav-text">Mặt Hàng</span>
         </a>
       </li>
-      <li class="nav-item">
-        <a href="/admin/nhanvien" class="nav-link" data-page="nhanvien">
-          <div class="nav-icon">
-            <i class="fas fa-users"></i>
-          </div>
-          <span class="nav-text">Nhân Viên</span>
-        </a>
-      </li>
+      {{#if isManager}}
+        <li class="nav-item">
+          <a href="/admin/nhanvien" class="nav-link" data-page="nhanvien">
+            <div class="nav-icon">
+              <i class="fas fa-users"></i>
+            </div>
+            <span class="nav-text">Nhân Viên</span>
+          </a>
+        </li>
+      {{/if}}
       <li class="nav-item">
         <a href="/admin/khachhang" class="nav-link" data-page="khachhang">
           <div class="nav-icon">
@@ -116,7 +118,7 @@
         <i class="fas fa-sign-out-alt"></i>
         <span>Đăng xuất</span>
       </a>
-      <form id="form-logout" action="/admin-logout" method="POST" style="display: none"></form>
+      <form id="form-logout" action="/api/logout" method="POST" style="display: none"></form>
     </div>
   </div>
 </div>

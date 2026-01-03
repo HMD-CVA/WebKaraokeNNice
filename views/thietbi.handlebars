@@ -10,12 +10,14 @@
             <p>Theo dõi và quản lý thiết bị phòng hát karaoke</p>
           </div>
         </div>
-        <div class="header-actions">
-          <button class="btn-primary" onclick="openThietBiModal()">
-            <i class="fas fa-plus"></i>
-            <span>Thêm thiết bị</span>
-          </button>
-        </div>
+        {{#if isManager}}
+          <div class="header-actions">
+            <button class="btn-primary" onclick="openThietBiModal()">
+              <i class="fas fa-plus"></i>
+              <span>Thêm thiết bị</span>
+            </button>
+          </div>
+        {{/if}}
       </div>
     </div>
 
@@ -129,9 +131,11 @@
                 <button class="btn-table-action btn-edit" onclick="editThietBi('{{this.MaThietBi}}')" title="Chỉnh sửa">
                   <i class="fas fa-edit"></i>
                 </button>
-                <button class="btn-table-action btn-delete" onclick="deleteThietBi('{{this.MaThietBi}}', '{{this.TenThietBi}}')" title="Xóa">
-                  <i class="fas fa-trash"></i>
-                </button>
+                {{#if ../isManager}}
+                  <button class="btn-table-action btn-delete" onclick="deleteThietBi('{{this.MaThietBi}}', '{{this.TenThietBi}}')" title="Xóa">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                {{/if}}
               </div>
             </td>
           </tr>
@@ -178,12 +182,12 @@
           <div class="form-grid">
             <div class="form-group">
               <label for="thietBiName">Tên thiết bị *</label>
-              <input type="text" id="thietBiName" required placeholder="Nhập tên thiết bị">
+              <input type="text" id="thietBiName" required placeholder="Nhập tên thiết bị" {{#unless isManager}}disabled{{/unless}}>
             </div>
 
             <div class="form-group">
               <label for="thietBiMaPhong">Mã phòng *</label>
-              <select id="thietBiMaPhong" required>
+              <select id="thietBiMaPhong" required {{#unless isManager}}disabled{{/unless}}>
                 <option value="">Chọn phòng</option>
                 {{#each uniqueMaPhongs}}
                   <option value="{{this}}">{{this}}</option>
@@ -194,7 +198,7 @@
 
             <div class="form-group">
               <label for="thietBiLoai">Loại thiết bị *</label>
-              <select id="thietBiLoai" required>
+              <select id="thietBiLoai" required {{#unless isManager}}disabled{{/unless}}>
                 <option value="">Chọn loại thiết bị</option>
                 {{#each loaiThietBis}}
                   <option value="{{this}}">{{this}}</option>
@@ -215,14 +219,14 @@
 
             <div class="form-group">
               <label for="thietBiNgayNhap">Ngày nhập</label>
-              <input type="date" id="thietBiNgayNhap">
+              <input type="date" id="thietBiNgayNhap" {{#unless isManager}}disabled{{/unless}}>
             </div>
 
           </div>
 
           <div class="form-group full-width">
             <label for="thietBiAvatar">Link ảnh thiết bị</label>
-            <input type="text" id="thietBiAvatar" placeholder="URL hình ảnh" oninput="updateThietBiPreview(this.value)">
+            <input type="text" id="thietBiAvatar" placeholder="URL hình ảnh" oninput="updateThietBiPreview(this.value)" {{#unless isManager}}disabled{{/unless}}>
           </div>
 
           <div class="form-group full-width" id="thietBiPreviewContainer">
@@ -1010,6 +1014,15 @@
   .btn-secondary:hover {
     background: rgba(255, 255, 255, 0.3);
     transform: translateY(-1px);
+  }
+
+  /* Disabled fields look dimmed for non-managers */
+  .modal-container input:disabled,
+  .modal-container select:disabled,
+  .modal-container textarea:disabled {
+    opacity: 0.6;
+    background: #f3f4f6;
+    cursor: not-allowed;
   }
 
   /* ===== SEARCH AND FILTER ===== */

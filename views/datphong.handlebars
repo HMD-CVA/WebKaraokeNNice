@@ -99,7 +99,6 @@
                         <th style="width: 130px;">Số điện thoại</th>
                         <th style="width: 120px;">Ngày tạo</th>
                         <th style="width: 140px;">Bắt đầu</th>
-                        <th style="width: 140px;">Kết thúc</th>
                         <th style="width: 130px;">Trạng thái</th>
                         <th style="width: 200px;">Thao tác</th>
                     </tr>
@@ -113,7 +112,6 @@
                         data-status="{{this.TrangThai}}"
                         data-date="{{formatDate this.createdAt}}" 
                         data-start="{{formatDateTime this.ThoiGianBatDau}}"
-                        data-end="{{formatDateTime this.ThoiGianKetThuc}}"
                         data-customer="{{#if this.ChiTiet.[0]}}{{this.ChiTiet.[0].TenKH}}{{else}}Không có thông tin{{/if}}">
                         <td><strong class="booking-code">{{this.MaDatPhong}}</strong></td>
                         <td><span class="room-badge">{{this.MaPhong}}</span></td>
@@ -133,7 +131,6 @@
                         </td>
                         <td>{{formatDate this.createdAt}}</td>
                         <td>{{formatTime this.ThoiGianBatDau}}</td>
-                        <td>{{formatTime this.ThoiGianKetThuc}}</td>
                         <td>
                             <span class="status-badge {{#if (eq this.TrangThai 'Sắp tới')}}status-warning{{else if (eq this.TrangThai 'Đã đặt')}}status-warning{{else if (eq this.TrangThai 'Hoàn thành')}}status-success{{else if (eq this.TrangThai 'Đã hủy')}}status-danger{{else}}status-info{{/if}}">
                                 {{#if (eq this.TrangThai 'Sắp tới')}}⏰ Sắp tới{{/if}}
@@ -216,16 +213,29 @@
                 <form id="datPhongForm" onsubmit="saveDatPhong(event)">
                     <input type="hidden" id="datPhongId">
                     <input type="hidden" id="datPhongMaDP">
+                    <input type="hidden" id="maKH">
 
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="tenKH">Tên khách hàng</label>
-                            <input type="text" id="tenKH" readonly style="background: #f1f5f9; cursor: not-allowed;">
+                            <label for="sdtKH">
+                                <i class="fas fa-phone"></i>
+                                Số điện thoại *
+                            </label>
+                            <input type="tel" id="sdtKH" required placeholder="Nhập số điện thoại (10 số)" maxlength="10" pattern="[0-9]{10}">
+                            <small style="color: #64748b; font-size: 0.85rem; margin-top: 4px; display: block;">
+                                <i class="fas fa-info-circle"></i> Nhập 10 số để tự động tìm khách hàng
+                            </small>
                         </div>
 
-                        <div class="form-group">
-                            <label for="sdtKH">Số điện thoại</label>
-                            <input type="text" id="sdtKH" readonly style="background: #f1f5f9; cursor: not-allowed;">
+                        <div class="form-group" id="tenKHGroup" style="display: none;">
+                            <label for="tenKH">
+                                <i class="fas fa-user"></i>
+                                Tên khách hàng *
+                            </label>
+                            <input type="text" id="tenKH" required placeholder="Tên khách hàng sẽ tự động điền">
+                            <small style="color: #64748b; font-size: 0.85rem; margin-top: 4px; display: block;">
+                                <i class="fas fa-info-circle"></i> Tự động điền nếu đã có trong hệ thống
+                            </small>
                         </div>
 
                         <div class="form-group">
@@ -277,8 +287,14 @@
             </div>
 
             <div class="modal-footer">
-                <button class="btn-secondary" type="button" onclick="closeDatPhongModal()">Hủy</button>
-                <button class="btn-primary" type="submit" form="datPhongForm" id="submitBtn" disabled>Lưu đặt phòng</button>
+                <button class="btn-secondary" type="button" onclick="closeDatPhongModal()">
+                    <i class="fas fa-times"></i>
+                    Hủy
+                </button>
+                <button class="btn-primary" type="submit" form="datPhongForm" id="submitBtn" disabled>
+                    <i class="fas fa-check-double"></i>
+                    Lưu đặt phòng
+                </button>
             </div>
         </div>
     </div>
@@ -446,10 +462,17 @@
     }
 
     function closeDatPhongModal() {
-        document.getElementById('datPhongModal').style.display = 'none';
+        const modal = document.getElementById('datPhongModal');
+        modal.style.display = 'none';
         document.body.style.overflow = 'auto';
-        document.getElementById('datPhongForm').reset();
-        document.getElementById('datPhongId').value = '';
+        
+        // Xóa backdrop-filter và đảm bảo modal biến mất hoàn toàn
+        modal.style.opacity = '0';
+        setTimeout(() => {
+            modal.style.opacity = '1';
+        }, 100);
+        
+        resetDatPhongForm();
         currentRoomPriceTable = null;
         
         // Reset nút submit
@@ -541,7 +564,7 @@
                     html: `
                         <div style="text-align: left;">
                             <p>✅ Đơn đặt phòng <strong>${maDatPhong}</strong> đã được hủy</p>
-                            <p>🏠 Phòng <strong>${responseData.data.maPhong}</strong> đã được khôi phục về trạng thái "Trống"</p>
+                            ${responseData.data?.maPhong ? `<p>🏠 Phòng <strong>${responseData.data.maPhong}</strong> đã được khôi phục về trạng thái "Trống"</p>` : ''}
                         </div>
                     `,
                     timer: 2000,
@@ -578,7 +601,6 @@
                         <p><strong>Khách hàng:</strong> ${datPhong.ChiTiet?.[0]?.TenKH || 'N/A'}</p>
                         <p><strong>SĐT:</strong> ${datPhong.ChiTiet?.[0]?.SDT || 'N/A'}</p>
                         <p><strong>Bắt đầu:</strong> ${new Date(datPhong.ThoiGianBatDau).toLocaleString('vi-VN')}</p>
-                        <p><strong>Kết thúc:</strong> ${new Date(datPhong.ThoiGianKetThuc).toLocaleString('vi-VN')}</p>
                         <p><strong>Trạng thái:</strong> ${datPhong.TrangThai}</p>
                         ${datPhong.GhiChu ? `<p><strong>Ghi chú:</strong> ${datPhong.GhiChu}</p>` : ''}
                     </div>
@@ -601,14 +623,20 @@
         document.getElementById('datPhongForm').reset();
         document.getElementById('datPhongId').value = '';
         document.getElementById('datPhongMaDP').value = '';
-    }
-
-    function loadKhachHangInfo() {
-        const selectedOption = document.querySelector('#khachHangSelect option:checked');
-        if (selectedOption && selectedOption.value) {
-            document.getElementById('maKH').value = selectedOption.value || '';
-            document.getElementById('tenKH').value = selectedOption.getAttribute('data-tenkh') || '';
-            document.getElementById('sdtKH').value = selectedOption.getAttribute('data-sdt') || '';
+        document.getElementById('maKH').value = '';
+        
+        // Ẩn field tên khách hàng
+        const tenKHGroup = document.getElementById('tenKHGroup');
+        if (tenKHGroup) {
+            tenKHGroup.style.display = 'none';
+        }
+        
+        // Reset readonly state
+        const tenKHInput = document.getElementById('tenKH');
+        if (tenKHInput) {
+            tenKHInput.readOnly = false;
+            tenKHInput.style.background = '#fff';
+            tenKHInput.style.cursor = 'text';
         }
     }
 
@@ -862,8 +890,9 @@
         const submitBtn = document.getElementById('submitBtn');
         
         // Kiểm tra tất cả điều kiện (bao gồm số người không vượt sức chứa)
-        const isValid = tenKH && 
-                       sdtKH && 
+        const isValid = sdtKH && 
+                       sdtKH.length === 10 &&
+                       tenKH && 
                        phongSelect?.value && 
                        thoiGianBatDau && 
                        soNguoi > 0 && 
@@ -890,11 +919,24 @@
 
     function formatDateTimeLocal(dateString) {
         if (!dateString) return '';
+        
         const date = new Date(dateString);
-        // Chuyển sang múi giờ VN (UTC+7)
-        const offsetMs = 7 * 60 * 60 * 1000; // 7 giờ = milliseconds
-        const vnDate = new Date(date.getTime() + offsetMs);
-        return vnDate.toISOString().slice(0, 16);
+        if (isNaN(date.getTime())) {
+            console.error('❌ Invalid date:', dateString);
+            return '';
+        }
+        
+        // Format: YYYY-MM-DDTHH:mm (chuẩn datetime-local)
+        // Lấy local time (không cần adjust timezone)
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        
+        const formatted = `${year}-${month}-${day}T${hours}:${minutes}`;
+        console.log('📅 Formatted datetime:', dateString, '→', formatted);
+        return formatted;
     }
 
     function formatCurrency(amount) {
@@ -913,57 +955,173 @@
         const datPhongId = document.getElementById('datPhongId').value;
         const isEdit = !!datPhongId;
 
-        const formData = {
-            MaPhong: document.getElementById('phongSelect').value,
-            SoNguoi: parseInt(document.getElementById('soNguoi').value),
-            ThoiGianBatDau: document.getElementById('thoiGianBatDau').value,
-            GhiChu: document.getElementById('ghiChu').value
-        };
+        // Lấy hoặc tạo mã khách hàng
+        let maKH = document.getElementById('maKH').value;
+        const sdt = document.getElementById('sdtKH').value.trim();
+        const tenKH = document.getElementById('tenKH').value.trim();
+        
+        // Validation khách hàng
+        if (!sdt || sdt.length !== 10) {
+            showError('Vui lòng nhập số điện thoại hợp lệ (10 số)');
+            return;
+        }
+        
+        if (!tenKH) {
+            showError('Vui lòng nhập tên khách hàng');
+            return;
+        }
+        
+        // Nếu chưa có mã KH (khách hàng mới), tạo mã mới
+        if (!maKH) {
+            maKH = `KH${Date.now()}${Math.random().toString(36).substr(2, 5)}`.toUpperCase();
+        }
+        
+        // Lấy thông tin phòng
+        const selectedPhong = document.querySelector('#phongSelect option:checked');
+        const tenPhong = selectedPhong?.textContent || 'Phòng karaoke';
+        const loaiPhong = selectedPhong?.getAttribute('data-loaiphong') || 'Thường';
+        const maPhong = document.getElementById('phongSelect').value;
+        const soNguoi = parseInt(document.getElementById('soNguoi').value);
+        const thoiGianBatDauInput = document.getElementById('thoiGianBatDau').value;
+        const ghiChu = document.getElementById('ghiChu').value || '';
+        
+        // FIX: Validate và parse datetime - QUAN TRỌNG!
+        if (!thoiGianBatDauInput) {
+            showError('Vui lòng chọn thời gian bắt đầu');
+            return;
+        }
+        
+        console.log('📅 Input datetime value:', thoiGianBatDauInput);
+        
+        // Datetime-local format: "2025-12-23T18:30"
+        const thoiGianBatDau = new Date(thoiGianBatDauInput);
+        
+        if (isNaN(thoiGianBatDau.getTime())) {
+            console.error('❌ Invalid datetime:', thoiGianBatDauInput);
+            showError('Thời gian bắt đầu không hợp lệ. Vui lòng chọn lại.');
+            return;
+        }
+        
+        console.log('✅ Parsed datetime:', thoiGianBatDau.toISOString());
+        
+        // Kiểm tra giá phòng
+        const giaPhongInput = document.getElementById('giaPhong');
+        const giaPhong = parseInt(giaPhongInput.getAttribute('data-gia')) || 0;
+        
+        // Format data - Khác nhau giữa CREATE và EDIT
+        let formData;
+        
+        if (isEdit) {
+            // EDIT: Gửi ít data hơn, chỉ những gì cần update
+            const maDatPhong = document.getElementById('datPhongMaDP').value;
+            formData = {
+                MaPhong: maPhong,
+                SoNguoi: soNguoi,
+                ThoiGianBatDau: thoiGianBatDau.toISOString(),
+                GhiChu: ghiChu
+            };
+            console.log('📝 EDIT mode - Form data:', formData);
+        } else {
+            // CREATE: Gửi đầy đủ data
+            const maDatPhong = `DP${Date.now()}${Math.random().toString(36).substr(2, 5)}`.toUpperCase();
+            formData = {
+                // Thông tin khách hàng
+                maKH: maKH,
+                tenKH: tenKH,
+                sdt: sdt,
+                email: '',
+                
+                // Thông tin đặt phòng
+                maDatPhong: maDatPhong,
+                maPhong: maPhong,
+                tenPhong: tenPhong,
+                loaiPhong: loaiPhong,
+                giaTien: giaPhong,
+                
+                // Thời gian - GỬI ISO STRING
+                thoiGianBatDau: thoiGianBatDau.toISOString(),
+                thoiGianKetThuc: null,
+                songuoi: soNguoi,
+                
+                // Ghi chú và trạng thái
+                ghiChu: ghiChu,
+                trangThai: 'Đã đặt'
+            };
+            console.log('➕ CREATE mode - Form data:', formData);
+        }
 
-        // Validation
-        if (!formData.MaPhong) {
+        // Validation - Thống nhất key cho cả CREATE và EDIT
+        const maPhongToCheck = formData.MaPhong || formData.maPhong;
+        const soNguoiToCheck = formData.SoNguoi || formData.songuoi;
+        
+        if (!maPhongToCheck) {
             showError('Vui lòng chọn phòng');
             return;
         }
         
-        if (!formData.SoNguoi || formData.SoNguoi < 1) {
+        if (!soNguoiToCheck || soNguoiToCheck < 1) {
             showError('Vui lòng nhập số người hợp lệ (tối thiểu 1)');
             return;
         }
         
         // Kiểm tra số người không vượt quá sức chứa
-        const selectedPhong = document.querySelector('#phongSelect option:checked');
         const sucChua = parseInt(selectedPhong?.getAttribute('data-succhua')) || 0;
-        if (sucChua && formData.SoNguoi > sucChua) {
-            showError(`Số người (${formData.SoNguoi}) vượt quá sức chứa phòng (${sucChua} người)`);
+        if (sucChua && soNguoiToCheck > sucChua) {
+            showError(`Số người (${soNguoiToCheck}) vượt quá sức chứa phòng (${sucChua} người)`);
             return;
         }
 
-        // Validation thời gian bắt đầu
-        const startTime = new Date(formData.ThoiGianBatDau);
-        if (!startTime || isNaN(startTime.getTime())) {
-            showError('Vui lòng chọn thời gian bắt đầu hợp lệ');
-            return;
-        }
+        // Đã validate datetime ở trên rồi
         
-        // Kiểm tra giá phòng
-        const giaPhongInput = document.getElementById('giaPhong');
-        const giaPhong = parseInt(giaPhongInput.getAttribute('data-gia')) || 0;
-        if (!giaPhong || giaPhong === 0) {
-            showError('Không có giá phòng cho khung giờ đã chọn. Vui lòng chọn thời gian khác.');
-            return;
+        // Kiểm tra giá phòng - CHỈ KHI TẠO MỚI
+        if (!isEdit) {
+            if (!formData.giaTien || formData.giaTien === 0) {
+                showError('Không có giá phòng cho khung giờ đã chọn. Vui lòng chọn thời gian khác.');
+                return;
+            }
         }
 
-        const url = isEdit ? `/api/datphong/${document.getElementById('datPhongMaDP').value}` : '/api/datphong';
-        const method = isEdit ? 'PUT' : 'POST';
-
+        // THÊM CONFIRMATION DIALOG - Pattern từ home.js
         try {
-            Swal.fire({
-                title: 'Đang lưu đặt phòng...',
-                text: 'Vui lòng chờ trong giây lát',
-                allowOutsideClick: false,
-                didOpen: () => Swal.showLoading()
+            // Lấy data hiển thị - hỗ trợ cả CREATE và EDIT
+            const thoiGian = new Date(formData.ThoiGianBatDau || formData.thoiGianBatDau).toLocaleString('vi-VN');
+            const displayTenPhong = formData.tenPhong || tenPhong;
+            const displaySoNguoi = formData.SoNguoi || formData.songuoi;
+            const displayGiaPhong = formData.giaTien || giaPhong;
+            
+            const confirmResult = await Swal.fire({
+                title: isEdit ? 'Xác nhận cập nhật?' : 'Xác nhận đặt phòng?',
+                html: `
+                    <div class="text-start">
+                        <p>Bạn có chắc chắn muốn ${isEdit ? 'cập nhật' : 'đặt'} phòng <strong>${displayTenPhong}</strong>?</p>
+                        <div class="mt-3 p-3 bg-light rounded">
+                            <p class="mb-2"><i class="fas fa-clock"></i> <strong>Thời gian:</strong> ${thoiGian}</p>
+                            <p class="mb-2"><i class="fas fa-users"></i> <strong>Số người:</strong> ${displaySoNguoi}</p>
+                            ${!isEdit ? `<p class="mb-0"><i class="fas fa-money-bill"></i> <strong>Giá phòng:</strong> ${formatCurrency(displayGiaPhong)}</p>` : ''}
+                        </div>
+                    </div>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: isEdit ? '<i class="fas fa-check"></i> Cập nhật' : '<i class="fas fa-check-double"></i> Đặt ngay',
+                cancelButtonText: '<i class="fas fa-times"></i> Hủy bỏ',
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                reverseButtons: true,
+                width: '500px'
             });
+
+            // Nếu người dùng không xác nhận, dừng lại
+            if (!confirmResult.isConfirmed) {
+                console.log('User cancelled booking');
+                return;
+            }
+
+            // Tiếp tục xử lý - Hiển thị loading state
+            showLoadingButton();
+
+            const url = isEdit ? `/api/datphong/${document.getElementById('datPhongMaDP').value}` : '/api/datphong';
+            const method = isEdit ? 'PUT' : 'POST';
 
             const response = await fetch(url, {
                 method: method,
@@ -972,34 +1130,110 @@
             });
 
             const result = await response.json();
+            
+            hideLoadingButton();
+            
             if (!response.ok) throw new Error(result.error || 'Lỗi server');
 
-            // Tắt loading và đóng modal
-            Swal.close();
+            // Đóng modal TRƯỚC
             closeDatPhongModal();
+            
+            // Đợi modal đóng hoàn toàn (quan trọng!)
+            await new Promise(resolve => setTimeout(resolve, 400));
 
-            // Hiển thị thông báo thành công
-            Swal.fire({
+            // Chuẩn bị data hiển thị - hỗ trợ cả CREATE và EDIT
+            const maDatPhongDisplay = result.data?.maDatPhong || formData.maDatPhong || document.getElementById('datPhongMaDP')?.value || 'N/A';
+            const tenPhongDisplay = formData.tenPhong || tenPhong;
+            const thoiGianDisplay = formData.ThoiGianBatDau || formData.thoiGianBatDau;
+            const soNguoiDisplay = formData.SoNguoi || formData.songuoi;
+            const giaPhongDisplay = formData.giaTien || giaPhong;
+
+            // SAU ĐÓ mới hiển thị thông báo thành công chi tiết và chờ người dùng bấm OK
+            await Swal.fire({
+                title: isEdit ? 'Cập nhật thành công!' : 'Đặt phòng thành công!',
+                html: `
+                    <div class="text-center">
+                        <div class="mb-4">
+                            <i class="fas fa-check-circle text-success" style="font-size: 3rem;"></i>
+                        </div>
+                        <p class="mb-4">${result.message || (isEdit ? 'Đã cập nhật thông tin đặt phòng' : 'Đặt phòng thành công!')}</p>
+                        <div class="booking-summary p-3 bg-light rounded text-start">
+                            <h6 class="mb-3"><i class="fas fa-info-circle"></i> Thông tin đặt phòng:</h6>
+                            <p><strong>Mã đặt phòng:</strong> ${maDatPhongDisplay}</p>
+                            <p><strong>Phòng:</strong> ${tenPhongDisplay}</p>
+                            <p><strong>Thời gian:</strong> ${new Date(thoiGianDisplay).toLocaleString('vi-VN')}</p>
+                            <p><strong>Số người:</strong> ${soNguoiDisplay}</p>
+                            ${!isEdit ? `<p><strong>Giá phòng:</strong> ${formatCurrency(giaPhongDisplay)}</p>` : ''}
+                            <p class="mb-0"><strong>Trạng thái:</strong> <span class="badge bg-success">${isEdit ? 'Đã cập nhật' : 'Đã đặt thành công'}</span></p>
+                        </div>
+                    </div>
+                `,
                 icon: 'success',
-                title: 'Thành công!',
-                text: result.message || `Đặt phòng đã được ${isEdit ? 'cập nhật' : 'tạo'} thành công!`,
-                timer: 1500,
-                showConfirmButton: false
+                confirmButtonText: '<i class="fas fa-check"></i> OK',
+                confirmButtonColor: '#3085d6',
+                width: '600px',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                customClass: {
+                    container: 'swal2-top-level'
+                }
             });
-
-            setTimeout(() => {
-                location.reload();
-            }, 1500);
+            
+            // Reload trang sau khi người dùng bấm OK
+            location.reload();
 
         } catch (error) {
+            hideLoadingButton();
             console.error('❌ Lỗi khi lưu đặt phòng:', error);
             Swal.fire({
                 icon: 'error',
                 title: 'Lỗi!',
-                text: error.message || 'Không thể lưu đặt phòng',
-                confirmButtonColor: '#667eea'
+                html: `
+                    <p>${error.message || 'Không thể lưu đặt phòng'}</p>
+                    <p class="text-muted small">Vui lòng thử lại sau hoặc liên hệ quản trị viên.</p>
+                `,
+                confirmButtonText: '<i class="fas fa-times"></i> Đóng',
+                confirmButtonColor: '#d33'
             });
         }
+    }
+
+    // Helper functions cho loading state - Pattern từ home.js
+    function showLoadingButton() {
+        const submitBtn = document.getElementById('submitBtn');
+        
+        if (!submitBtn) {
+            console.error('Không tìm thấy nút submit');
+            return;
+        }
+        
+        // Lưu trạng thái ban đầu
+        submitBtn.setAttribute('data-original-html', submitBtn.innerHTML);
+        
+        // Thay đổi nội dung và disable button
+        submitBtn.innerHTML = `
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Đang xử lý...</span>
+        `;
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.7';
+        submitBtn.style.cursor = 'not-allowed';
+    }
+
+    function hideLoadingButton() {
+        const submitBtn = document.getElementById('submitBtn');
+        
+        if (!submitBtn) return;
+        
+        // Khôi phục trạng thái ban đầu
+        const originalHtml = submitBtn.getAttribute('data-original-html');
+        if (originalHtml) {
+            submitBtn.innerHTML = originalHtml;
+            submitBtn.removeAttribute('data-original-html');
+        }
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+        submitBtn.style.cursor = 'pointer';
     }
 
     // ===== CHECK-IN VÀ CHUYỂN THÀNH HÓA ĐƠN =====
@@ -1072,9 +1306,9 @@
                                 <div style="text-align: left; padding: 10px;">
                                     <p style="margin-bottom: 10px;">✅ <strong>Đã tạo hóa đơn mới:</strong></p>
                                     <ul style="list-style: none; padding-left: 0;">
-                                        <li>📋 Mã hóa đơn: <strong>${apiResult.hoaDon.MaHoaDon}</strong></li>
-                                        <li>🏠 Phòng: <strong>${apiResult.hoaDon.MaPhong}</strong></li>
-                                        <li>⏱️ Bắt đầu: <strong>${new Date(apiResult.hoaDon.ThoiGianBatDau).toLocaleString('vi-VN')}</strong></li>
+                                        <li>📋 Mã hóa đơn: <strong>${apiResult.data?.hoaDon?.MaHoaDon || 'N/A'}</strong></li>
+                                        <li>🏠 Phòng: <strong>${apiResult.data?.hoaDon?.MaPhong || 'N/A'}</strong></li>
+                                        <li>⏱️ Bắt đầu: <strong>${apiResult.data?.hoaDon?.ThoiGianBatDau ? new Date(apiResult.data.hoaDon.ThoiGianBatDau).toLocaleString('vi-VN') : 'N/A'}</strong></li>
                                         <li>📊 Đơn đặt phòng: <strong>Hoàn thành</strong></li>
                                     </ul>
                                     <p style="margin-top: 15px; color: #4299e1;">
@@ -1703,6 +1937,72 @@
         }
     }
 
+    // ===== XỬ LÝ NHẬP SĐT VÀ TỰ ĐỘNG LẤY THÔNG TIN KHÁCH HÀNG =====
+    async function getCustomerInfoByPhone(phone) {
+        try {
+            const response = await fetch(`/api/khachhang?phone=${phone}`);
+            const khachHang = await response.json();
+            
+            const tenKHInput = document.getElementById('tenKH');
+            const maKHInput = document.getElementById('maKH');
+            const tenKHGroup = document.getElementById('tenKHGroup');
+            
+            if (khachHang && khachHang.MaKH) {
+                // Khách hàng đã tồn tại
+                tenKHInput.value = khachHang.TenKH || '';
+                maKHInput.value = khachHang.MaKH;
+                tenKHInput.readOnly = true;
+                tenKHInput.style.background = '#f1f5f9';
+                tenKHInput.style.cursor = 'not-allowed';
+                
+                // Hiển thị thông báo
+                const smallTag = tenKHGroup.querySelector('small');
+                if (smallTag) {
+                    smallTag.innerHTML = '<i class="fas fa-check-circle" style="color: #10b981;"></i> Khách hàng đã tồn tại trong hệ thống';
+                    smallTag.style.color = '#10b981';
+                }
+            } else {
+                // Khách hàng mới
+                tenKHInput.value = '';
+                maKHInput.value = '';
+                tenKHInput.readOnly = false;
+                tenKHInput.style.background = '#fff';
+                tenKHInput.style.cursor = 'text';
+                tenKHInput.placeholder = 'Nhập tên khách hàng mới';
+                
+                // Hiển thị thông báo
+                const smallTag = tenKHGroup.querySelector('small');
+                if (smallTag) {
+                    smallTag.innerHTML = '<i class="fas fa-user-plus" style="color: #3b82f6;"></i> Khách hàng mới - vui lòng nhập tên';
+                    smallTag.style.color = '#3b82f6';
+                }
+            }
+            
+            // Hiển thị field tên
+            tenKHGroup.style.display = 'block';
+            
+        } catch (error) {
+            console.log({info: 'Lỗi khi lấy thông tin khách hàng', message: error.message});
+            // Vẫn cho phép nhập tên mới
+            const tenKHInput = document.getElementById('tenKH');
+            const tenKHGroup = document.getElementById('tenKHGroup');
+            tenKHInput.value = '';
+            tenKHInput.readOnly = false;
+            tenKHInput.style.background = '#fff';
+            tenKHInput.style.cursor = 'text';
+            tenKHGroup.style.display = 'block';
+        }
+    }
+
+    // Debounce function
+    function debounce(func, delay) {
+        let timerId;
+        return function() {
+            clearTimeout(timerId);
+            timerId = setTimeout(() => func.apply(this, arguments), delay);
+        };
+    }
+
     // ===== INITIALIZATION =====
     document.addEventListener('DOMContentLoaded', function () {
         allDatPhongs = Array.from(document.querySelectorAll('#datPhongTableBody tr'));
@@ -1710,22 +2010,59 @@
 
         calculateStatistics();
 
+        // Event listener cho SĐT - Tự động lấy thông tin khách hàng
+        const sdtKHInput = document.getElementById('sdtKH');
+        if (sdtKHInput) {
+            const debouncedGetInfo = debounce(getCustomerInfoByPhone, 500);
+            
+            sdtKHInput.addEventListener('input', function(e) {
+                const phone = e.target.value.trim();
+                const tenKHGroup = document.getElementById('tenKHGroup');
+                
+                // Chỉ chấp nhận số
+                this.value = this.value.replace(/[^0-9]/g, '');
+                
+                if (phone.length < 10) {
+                    tenKHGroup.style.display = 'none';
+                    return;
+                }
+                
+                if (phone.length === 10) {
+                    // Gọi API lấy thông tin
+                    debouncedGetInfo(phone);
+                }
+            });
+        }
+
         // Event listeners
-        const khSelect = document.getElementById('khachHangSelect');
         const phongSelect = document.getElementById('phongSelect');
         const soNguoiInput = document.getElementById('soNguoi');
         const thoiGianBatDauInput = document.getElementById('thoiGianBatDau');
+        const tenKHInput = document.getElementById('tenKH');
         
-        if (khSelect) khSelect.addEventListener('change', loadKhachHangInfo);
-        if (phongSelect) phongSelect.addEventListener('change', loadPhongInfo);
+        if (phongSelect) {
+            phongSelect.addEventListener('change', function() {
+                loadPhongInfo();
+                validateAllFields();
+            });
+        }
         
-        // Event listeners để validate khi input thay đổi
         if (soNguoiInput) {
-            soNguoiInput.addEventListener('input', validateSoNguoi);
+            soNguoiInput.addEventListener('input', function() {
+                validateSoNguoi();
+                validateAllFields();
+            });
         }
         
         if (thoiGianBatDauInput) {
-            thoiGianBatDauInput.addEventListener('change', updateGiaPhong);
+            thoiGianBatDauInput.addEventListener('change', function() {
+                updateGiaPhong();
+                validateAllFields();
+            });
+        }
+        
+        if (tenKHInput) {
+            tenKHInput.addEventListener('input', validateAllFields);
         }
         
         // Kiểm tra và tự động hủy đơn khi load trang
@@ -3635,6 +3972,15 @@
 
     .modal-container {
         cursor: default;
+    }
+    
+    /* ===== SWEETALERT2 Z-INDEX FIX ===== */
+    .swal2-top-level {
+        z-index: 20000 !important;
+    }
+    
+    .swal2-container {
+        z-index: 20000 !important;
     }
 
     /* ===== RESPONSIVE CHO NÚT HÀNH ĐỘNG ===== */

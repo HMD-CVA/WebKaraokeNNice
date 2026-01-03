@@ -147,17 +147,17 @@
                 <button class="btn-table-action btn-pay" data-mahd="{{this.MaHoaDon}}" title="Thanh toán">
                   <i class="fas fa-credit-card"></i>
                 </button>
+                <button class="btn-table-action btn-edit" data-mahd="{{this.MaHoaDon}}" title="Sửa">
+                  <i class="fas fa-edit"></i>
+                </button>
                 {{else}}
                 <button class="btn-table-action btn-print" data-mahd="{{this.MaHoaDon}}" title="In hóa đơn">
                   <i class="fas fa-print"></i>
                 </button>
-                {{/if}}
-                <button class="btn-table-action btn-edit" data-mahd="{{this.MaHoaDon}}" title="Sửa">
-                  <i class="fas fa-edit"></i>
-                </button>
                 <button class="btn-table-action btn-delete-table" data-id="{{this._id}}" data-mahd="{{this.MaHoaDon}}" title="Xóa">
                   <i class="fas fa-trash"></i>
                 </button>
+                {{/if}}
               </div>
             </td>
           </tr>
@@ -1382,12 +1382,8 @@ async function thanhToanHoaDon(maHoaDon) {
             width: '500px'
         });
 
-        // Cập nhật UI ngay lập tức mà không cần reload
-        updateHoaDonUI(maHoaDon, {
-            trangThai: 'Đã thanh toán',
-            tongTien: tongTienMoi,
-            thoiGianKetThuc: thoiGianKetThuc
-        });
+        // Reload trang để cập nhật dữ liệu
+        window.location.reload();
 
     } catch (error) {
         console.error('❌ Lỗi thanh toán hóa đơn:', error);
@@ -1711,8 +1707,7 @@ async function viewHoaDonDetail(maHoaDon) {
     
     // Tính các thành phần tiền
     const tienPhong = (hoaDon.TongTien || 0) - tongTienDichVu;
-    const vat = (hoaDon.TongTien || 0) * 0.1; // VAT 10%
-    const tongThanhToan = (hoaDon.TongTien || 0) + vat;
+    const tongThanhToan = hoaDon.TongTien || 0;
 
     detailContent.innerHTML = `
       <div class="modern-invoice" id="printableInvoice">
@@ -1787,14 +1782,6 @@ async function viewHoaDonDetail(maHoaDon) {
 
         <!-- Tổng kết hóa đơn -->
         <div class="invoice-summary">
-          <div class="summary-row">
-            <span class="label">Tổng tiền dịch vụ:</span>
-            <span class="value">${formatNumber(hoaDon.TongTien || 0)}</span>
-          </div>
-          <div class="summary-row">
-            <span class="label">VAT (10%):</span>
-            <span class="value">${formatNumber(vat)}</span>
-          </div>
           <div class="summary-row total">
             <span class="label">TỔNG CỘNG:</span>
             <span class="value">${formatNumber(tongThanhToan)}</span>

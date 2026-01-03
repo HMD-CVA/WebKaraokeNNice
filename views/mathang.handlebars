@@ -10,12 +10,14 @@
             <p>Theo dõi và quản lý kho hàng karaoke</p>
           </div>
         </div>
-        <div class="header-actions">
-          <button class="btn-primary" id="addProductBtn">
-            <i class="fas fa-plus"></i>
-            <span>Thêm mặt hàng</span>
-          </button>
-        </div>
+        {{#if isManager}}
+          <div class="header-actions">
+            <button class="btn-primary" id="addProductBtn">
+              <i class="fas fa-plus"></i>
+              <span>Thêm mặt hàng</span>
+            </button>
+          </div>
+        {{/if}}
       </div>
     </div>
 
@@ -98,7 +100,9 @@
             <th style="width: 120px;">Đơn giá</th>
             <th style="width: 100px;">Tồn kho</th>
             <th style="width: 120px;">Trạng thái</th>
-            <th style="width: 180px;">Thao tác</th>
+            {{#if isManager}}
+              <th style="width: 180px;">Thao tác</th> 
+            {{/if}}
           </tr>
         </thead>
         <tbody id="productsTableBody">
@@ -118,22 +122,24 @@
                 {{#if (eq this.SoLuongTon 0)}}🔴 Hết hàng{{/if}}
               </span>
             </td>
-            <td class="table-actions">
-              <div class="action-buttons">
-                <button class="btn-table-action btn-stock-in" data-id="{{this.MaHang}}" title="Nhập hàng">
-                  <i class="fas fa-arrow-down"></i>
-                </button>
-                <button class="btn-table-action btn-stock-out" data-id="{{this.MaHang}}" title="Xuất hàng">
-                  <i class="fas fa-arrow-up"></i>
-                </button>
-                <button class="btn-table-action btn-edit" data-product='{{{json this}}}' title="Sửa">
-                  <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn-table-action btn-delete-table" data-id="{{this.MaHang}}" data-name="{{this.TenHang}}" title="Xóa">
-                  <i class="fas fa-trash"></i>
-                </button>
-              </div>
-            </td>
+            {{#if ../isManager}}
+              <td class="table-actions">
+                <div class="action-buttons">
+                  <button class="btn-table-action btn-stock-in" data-id="{{this.MaHang}}" title="Nhập hàng">
+                    <i class="fas fa-arrow-down"></i>
+                  </button>
+                  <button class="btn-table-action btn-stock-out" data-id="{{this.MaHang}}" title="Xuất hàng">
+                    <i class="fas fa-arrow-up"></i>
+                  </button>
+                  <button class="btn-table-action btn-edit" data-product='{{{json this}}}' title="Sửa">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn-table-action btn-delete-table" data-id="{{this.MaHang}}" data-name="{{this.TenHang}}" title="Xóa">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            {{/if}}
           </tr>
           {{/each}}
         </tbody>
